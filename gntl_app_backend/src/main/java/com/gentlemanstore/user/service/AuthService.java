@@ -1,5 +1,7 @@
 package com.gentlemanstore.user.service;
 
+import com.gentlemanstore.common.exception.EmailAlreadyExistsException;
+import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.security.JwtService;
 import com.gentlemanstore.user.dto.AuthResponse;
 import com.gentlemanstore.user.dto.LoginRequest;
@@ -28,11 +30,11 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new EmailAlreadyExistsException("Email already exists");
         }
 
         Role role = roleRepository.findByName(RoleName.ROLE_CUSTOMER)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         User user = User.builder()
                 .firstName(request.getFirstName())
@@ -67,7 +69,7 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmailAndDeletedFalse(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String token = jwtService.generateToken(user);
 
