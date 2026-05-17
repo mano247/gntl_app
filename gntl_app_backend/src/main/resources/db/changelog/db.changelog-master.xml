@@ -6,4 +6,6 @@
                       https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
     <include file="db/changelog/migrations/V1__create_users_tables.xml"/>
+    <include file="db/changelog/migrations/V2__insert_roles.xml"/>
+    <include file="db/changelog/migrations/V3__create_product_tables.xml"/>
 </databaseChangeLog>
