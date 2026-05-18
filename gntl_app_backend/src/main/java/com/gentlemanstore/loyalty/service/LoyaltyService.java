@@ -1,0 +1,85 @@
+package com.gentlemanstore.loyalty.service;
+
+import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.loyalty.dto.LoyaltyAccountDTO;
+import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
+import com.gentlemanstore.loyalty.mapper.LoyaltyMapper;
+import com.gentlemanstore.loyalty.model.LoyaltyAccount;
+import com.gentlemanstore.loyalty.model.LoyaltyTransaction;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyTierRepository;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyTransactionRepository;
+import com.gentlemanstore.user.model.User;
+import com.gentlemanstore.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class LoyaltyService {
+
+    private final LoyaltyAccountRepository loyaltyAccountRepository;
+    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final LoyaltyTierRepository loyaltyTierRepository;
+    private final UserRepository userRepository;
+    private final LoyaltyMapper mapper;
+
+    public LoyaltyAccountDTO getAccount(Long id){
+        LoyaltyAccount loyaltyAccount = loyaltyAccountRepository.findByUserIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
+
+        return mapper.toDTO(loyaltyAccount);
+    }
+
+    public List<LoyaltyTransactionDTO> getTransactions(Long userId){
+        LoyaltyAccount account = loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
+
+        return loyaltyTransactionRepository.findAllByLoyaltyAccountIdAndDeletedFalse(account.getId())
+                .stream()
+                .map(mapper::toTransactionDTO)
+                .collect(Collectors.toList());
+    }
+
+    public LoyaltyAccountDTO createAccount(Long userId){
+        com.gentlemanstore.loyalty.model.LoyaltyTier tier = loyaltyTierRepository
+                .findTopByMinPointsLessThanEqualOrderByMinPointsDesc(0)
+                .orElseThrow(() -> new ResourceNotFoundException("Loyalty tier not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        LoyaltyAccount account = LoyaltyAccount.builder()
+                .points(0)
+                .user(user)
+                .loyaltyTier(tier)
+                .build();
+
+        loyaltyAccountRepository.save(account);
+        return mapper.toDTO(account);
+    }
+
+    public LoyaltyAccountDTO addPoints(Long userId, Integer points, String description) {
+        LoyaltyAccount account = loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
+
+        account.setPoints(account.getPoints() + points);
+
+        loyaltyTierRepository.findTopByMinPointsLessThanEqualOrderByMinPointsDesc(account.getPoints())
+                .ifPresent(account::setLoyaltyTier);
+
+        LoyaltyTransaction transaction = LoyaltyTransaction.builder()
+                .points(points)
+                .description(description)
+                .loyaltyAccount(account)
+                .build();
+
+        loyaltyTransactionRepository.save(transaction);
+        loyaltyAccountRepository.save(account);
+        return mapper.toDTO(account);
+
+    }
+}

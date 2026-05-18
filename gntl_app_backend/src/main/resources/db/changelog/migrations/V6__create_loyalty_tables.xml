@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="19" author="gentlemanstore">
+        <createTable tableName="loyalty_tiers">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="min_points" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="discount_percentage" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20" author="gentlemanstore">
+        <createTable tableName="loyalty_accounts">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="points" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="tier_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="loyalty_accounts"
+                baseColumnNames="user_id"
+                constraintName="fk_loyalty_accounts_user"
+                referencedTableName="users"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="loyalty_accounts"
+                baseColumnNames="tier_id"
+                constraintName="fk_loyalty_accounts_tier"
+                referencedTableName="loyalty_tiers"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="21" author="gentlemanstore">
+        <createTable tableName="loyalty_transactions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="points" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loyalty_account_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="loyalty_transactions"
+                baseColumnNames="loyalty_account_id"
+                constraintName="fk_loyalty_transactions_account"
+                referencedTableName="loyalty_accounts"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="22" author="gentlemanstore">
+        <createTable tableName="points_rules">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="points" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="23" author="gentlemanstore">
+        <insert tableName="loyalty_tiers">
+            <column name="name" value="Gentleman"/>
+            <column name="min_points" valueNumeric="0"/>
+            <column name="discount_percentage" valueNumeric="0"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="loyalty_tiers">
+            <column name="name" value="Distinguished"/>
+            <column name="min_points" valueNumeric="500"/>
+            <column name="discount_percentage" valueNumeric="5"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="loyalty_tiers">
+            <column name="name" value="Elite"/>
+            <column name="min_points" valueNumeric="1500"/>
+            <column name="discount_percentage" valueNumeric="10"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="loyalty_tiers">
+            <column name="name" value="Black Label"/>
+            <column name="min_points" valueNumeric="5000"/>
+            <column name="discount_percentage" valueNumeric="15"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
