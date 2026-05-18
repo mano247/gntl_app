@@ -9,4 +9,5 @@
     <include file="db/changelog/migrations/V2__insert_roles.xml"/>
     <include file="db/changelog/migrations/V3__create_product_tables.xml"/>
     <include file="db/changelog/migrations/V4__create_order_tables.xml"/>
+    <include file="db/changelog/migrations/V5__create_inventory_tables.xml"/>
 </databaseChangeLog>
