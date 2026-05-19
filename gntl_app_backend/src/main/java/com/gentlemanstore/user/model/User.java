@@ -1,5 +1,6 @@
 package com.gentlemanstore.user.model;
 
+import com.gentlemanstore.loyalty.model.LoyaltyAccount;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -59,6 +60,9 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Address> addresses = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user")
+    private LoyaltyAccount loyaltyAccount;
 
     @PrePersist
     protected void onCreate() {

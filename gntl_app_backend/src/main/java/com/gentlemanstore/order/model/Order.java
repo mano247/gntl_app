@@ -1,5 +1,6 @@
 package com.gentlemanstore.order.model;
 
+import com.gentlemanstore.payment.model.Payment;
 import com.gentlemanstore.user.model.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,6 +41,9 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @OneToOne(mappedBy = "order")
+    private Payment payment;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
