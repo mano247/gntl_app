@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="28" author="gentlemanstore">
+        <createTable tableName="chat_sessions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="started_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ended_at" type="TIMESTAMP"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="29" author="gentlemanstore">
+        <createTable tableName="support_tickets">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="subject" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chat_session_id" type="BIGINT">
+                <constraints unique="true"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="support_tickets"
+                baseColumnNames="user_id"
+                constraintName="fk_support_tickets_user"
+                referencedTableName="users"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="support_tickets"
+                baseColumnNames="chat_session_id"
+                constraintName="fk_support_tickets_chat_session"
+                referencedTableName="chat_sessions"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="30" author="gentlemanstore">
+        <createTable tableName="chat_messages">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sender" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sent_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chat_session_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="chat_messages"
+                baseColumnNames="chat_session_id"
+                constraintName="fk_chat_messages_session"
+                referencedTableName="chat_sessions"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="31" author="gentlemanstore">
+        <createTable tableName="bot_questions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="question" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_index" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="32" author="gentlemanstore">
+        <createTable tableName="bot_responses">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="response" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bot_question_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="support_ticket_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="bot_responses"
+                baseColumnNames="bot_question_id"
+                constraintName="fk_bot_responses_question"
+                referencedTableName="bot_questions"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="bot_responses"
+                baseColumnNames="support_ticket_id"
+                constraintName="fk_bot_responses_ticket"
+                referencedTableName="support_tickets"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="33" author="gentlemanstore">
+        <insert tableName="bot_questions">
+            <column name="question" value="Molimo vas opišite vaš problem"/>
+            <column name="order_index" valueNumeric="1"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="bot_questions">
+            <column name="question" value="Da li se problem odnosi na narudžbinu? Ako da, navedite broj narudžbine"/>
+            <column name="order_index" valueNumeric="2"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="bot_questions">
+            <column name="question" value="Kako biste ocenili hitnost vašeg problema? (1-Nije hitno, 2-Umereno hitno, 3-Hitno)"/>
+            <column name="order_index" valueNumeric="3"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
