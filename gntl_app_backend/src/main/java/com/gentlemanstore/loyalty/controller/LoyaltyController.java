@@ -5,8 +5,11 @@ import com.gentlemanstore.loyalty.dto.AddPointsRequest;
 import com.gentlemanstore.loyalty.dto.LoyaltyAccountDTO;
 import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
+import com.gentlemanstore.user.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,25 +21,45 @@ public class LoyaltyController {
 
     private final LoyaltyService service;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> getAccount(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Loyalty account retrieved successfully", service.getAccount(id)));
+    @GetMapping("")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> getAccount(@AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty account retrieved successfully", service.getAccount(currentUser.getId())));
     }
 
-    @GetMapping("/{id}/transactions")
-    public ResponseEntity<ApiResponse<List<LoyaltyTransactionDTO>>> getTransactions(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully", service.getTransactions(id)));
+    @GetMapping("/transactions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<LoyaltyTransactionDTO>>> getTransactions(@AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully", service.getTransactions(currentUser.getId())));
     }
 
-    @PostMapping("/{id}/account")
-    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> createAccount(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Loyalty account created successfully", service.createAccount(id)));
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> getUserAccount(
+            @PathVariable Long userId){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty account retrieved successfully",
+                service.getAccount(userId)));
     }
 
-    @PutMapping("/{id}/points")
-    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@PathVariable Long id, @RequestBody AddPointsRequest request){
+    @GetMapping("/user/{userId}/transactions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<List<LoyaltyTransactionDTO>>> getUserTransactions(
+            @PathVariable Long userId){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully",
+                service.getTransactions(userId)));
+    }
+
+    @PostMapping("/account")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> createAccount(@AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty account created successfully", service.createAccount(currentUser.getId())));
+    }
+
+    @PutMapping("/points")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@AuthenticationPrincipal User currentUser, @RequestBody AddPointsRequest request){
         return ResponseEntity.ok(ApiResponse.success("Loyalty points added successfully",
-                service.addPoints(id, request.getPoints(), request.getDescription())));
+                service.addPoints(currentUser.getId(), request.getPoints(), request.getDescription())));
     }
 
 }

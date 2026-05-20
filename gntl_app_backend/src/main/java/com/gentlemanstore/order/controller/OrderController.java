@@ -4,9 +4,12 @@ import com.gentlemanstore.common.response.ApiResponse;
 import com.gentlemanstore.order.dto.CreateOrderRequest;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.service.OrderService;
+import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,32 +22,46 @@ public class OrderController {
     private final OrderService service;
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<OrderDTO>> getOrder(@PathVariable Long id){
         return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", service.getOrder(id)));
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getUserOrders(@PathVariable Long userId){
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully", service.getUserOrders(userId)));
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<List<OrderDTO>>> getMyOrders(
+            @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully",
+                service.getUserOrders(currentUser.getId())));
+    }
+
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(@PathVariable Long id,@RequestBody  String status){
         return ResponseEntity.ok(ApiResponse.success("Order updated successfully", service.updateOrderStatus(id, status)));
     }
 
     @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long id){
         service.cancelOrder(id);
         return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", null));
     }
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@Valid @RequestBody CreateOrderRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Order created successfully", service.createOrder(request, 1L)));
+    @PreAuthorize("hasAnyRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@Valid @RequestBody CreateOrderRequest request, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Order created successfully", service.createOrder(request, currentUser.getId())));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteProduct (@PathVariable Long id){
         service.deleteOrder(id);
         return ResponseEntity.ok(ApiResponse.success("Order deleted successfully", null));
