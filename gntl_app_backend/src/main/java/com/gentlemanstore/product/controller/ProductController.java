@@ -6,6 +6,8 @@ import com.gentlemanstore.product.dto.ProductDTO;
 import com.gentlemanstore.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,10 @@ public class ProductController {
 
     private final ProductService service;
 
-    @GetMapping()
+    @GetMapping("/paged")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAll(){
-        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully", service.getAllProducts()));
+    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getAll(Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully", service.getAllProducts(pageable)));
     }
 
     @GetMapping("/{id}")

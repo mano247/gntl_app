@@ -15,7 +15,10 @@ import com.gentlemanstore.product.repository.ProductRepository;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -32,19 +35,20 @@ public class OrderService {
     private final UserRepository userRepository;
     private final EmailService emailService;
 
+    @Transactional(readOnly = true)
     public OrderDTO getOrder(Long id){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         return mapper.toDTO(order);
     }
 
-    public List<OrderDTO> getUserOrders(Long userId){
-        return repo.findAllByUserIdAndDeletedFalse(userId)
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getUserOrdersPaged(Long userId, Pageable pageable) {
+        return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(mapper::toDTO);
     }
 
+    @Transactional()
     public OrderDTO createOrder(CreateOrderRequest request, Long userId){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -91,6 +95,7 @@ public class OrderService {
         return mapper.toDTO(order);
     }
 
+    @Transactional()
     public OrderDTO updateOrderStatus(Long id, String status){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
@@ -109,6 +114,7 @@ public class OrderService {
         return mapper.toDTO(order);
     }
 
+    @Transactional()
     public void cancelOrder(Long id){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
@@ -118,6 +124,7 @@ public class OrderService {
         repo.save(order);
     }
 
+    @Transactional()
     public void deleteOrder(Long id){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));

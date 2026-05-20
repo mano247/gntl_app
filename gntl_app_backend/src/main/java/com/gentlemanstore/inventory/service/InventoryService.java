@@ -10,6 +10,7 @@ import com.gentlemanstore.inventory.repository.InventoryRepository;
 import com.gentlemanstore.inventory.repository.StockAlertRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,12 +23,14 @@ public class InventoryService {
     private final StockAlertRepository stockAlertRepository;
     private final InventoryMapper mapper;
 
+    @Transactional(readOnly = true)
     public InventoryDTO getInventory(Long productSizeId) {
         Inventory inventory = repo.findByProductSizeIdAndDeletedFalse(productSizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found"));
         return mapper.toDTO(inventory);
     }
 
+    @Transactional(readOnly = true)
     public List<StockAlertDTO> getStockAlerts() {
         return stockAlertRepository.findAllByResolvedFalseAndDeletedFalse()
                 .stream()
@@ -35,6 +38,7 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional()
     public void resolveAlert(Long id){
         StockAlert stockAlert = stockAlertRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Stock alert not found"));
@@ -43,6 +47,7 @@ public class InventoryService {
         stockAlertRepository.save(stockAlert);
     }
 
+    @Transactional()
     public InventoryDTO updateQuantity(Long productSizeId, Integer newQuantity){
         Inventory inventory = repo.findByProductSizeIdAndDeletedFalse(productSizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found"));
@@ -60,6 +65,7 @@ public class InventoryService {
         return mapper.toDTO(inventory);
     }
 
+    @Transactional()
     public void deleteInventory(Long productSizeId){
         Inventory inventory = repo.findByProductSizeIdAndDeletedFalse(productSizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Inventory not found"));

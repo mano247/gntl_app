@@ -1,6 +1,8 @@
 package com.gentlemanstore.order.repository;
 
 import com.gentlemanstore.order.model.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -11,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findAllByUserIdAndDeletedFalse(Long userId);
+    Page<Order> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
     Optional<Order> findByIdAndDeletedFalse(Long id);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.deleted = false")

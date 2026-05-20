@@ -1,13 +1,18 @@
 package com.gentlemanstore.payment.controller;
 
 import com.gentlemanstore.common.response.ApiResponse;
+import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
+import com.gentlemanstore.loyalty.model.LoyaltyAccount;
 import com.gentlemanstore.payment.dto.CreatePaymentRequest;
 import com.gentlemanstore.payment.dto.PaymentDTO;
 import com.gentlemanstore.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,8 +32,8 @@ public class PaymentController {
 
     @GetMapping()
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<PaymentDTO>>> getAllPayments() {
-        return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", service.getAllPayments()));
+    public ResponseEntity<ApiResponse<Page<PaymentDTO>>> getAllPayments(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("Payments retrieved successfully", service.getAllPayments(pageable)));
     }
 
     @PostMapping()

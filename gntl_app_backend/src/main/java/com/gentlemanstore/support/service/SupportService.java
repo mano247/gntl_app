@@ -8,7 +8,10 @@ import com.gentlemanstore.support.repository.*;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +28,7 @@ public class SupportService {
     private final UserRepository userRepository;
     private final SupportMapper mapper;
 
+    @Transactional
     public SupportTicketDTO createTicket(Long userId, CreateTicketRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -46,26 +50,26 @@ public class SupportService {
         return mapper.toDTO(ticket);
     }
 
+    @Transactional(readOnly = true)
     public SupportTicketDTO getTicket(Long id){
         SupportTicket supportTicket = supportTicketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));
         return mapper.toDTO(supportTicket);
     }
 
-    public List<SupportTicketDTO> getAllTickets(){
-        return supportTicketRepository.findAllByDeletedFalse()
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<SupportTicketDTO> getAllTickets(Pageable pageable) {
+        return supportTicketRepository.findAllByDeletedFalse(pageable)
+                .map(mapper::toDTO);
     }
 
-    public List<SupportTicketDTO> getUserTickets(Long userId){
-        return supportTicketRepository.findAllByUserIdAndDeletedFalse(userId)
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<SupportTicketDTO> getUserTickets(Long userId, Pageable pageable) {
+        return supportTicketRepository.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(mapper::toDTO);
     }
 
+    @Transactional()
     public SupportTicketDTO updateTicketStatus(Long id, String status){
         SupportTicket supportTicket = supportTicketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));
@@ -75,6 +79,7 @@ public class SupportService {
         return mapper.toDTO(supportTicket);
     }
 
+    @Transactional(readOnly = true)
     public List<ChatMessageDTO> getMessages(Long sessionId){
         return chatMessageRepository.findAllByChatSessionIdAndDeletedFalse(sessionId)
                 .stream()
@@ -82,6 +87,7 @@ public class SupportService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional()
     public ChatMessageDTO sendMessage(Long sessionId, String content, String sender){
         ChatSession chatSession = chatSessionRepository.findByIdAndDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
@@ -96,6 +102,7 @@ public class SupportService {
         return mapper.toMessageDTO(chatMessage);
     }
 
+    @Transactional(readOnly = true)
     public List<BotQuestionDTO> getBotQuestions(){
         return botQuestionRepository.findAllByDeletedFalseOrderByOrderIndexAsc()
                 .stream()
@@ -103,6 +110,7 @@ public class SupportService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional()
     public BotResponseDTO saveBotResponse(Long ticketId, Long questionId, String response){
         SupportTicket supportTicket = supportTicketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));

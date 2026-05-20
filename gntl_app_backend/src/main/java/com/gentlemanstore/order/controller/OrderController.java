@@ -7,6 +7,8 @@ import com.gentlemanstore.order.service.OrderService;
 import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,18 +29,13 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", service.getOrder(id)));
     }
 
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getUserOrders(@PathVariable Long userId){
-        return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully", service.getUserOrders(userId)));
-    }
-
-    @GetMapping("/my")
+    @GetMapping("/my/paged")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getMyOrders(
-            @AuthenticationPrincipal User currentUser){
+    public ResponseEntity<ApiResponse<Page<OrderDTO>>> getMyOrdersPaged(
+            @AuthenticationPrincipal User currentUser,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully",
-                service.getUserOrders(currentUser.getId())));
+                service.getUserOrdersPaged(currentUser.getId(), pageable)));
     }
 
     @PutMapping("/{id}/status")

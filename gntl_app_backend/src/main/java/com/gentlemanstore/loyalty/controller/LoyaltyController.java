@@ -7,6 +7,8 @@ import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.user.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,8 +31,11 @@ public class LoyaltyController {
 
     @GetMapping("/transactions")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<LoyaltyTransactionDTO>>> getTransactions(@AuthenticationPrincipal User currentUser){
-        return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully", service.getTransactions(currentUser.getId())));
+    public ResponseEntity<ApiResponse<Page<LoyaltyTransactionDTO>>> getTransactions(
+            @AuthenticationPrincipal User currentUser,
+            Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully",
+                service.getTransactions(currentUser.getId(), pageable)));
     }
 
     @GetMapping("/user/{userId}")
@@ -43,10 +48,11 @@ public class LoyaltyController {
 
     @GetMapping("/user/{userId}/transactions")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<LoyaltyTransactionDTO>>> getUserTransactions(
-            @PathVariable Long userId){
+    public ResponseEntity<ApiResponse<Page<LoyaltyTransactionDTO>>> getUserTransactions(
+            @PathVariable Long userId,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Loyalty transactions retrieved successfully",
-                service.getTransactions(userId)));
+                service.getTransactions(userId, pageable)));
     }
 
     @PostMapping("/account")

@@ -12,7 +12,10 @@ import com.gentlemanstore.loyalty.reporitory.LoyaltyTransactionRepository;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +30,7 @@ public class LoyaltyService {
     private final UserRepository userRepository;
     private final LoyaltyMapper mapper;
 
+    @Transactional(readOnly = true)
     public LoyaltyAccountDTO getAccount(Long id){
         LoyaltyAccount loyaltyAccount = loyaltyAccountRepository.findByUserIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
@@ -34,16 +38,16 @@ public class LoyaltyService {
         return mapper.toDTO(loyaltyAccount);
     }
 
-    public List<LoyaltyTransactionDTO> getTransactions(Long userId){
+    @Transactional(readOnly = true)
+    public Page<LoyaltyTransactionDTO> getTransactions(Long userId, Pageable pageable) {
         LoyaltyAccount account = loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
 
-        return loyaltyTransactionRepository.findAllByLoyaltyAccountIdAndDeletedFalse(account.getId())
-                .stream()
-                .map(mapper::toTransactionDTO)
-                .collect(Collectors.toList());
+        return loyaltyTransactionRepository.findAllByLoyaltyAccountIdAndDeletedFalse(account.getId(), pageable)
+                .map(mapper::toTransactionDTO);
     }
 
+    @Transactional()
     public LoyaltyAccountDTO createAccount(Long userId){
         com.gentlemanstore.loyalty.model.LoyaltyTier tier = loyaltyTierRepository
                 .findTopByMinPointsLessThanEqualOrderByMinPointsDesc(0)
@@ -62,6 +66,7 @@ public class LoyaltyService {
         return mapper.toDTO(account);
     }
 
+    @Transactional()
     public LoyaltyAccountDTO addPoints(Long userId, Integer points, String description) {
         LoyaltyAccount account = loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));

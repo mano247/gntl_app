@@ -7,6 +7,8 @@ import com.gentlemanstore.notification.service.NotificationService;
 import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,32 +25,29 @@ public class NotificationController {
 
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<NotificationDTO>>> getMyNotifications(
-            @AuthenticationPrincipal User currentUser){
+    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getMyNotifications(
+            @AuthenticationPrincipal User currentUser,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Notifications retrieved successfully",
-                service.getUserNotifications(currentUser.getId())));
+                service.getUserNotifications(currentUser.getId(), pageable)));
     }
 
     @GetMapping("/my/unread")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<NotificationDTO>>> getMyUnreadNotifications(
-            @AuthenticationPrincipal User currentUser){
+    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getMyUnreadNotifications(
+            @AuthenticationPrincipal User currentUser,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Unread notifications retrieved successfully",
-                service.getUnreadNotifications(currentUser.getId())));
+                service.getUnreadNotifications(currentUser.getId(), pageable)));
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<NotificationDTO>>> getUserNotifications(
-            @PathVariable Long userId){
+    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getUserNotifications(
+            @PathVariable Long userId,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Notifications retrieved successfully",
-                service.getUserNotifications(userId)));
-    }
-
-    @GetMapping("/{userId}/unread")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<NotificationDTO>>> getUnreadNotifications(@PathVariable Long userId){
-        return ResponseEntity.ok(ApiResponse.success("Unreaded users notifications retrieved successfully", service.getUnreadNotifications(userId)));
+                service.getUserNotifications(userId, pageable)));
     }
 
     @PostMapping()

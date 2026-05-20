@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 public class EmailService {
     private final JavaMailSender mailSender;
 
+    @Transactional()
     public void sendWelcomeEmail(String to, String firstName) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
@@ -22,6 +24,7 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    @Transactional()
     public void sendOrderConfirmationEmail(String to, String firstName, Long orderId, BigDecimal totalPrice) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
@@ -33,6 +36,7 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    @Transactional()
     public void sendOrderStatusEmail(String to, String firstName, Long orderId, String status) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);

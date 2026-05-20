@@ -10,7 +10,10 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.RoleRepository;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -24,19 +27,20 @@ public class UserService{
     private final UserMapper mapper;
     private final RoleRepository roleRepository;
 
+    @Transactional(readOnly = true)
     public UserDTO getProfile(Long id){
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapper.toDTO(user);
     }
 
-    public List<UserDTO> getAllUsers() {
-        return repo.findAllByDeletedFalse()
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getAllUsers(Pageable pageable) {
+        return repo.findAllByDeletedFalse(pageable)
+                .map(mapper::toDTO);
     }
 
+    @Transactional()
     public UserDTO updateProfile(Long id, UpdateUserRequest request){
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -50,6 +54,7 @@ public class UserService{
         return mapper.toDTO(user);
     }
 
+    @Transactional()
     public void deleteAccount(Long id){
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -59,6 +64,7 @@ public class UserService{
         repo.save(user);
     }
 
+    @Transactional()
     public UserDTO changeRole(Long id, String roleName) {
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

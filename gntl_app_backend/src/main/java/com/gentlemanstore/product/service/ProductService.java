@@ -9,7 +9,10 @@ import com.gentlemanstore.product.model.*;
 import com.gentlemanstore.product.repository.CategoryRepository;
 import com.gentlemanstore.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,19 +25,20 @@ public class ProductService {
     private final ProductMapper mapper;
     private final CategoryRepository categoryRepository;
 
+    @Transactional(readOnly = true)
     public ProductDTO getProduct(Long id){
         Product product = repo.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         return mapper.toDTO(product);
     }
 
-    public List<ProductDTO> getAllProducts(){
-        return repo.findAllByDeletedFalse()
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getAllProducts(Pageable pageable) {
+        return repo.findAllByDeletedFalse(pageable)
+                .map(mapper::toDTO);
     }
 
+    @Transactional()
     public void deleteProduct(Long id){
         Product product = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
@@ -44,6 +48,7 @@ public class ProductService {
         repo.save(product);
     }
 
+    @Transactional()
     public ProductDTO createProduct(CreateProductRequest request) {
         if (repo.existsBySku(request.getSku())) {
             throw new BadRequestException("SKU already exists");
@@ -95,6 +100,7 @@ public class ProductService {
         return mapper.toDTO(product);
     }
 
+    @Transactional()
     public ProductDTO updateProduct(Long id, CreateProductRequest request){
         Product product = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));

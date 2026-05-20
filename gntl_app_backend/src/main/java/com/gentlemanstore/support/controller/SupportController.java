@@ -6,6 +6,8 @@ import com.gentlemanstore.support.service.SupportService;
 import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,22 +36,26 @@ public class SupportController {
 
     @GetMapping("/tickets")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<SupportTicketDTO>>> getAllTickets(){
-        return ResponseEntity.ok(ApiResponse.success("Support tickets retrieved successfully", service.getAllTickets()));
-    }
-
-    @GetMapping("/tickets/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<SupportTicketDTO>>> getUserTickets(@PathVariable Long userId){
-        return ResponseEntity.ok(ApiResponse.success("Users support tickets retrieved successfully", service.getUserTickets(userId)));
+    public ResponseEntity<ApiResponse<Page<SupportTicketDTO>>> getAllTickets(Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Support tickets retrieved successfully", service.getAllTickets(pageable)));
     }
 
     @GetMapping("/tickets/my")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<SupportTicketDTO>>> getMyTickets(
-            @AuthenticationPrincipal User currentUser){
+    public ResponseEntity<ApiResponse<Page<SupportTicketDTO>>> getMyTickets(
+            @AuthenticationPrincipal User currentUser,
+            Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Tickets retrieved successfully",
-                service.getUserTickets(currentUser.getId())));
+                service.getUserTickets(currentUser.getId(), pageable)));
+    }
+
+    @GetMapping("/tickets/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<Page<SupportTicketDTO>>> getUserTickets(
+            @PathVariable Long userId,
+            Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Tickets retrieved successfully",
+                service.getUserTickets(userId, pageable)));
     }
 
     @PutMapping("/tickets/{id}")

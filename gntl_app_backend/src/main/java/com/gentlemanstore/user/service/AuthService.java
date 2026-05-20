@@ -12,6 +12,7 @@ import com.gentlemanstore.user.model.RoleName;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.RoleRepository;
 import com.gentlemanstore.user.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +31,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final EmailService emailService;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("Email already exists");
@@ -62,6 +64,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(

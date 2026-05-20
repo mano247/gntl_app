@@ -17,6 +17,7 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,7 @@ public class DiscountService {
     private final UserRepository userRepository;
     private final DiscountMapper mapper;
 
+    @Transactional(readOnly = true)
     public DiscountDTO getDiscount(String code){
         Discount discount = discountRepository.findByCodeAndDeletedFalse(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
@@ -39,6 +41,7 @@ public class DiscountService {
         return mapper.toDTO(discount);
     }
 
+    @Transactional(readOnly = true)
     public List<DiscountDTO> getAllDiscounts(){
         return discountRepository.findAllByDeletedFalse()
                 .stream()
@@ -46,6 +49,7 @@ public class DiscountService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional()
     public DiscountDTO createDiscount(CreateDiscountRequest request){
         Discount discount = Discount.builder()
                 .code(request.getCode())
@@ -60,6 +64,7 @@ public class DiscountService {
         return mapper.toDTO(discount);
     }
 
+    @Transactional()
     public void deleteDiscount(Long id){
         Discount discount = discountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
@@ -68,6 +73,7 @@ public class DiscountService {
         discountRepository.save(discount);
     }
 
+    @Transactional(readOnly = true)
     public List<PromotionDTO> getActivePromotions(){
         LocalDateTime now = LocalDateTime.now();
         return promotionRepository.findAllByValidFromBeforeAndValidToAfterAndDeletedFalse(now, now)
@@ -76,6 +82,7 @@ public class DiscountService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional()
     public PromotionDTO createPromotion(CreatePromotionRequest request){
         Discount discount = discountRepository.findById(request.getDiscountId())
                 .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
@@ -93,6 +100,7 @@ public class DiscountService {
         return mapper.toPromotionDTO(promotion);
     }
 
+    @Transactional()
     public void applyPromotion(Long userId, Long promotionId){
         Promotion promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Promotion not found"));

@@ -7,6 +7,8 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,10 +23,10 @@ public class UserController {
 
     private final UserService service;
 
-    @GetMapping()
+    @GetMapping("/paged")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<List<UserDTO>>> getAll(){
-        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", service.getAllUsers()));
+    public ResponseEntity<ApiResponse<Page<UserDTO>>> getAllUsersPaged(Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", service.getAllUsers(pageable)));
     }
 
     @GetMapping("/{id}")

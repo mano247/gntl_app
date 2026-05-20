@@ -10,7 +10,10 @@ import com.gentlemanstore.notification.repository.NotificationRepository;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,20 +26,19 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final NotificationMapper mapper;
 
-    public List<NotificationDTO> getUserNotifications(Long userId){
-        return repo.findAllByUserIdAndDeletedFalse(userId)
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<NotificationDTO> getUserNotifications(Long userId, Pageable pageable) {
+        return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(mapper::toDTO);
     }
 
-    public List<NotificationDTO> getUnreadNotifications(Long userId){
-        return repo.findAllByUserIdAndReadFalseAndDeletedFalse(userId)
-                .stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<NotificationDTO> getUnreadNotifications(Long userId, Pageable pageable) {
+        return repo.findAllByUserIdAndReadFalseAndDeletedFalse(userId, pageable)
+                .map(mapper::toDTO);
     }
 
+    @Transactional()
     public NotificationDTO createNotification(CreateNotificationRequest request){
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -53,6 +55,7 @@ public class NotificationService {
         return mapper.toDTO(notification);
     }
 
+    @Transactional()
     public NotificationDTO markAsRead(Long id){
         Notification notification = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
@@ -62,6 +65,7 @@ public class NotificationService {
         return mapper.toDTO(notification);
     }
 
+    @Transactional()
     public void deleteNotification(Long id){
         Notification notification = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));

@@ -23,6 +23,7 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class CartService {
     private final CartMapper cartMapper;
     private final OrderMapper orderMapper;
 
+    @Transactional(readOnly = true)
     public CartDTO getCart(Long userId) {
         Cart cart = cartRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseGet(() -> {
@@ -63,6 +65,7 @@ public class CartService {
         return cartDTO;
     }
 
+    @Transactional()
     public CartDTO addToCart(Long userId, AddToCartRequest request) {
         Cart cart = cartRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseGet(() -> {
@@ -93,6 +96,7 @@ public class CartService {
         return getCart(userId);
     }
 
+    @Transactional()
     public CartDTO removeFromCart(Long userId, Long cartItemId) {
         CartItem cartItem = cartItemRepository.findByIdAndDeletedFalse(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
@@ -102,6 +106,7 @@ public class CartService {
         return getCart(userId);
     }
 
+    @Transactional()
     public OrderDTO checkout(Long userId) {
         Cart cart = cartRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
