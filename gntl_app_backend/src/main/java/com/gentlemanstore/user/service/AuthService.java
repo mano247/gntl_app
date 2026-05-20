@@ -2,6 +2,7 @@ package com.gentlemanstore.user.service;
 
 import com.gentlemanstore.common.exception.EmailAlreadyExistsException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.common.util.EmailService;
 import com.gentlemanstore.security.JwtService;
 import com.gentlemanstore.user.dto.AuthResponse;
 import com.gentlemanstore.user.dto.LoginRequest;
@@ -27,6 +28,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RoleRepository roleRepository;
+    private final EmailService emailService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -47,6 +49,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
 
         String token = jwtService.generateToken(user);
 

@@ -1,6 +1,7 @@
 package com.gentlemanstore.order.service;
 
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.common.util.EmailService;
 import com.gentlemanstore.order.dto.CreateOrderRequest;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.dto.OrderItemRequest;
@@ -29,6 +30,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderMapper mapper;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public OrderDTO getOrder(Long id){
         Order order = repo.findById(id)
@@ -78,6 +80,14 @@ public class OrderService {
         order.setTotalPrice(totalPrice);
 
         repo.save(order);
+
+        emailService.sendOrderConfirmationEmail(
+                order.getUser().getEmail(),
+                order.getUser().getFirstName(),
+                order.getId(),
+                order.getTotalPrice()
+        );
+
         return mapper.toDTO(order);
     }
 
@@ -88,6 +98,14 @@ public class OrderService {
         order.setStatus(OrderStatus.valueOf(status));
 
         repo.save(order);
+
+        emailService.sendOrderStatusEmail(
+                order.getUser().getEmail(),
+                order.getUser().getFirstName(),
+                order.getId(),
+                status
+        );
+
         return mapper.toDTO(order);
     }
 
