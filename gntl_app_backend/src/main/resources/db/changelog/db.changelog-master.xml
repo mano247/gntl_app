@@ -15,4 +15,5 @@
     <include file="db/changelog/migrations/V8__create_payment_tables.xml"/>
     <include file="db/changelog/migrations/V9__create_support_tables.xml"/>
     <include file="db/changelog/migrations/V10__create_notification_tables.xml"/>
+    <include file="db/changelog/migrations/V11__create_cart_tables.xml"/>
 </databaseChangeLog>
