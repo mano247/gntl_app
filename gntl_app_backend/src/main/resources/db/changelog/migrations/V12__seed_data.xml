@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="38" author="gentlemanstore">
+        <insert tableName="categories">
+            <column name="name" value="Suits"/>
+            <column name="description" value="Premium suits for every occasion"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Shirts"/>
+            <column name="description" value="Elegant shirts for gentlemen"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Trousers"/>
+            <column name="description" value="Classic and modern trousers"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Shoes"/>
+            <column name="description" value="Premium leather shoes"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Ties"/>
+            <column name="description" value="Silk ties and bow ties"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Accessories"/>
+            <column name="description" value="Cufflinks, pocket squares and more"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="39" author="gentlemanstore">
+        <insert tableName="tags">
+            <column name="name" value="Formal"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Business"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Casual"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Wedding"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Wool"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Cotton"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Silk"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+        <insert tableName="tags">
+            <column name="name" value="Leather"/>
+            <column name="deleted" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="40" author="gentlemanstore">
+        <insert tableName="products">
+            <column name="sku" value="SUIT001"/>
+            <column name="name" value="Classic Black Suit"/>
+            <column name="description" value="A timeless black suit crafted from premium wool blend. Perfect for formal occasions and business meetings."/>
+            <column name="price" valueNumeric="45000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SUIT002"/>
+            <column name="name" value="Navy Blue Business Suit"/>
+            <column name="description" value="Sophisticated navy blue suit ideal for business environments. Made from Italian wool."/>
+            <column name="price" valueNumeric="52000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SUIT003"/>
+            <column name="name" value="Charcoal Grey Suit"/>
+            <column name="description" value="Elegant charcoal grey suit with subtle pinstripe. Versatile for both business and formal events."/>
+            <column name="price" valueNumeric="48000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHIRT001"/>
+            <column name="name" value="White Oxford Shirt"/>
+            <column name="description" value="Classic white Oxford shirt made from 100% Egyptian cotton. A wardrobe essential."/>
+            <column name="price" valueNumeric="8500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHIRT002"/>
+            <column name="name" value="Light Blue Dress Shirt"/>
+            <column name="description" value="Elegant light blue dress shirt perfect for business casual occasions."/>
+            <column name="price" valueNumeric="7500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHIRT003"/>
+            <column name="name" value="White French Cuff Shirt"/>
+            <column name="description" value="Luxurious white French cuff shirt. Perfect with cufflinks for formal events."/>
+            <column name="price" valueNumeric="9500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TROUS001"/>
+            <column name="name" value="Classic Black Trousers"/>
+            <column name="description" value="Tailored black trousers with a slim fit. Made from premium wool blend."/>
+            <column name="price" valueNumeric="15000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TROUS002"/>
+            <column name="name" value="Navy Chinos"/>
+            <column name="description" value="Smart navy chinos that bridge the gap between formal and casual wear."/>
+            <column name="price" valueNumeric="12000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TROUS003"/>
+            <column name="name" value="Grey Wool Trousers"/>
+            <column name="description" value="Classic grey wool trousers with a regular fit. Pairs perfectly with any suit jacket."/>
+            <column name="price" valueNumeric="14000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHOE001"/>
+            <column name="name" value="Oxford Derby Shoes"/>
+            <column name="description" value="Premium black leather Oxford shoes. Handcrafted with Goodyear welt construction."/>
+            <column name="price" valueNumeric="28000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHOE002"/>
+            <column name="name" value="Brown Brogue Shoes"/>
+            <column name="description" value="Classic brown leather brogues with decorative perforations. Perfect for business casual."/>
+            <column name="price" valueNumeric="24000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="SHOE003"/>
+            <column name="name" value="Black Chelsea Boots"/>
+            <column name="description" value="Sleek black Chelsea boots in premium leather. Versatile for both formal and smart casual."/>
+            <column name="price" valueNumeric="26000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TIE001"/>
+            <column name="name" value="Burgundy Silk Tie"/>
+            <column name="description" value="Luxurious burgundy silk tie with a subtle pattern. Handmade in Italy."/>
+            <column name="price" valueNumeric="5500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="5"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TIE002"/>
+            <column name="name" value="Navy Striped Tie"/>
+            <column name="description" value="Classic navy blue tie with elegant diagonal stripes. Made from pure silk."/>
+            <column name="price" valueNumeric="4500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="5"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="TIE003"/>
+            <column name="name" value="Black Bow Tie"/>
+            <column name="description" value="Elegant black silk bow tie. The perfect accessory for black tie events."/>
+            <column name="price" valueNumeric="3500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="5"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="ACC001"/>
+            <column name="name" value="Silver Cufflinks"/>
+            <column name="description" value="Elegant silver cufflinks with a polished finish. The perfect finishing touch."/>
+            <column name="price" valueNumeric="6500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="6"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="ACC002"/>
+            <column name="name" value="White Pocket Square"/>
+            <column name="description" value="Classic white linen pocket square. Adds a touch of elegance to any suit."/>
+            <column name="price" valueNumeric="2500"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="6"/>
+        </insert>
+        <insert tableName="products">
+            <column name="sku" value="ACC003"/>
+            <column name="name" value="Leather Belt"/>
+            <column name="description" value="Premium black leather belt with silver buckle. Pairs perfectly with Oxford shoes."/>
+            <column name="price" valueNumeric="8000"/>
+            <column name="created_at" valueDate="now()"/>
+            <column name="deleted" valueBoolean="false"/>
+            <column name="category_id" valueNumeric="6"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="41" author="gentlemanstore">
+        <!-- Classic Black Suit sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="1"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="1"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="1"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="1"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="1"/></insert>
+
+        <!-- Navy Blue Business Suit sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="2"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="2"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="2"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="2"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="2"/></insert>
+
+        <!-- Charcoal Grey Suit sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="3"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="3"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="3"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="3"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="3"/></insert>
+
+        <!-- White Oxford Shirt sizes -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="4"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="15"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="4"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="12"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="4"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="4"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="4"/></insert>
+
+        <!-- Light Blue Dress Shirt sizes -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="5"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="12"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="5"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="5"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="5"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="5"/></insert>
+
+        <!-- White French Cuff Shirt sizes -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="6"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="6"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="6"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="6"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="6"/></insert>
+
+        <!-- Classic Black Trousers sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="7"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="7"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="7"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="7"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="7"/></insert>
+
+        <!-- Navy Chinos sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="8"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="8"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="8"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="8"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="8"/></insert>
+
+        <!-- Grey Wool Trousers sizes -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="9"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="9"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="9"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="9"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="9"/></insert>
+
+        <!-- Oxford Derby Shoes sizes -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="10"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="10"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="10"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="10"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="10"/></insert>
+
+        <!-- Brown Brogue Shoes sizes -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="11"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="11"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="11"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="11"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="11"/></insert>
+
+        <!-- Black Chelsea Boots sizes -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="12"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="12"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="12"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="12"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="12"/></insert>
+
+        <!-- Ties - One Size -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="20"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="13"/></insert>
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="20"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="14"/></insert>
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="15"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="15"/></insert>
+
+        <!-- Accessories - One Size -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="25"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="16"/></insert>
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="30"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="17"/></insert>
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="18"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="18"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="18"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="18"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="18"/></insert>
+    </changeSet>
+
+</databaseChangeLog>
