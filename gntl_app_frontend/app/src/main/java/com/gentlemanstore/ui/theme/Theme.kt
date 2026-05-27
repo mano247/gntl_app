@@ -1,54 +1,75 @@
 package com.gentlemanstore.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Gold500,
+    onPrimary = Navy900,
+    primaryContainer = Navy800,
+    onPrimaryContainer = Gold300,
+
+    secondary = Cream100,
+    onSecondary = Navy900,
+    secondaryContainer = Navy700,
+    onSecondaryContainer = Cream100,
+
+    tertiary = Gold300,
+    onTertiary = Navy900,
+
+    background = Navy900,
+    onBackground = Cream100,
+
+    surface = Navy800,
+    onSurface = Cream100,
+    surfaceVariant = Navy700,
+    onSurfaceVariant = Stone400,
+
+    outline = Navy600,
+    outlineVariant = Navy700,
+
+    error = ErrorRed,
+    onError = White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = Navy800,
+    onPrimary = White,
+    primaryContainer = Gold100,
+    onPrimaryContainer = Navy800,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = Gold500,
+    onSecondary = White,
+    secondaryContainer = Gold100,
+    onSecondaryContainer = Navy800,
+
+    tertiary = Stone400,
+    onTertiary = White,
+
+    background = White,
+    onBackground = Navy800,
+
+    surface = White,
+    onSurface = Navy800,
+    surfaceVariant = Cream100,
+    onSurfaceVariant = Stone600,
+
+    outline = Cream200,
+    outlineVariant = Cream100,
+
+    error = ErrorRed,
+    onError = White
 )
 
 @Composable
 fun GentlemanStoreTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
