@@ -2,7 +2,9 @@ package com.gentlemanstore.feature.auth.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,20 +22,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.ui.theme.Gold500
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: (String) -> Unit,
-    onNavigateToRegister: () -> Unit,
+fun RegisterScreen(
+    onRegisterSuccess: (String) -> Unit,
+    onNavigateToLogin: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
-) {
+){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(uiState.isSuccess) {
-        if(uiState.isSuccess && uiState.userRole != null) {
-            onLoginSuccess(uiState.userRole!!)
+        if(uiState.isSuccess && uiState.userRole != null){
+            onRegisterSuccess(uiState.userRole!!)
         }
     }
 
@@ -41,26 +48,49 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-    ) {
+    ){
         Column(
-          modifier = Modifier
-              .fillMaxSize()
-              .padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
+            Spacer(modifier = Modifier.height(48.dp))
+
             Text(
                 text = "GENTLEMAN",
                 style =  MaterialTheme.typography.headlineLarge,
                 color = Gold500
             )
             Text(
-                text = "STORE",
+                text = "CREATE ACCOUNT",
                 style =  MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = { Text("First Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = { Text("Last Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = email,
@@ -76,8 +106,21 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone (optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
                 label = { Text("Password") },
                 singleLine = true,
                 visualTransformation = if (passwordVisible)
@@ -99,9 +142,38 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = {
+                    confirmPassword = it
+                    passwordError = null
+                },
+                label = { Text("Confirm password") },
+                singleLine = true,
+                isError = passwordError != null,
+                supportingText = {
+                    if (passwordError != null){
+                        Text(
+                            text = passwordError!!,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (uiState.error != null) {
+            if(uiState.error != null){
                 Text(
                     text = uiState.error!!,
                     color = MaterialTheme.colorScheme.error,
@@ -114,13 +186,34 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.login(email, password) },
-                enabled =  !uiState.isLoading && email.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier
+                onClick = {
+                    if (password != confirmPassword){
+                        passwordError = "Passwords do not match"
+                        return@Button
+                    }
+                    if (password.length < 6){
+                        passwordError = "Password must be at least 6 characters"
+                        return@Button
+                    }
+                    viewModel.register(
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email,
+                        password = password,
+                        phone = phone.ifBlank { null }
+                    )
+                },
+                enabled = !uiState.isLoading
+                        &&firstName.isNotBlank()
+                        &&lastName.isNotBlank()
+                        &&email.isNotBlank()
+                        &&password.isNotBlank()
+                        &&confirmPassword.isNotBlank(),
+                modifier =  Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Gold500,
+                    containerColor =  Gold500,
                     contentColor = MaterialTheme.colorScheme.background
                 )
             ){
@@ -132,7 +225,7 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        text = "Sign In",
+                        text = "Create Account",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -140,23 +233,25 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = onNavigateToRegister) {
+            TextButton(onClick = onNavigateToLogin) {
                 Text(
                     text = buildAnnotatedString {
-                        append("Don't have an account? ")
+                        append("Already have an account? ")
                         withStyle(
                             style = SpanStyle(
                                 textDecoration = TextDecoration.Underline,
                                 color = Gold500
                             )
                         ) {
-                            append("Register")
+                            append("Sign In")
                         }
                     },
                     color = Gold500,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+
+            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }
