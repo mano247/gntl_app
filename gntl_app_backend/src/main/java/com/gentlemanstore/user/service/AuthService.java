@@ -12,6 +12,7 @@ import com.gentlemanstore.user.model.RoleName;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.RoleRepository;
 import com.gentlemanstore.user.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -31,7 +33,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final EmailService emailService;
 
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("Email already exists");
@@ -51,17 +53,24 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
 
         String token = jwtService.generateToken(user);
 
-        return AuthResponse.builder()
+        AuthResponse response = AuthResponse.builder()
                 .token(token)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(role.getName().name())
                 .build();
+
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
+        } catch (Exception e) {
+            log.warn("Email sending failed: {}", e.getMessage());
+        }
+
+        return response;
     }
 
     @Transactional(readOnly = true)
