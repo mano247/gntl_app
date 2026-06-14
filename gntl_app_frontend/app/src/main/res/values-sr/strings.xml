@@ -1,0 +1,52 @@
+<resources>
+    <string name="app_name">Gentleman Store</string>
+
+    <!-- Auth -->
+    <string name="sign_in">Prijavi se</string>
+    <string name="sign_up">Kreiraj nalog</string>
+    <string name="email">Email</string>
+    <string name="password">Lozinka</string>
+    <string name="confirm_password">Potvrdi lozinku</string>
+    <string name="first_name">Ime</string>
+    <string name="last_name">Prezime</string>
+    <string name="phone_optional">Telefon (opciono)</string>
+    <string name="no_account">Nemate nalog?</string>
+    <string name="have_account">Već imate nalog?</string>
+    <string name="register">Registrujte se</string>
+    <string name="show">Prikaži</string>
+    <string name="hide">Sakrij</string>
+
+    <!-- Products -->
+    <string name="search_products">Pretraži proizvode...</string>
+    <string name="add_to_cart">Dodaj u korpu</string>
+    <string name="size">VELIČINA</string>
+    <string name="description">OPIS</string>
+    <string name="try_again">Pokušaj ponovo</string>
+
+    <!-- Navigation -->
+    <string name="home">Početna</string>
+    <string name="discover">Istraži</string>
+    <string name="cart">Korpa</string>
+    <string name="orders">Narudžbine</string>
+    <string name="profile">Profil</string>
+
+    <!-- Orders -->
+    <string name="my_orders">Moje narudžbine</string>
+    <string name="order_status">Status narudžbine</string>
+    <string name="cancel_order">Otkaži narudžbinu</string>
+
+    <!-- Loyalty -->
+    <string name="loyalty">Loyalty</string>
+    <string name="points">poena</string>
+    <string name="discount">popust</string>
+
+    <!-- Cart -->
+    <string name="checkout">Plaćanje</string>
+    <string name="total">Ukupno</string>
+    <string name="remove">Ukloni</string>
+
+    <!-- General -->
+    <string name="loading">Učitavanje...</string>
+    <string name="error_occurred">Došlo je do greške</string>
+    <string name="success">Uspešno</string>
+</resources>
