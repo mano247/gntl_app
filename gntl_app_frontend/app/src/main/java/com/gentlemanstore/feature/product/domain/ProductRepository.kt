@@ -1,0 +1,46 @@
+package com.gentlemanstore.feature.product.domain
+
+import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.Resource
+import com.gentlemanstore.feature.product.data.ProductApiService
+import com.gentlemanstore.feature.product.data.dto.PagedProductResponse
+import com.gentlemanstore.feature.product.data.dto.ProductResponse
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class ProductRepository @Inject constructor(
+    private val productApiService: ProductApiService
+) {
+    suspend fun getProducts(
+        page: Int = 0,
+        size: Int = 20,
+        category: String? = null,
+        search: String? = null
+    ): Resource<PagedProductResponse> {
+        return try {
+            val response = productApiService.getProducts(page, size, category, search)
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to load products")
+        }
+    }
+
+    suspend fun getProductById(id: Long): Resource<ProductResponse> {
+        return try {
+            val response = productApiService.getProductById(id)
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to load product")
+        }
+    }
+
+    suspend fun getCategories(): Resource<List<String>> {
+        return try {
+            val response = productApiService.getCategories()
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to load categories")
+        }
+    }
+}

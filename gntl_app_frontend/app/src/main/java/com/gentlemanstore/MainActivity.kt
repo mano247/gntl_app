@@ -14,6 +14,7 @@ import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
+import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -78,8 +79,15 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("home_customer") {
-                        // placeholder — dodajemo u Fazi 3
-                        PlaceholderScreen("CUSTOMER HOME")
+                        ProductListScreen(
+                            onProductClick = { productId ->
+                                navController.navigate("product_detail/$productId")
+                            }
+                        )
+                    }
+                    composable("product_detail/{productId}") { backStackEntry ->
+                        val productId = backStackEntry.arguments?.getString("productId")?.toLongOrNull() ?: return@composable
+                        PlaceholderScreen("PRODUCT DETAIL - $productId")
                     }
                     composable("home_employee") {
                         PlaceholderScreen("EMPLOYEE HOME")
