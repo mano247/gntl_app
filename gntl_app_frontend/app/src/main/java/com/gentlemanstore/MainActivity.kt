@@ -14,6 +14,7 @@ import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
+import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -87,7 +88,13 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("product_detail/{productId}") { backStackEntry ->
                         val productId = backStackEntry.arguments?.getString("productId")?.toLongOrNull() ?: return@composable
-                        PlaceholderScreen("PRODUCT DETAIL - $productId")
+                        ProductDetailScreen(
+                            productId = productId,
+                            onNavigateBack = { navController.popBackStack() },
+                            onAddToCart = { id, size ->
+                                // Cart — dodajemo u Fazi 5
+                            }
+                        )
                     }
                     composable("home_employee") {
                         PlaceholderScreen("EMPLOYEE HOME")
