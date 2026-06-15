@@ -4,12 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.gentlemanstore.core.util.Constants
+import com.gentlemanstore.core.ui.BottomNavBar
+import com.gentlemanstore.core.ui.BottomNavItem
 import com.gentlemanstore.core.ui.PlaceholderScreen
+import com.gentlemanstore.core.util.Constants
 import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
@@ -32,78 +38,106 @@ class MainActivity : ComponentActivity() {
         setContent {
             GentlemanStoreTheme(darkTheme = true) {
                 val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
 
-                NavHost(
-                    navController = navController,
-                    startDestination = "splash"
-                ) {
-                    composable("splash") {
-                        SplashScreen(
-                            onNavigateToLogin = {
-                                navController.navigate("login") {
-                                    popUpTo("splash") { inclusive = true }
+                val bottomNavRoutes = listOf(
+                    BottomNavItem.Home.route,
+                    BottomNavItem.Discover.route,
+                    BottomNavItem.Cart.route,
+                    BottomNavItem.Profile.route
+                )
+
+                val showBottomBar = currentRoute in bottomNavRoutes
+
+                Scaffold(
+                    bottomBar = {
+                        if (showBottomBar) {
+                            BottomNavBar(navController = navController)
+                        }
+                    }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "splash",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("splash") {
+                            SplashScreen(
+                                onNavigateToLogin = {
+                                    navController.navigate("login") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToHome = { role ->
+                                    val destination = getRoleDestination(role)
+                                    navController.navigate(destination) {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                },
+                                tokenDataStore = tokenDataStore
+                            )
+                        }
+                        composable("login") {
+                            LoginScreen(
+                                onLoginSuccess = { role ->
+                                    val destination = getRoleDestination(role)
+                                    navController.navigate(destination) {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToRegister = {
+                                    navController.navigate("register")
                                 }
-                            },
-                            onNavigateToHome = { role ->
-                                val destination = getRoleDestination(role)
-                                navController.navigate(destination) {
-                                    popUpTo("splash") { inclusive = true }
+                            )
+                        }
+                        composable("register") {
+                            RegisterScreen(
+                                onRegisterSuccess = { role ->
+                                    val destination = getRoleDestination(role)
+                                    navController.navigate(destination) {
+                                        popUpTo("register") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToLogin = {
+                                    navController.popBackStack()
                                 }
-                            },
-                            tokenDataStore = tokenDataStore
-                        )
-                    }
-                    composable("login") {
-                        LoginScreen(
-                            onLoginSuccess = { role ->
-                                val destination = getRoleDestination(role)
-                                navController.navigate(destination) {
-                                    popUpTo("login") { inclusive = true }
+                            )
+                        }
+                        composable("home_customer") {
+                            ProductListScreen(
+                                onProductClick = { productId ->
+                                    navController.navigate("product_detail/$productId")
                                 }
-                            },
-                            onNavigateToRegister = {
-                                navController.navigate("register")
-                            }
-                        )
-                    }
-                    composable("register") {
-                        RegisterScreen(
-                            onRegisterSuccess = { role ->
-                                val destination = getRoleDestination(role)
-                                navController.navigate(destination) {
-                                    popUpTo("register") { inclusive = true }
-                                }
-                            },
-                            onNavigateToLogin = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
-                    composable("home_customer") {
-                        ProductListScreen(
-                            onProductClick = { productId ->
-                                navController.navigate("product_detail/$productId")
-                            }
-                        )
-                    }
-                    composable("product_detail/{productId}") { backStackEntry ->
-                        val productId = backStackEntry.arguments?.getString("productId")?.toLongOrNull() ?: return@composable
-                        ProductDetailScreen(
-                            productId = productId,
-                            onNavigateBack = { navController.popBackStack() },
-                            onAddToCart = { id, size ->
-                                // Cart — dodajemo u Fazi 5
-                            }
-                        )
-                    }
-                    composable("home_employee") {
-                        PlaceholderScreen("EMPLOYEE HOME")
-                    }
-                    composable("home_manager") {
-                        PlaceholderScreen("MANAGER HOME")
-                    }
-                    composable("home_admin") {
-                        PlaceholderScreen("ADMIN HOME")
+                            )
+                        }
+                        composable("product_detail/{productId}") { backStackEntry ->
+                            val productId = backStackEntry.arguments?.getString("productId")
+                                ?.toLongOrNull() ?: return@composable
+                            ProductDetailScreen(
+                                productId = productId,
+                                onNavigateBack = { navController.popBackStack() },
+                                onAddToCart = { id, size -> }
+                            )
+                        }
+                        composable("swipe") {
+                            PlaceholderScreen("SWIPE EKRAN")
+                        }
+                        composable("cart") {
+                            PlaceholderScreen("KORPA")
+                        }
+                        composable("profile") {
+                            PlaceholderScreen("PROFIL")
+                        }
+                        composable("home_employee") {
+                            PlaceholderScreen("EMPLOYEE HOME")
+                        }
+                        composable("home_manager") {
+                            PlaceholderScreen("MANAGER HOME")
+                        }
+                        composable("home_admin") {
+                            PlaceholderScreen("ADMIN HOME")
+                        }
                     }
                 }
             }
