@@ -21,6 +21,7 @@ coroutines = "1.10.2"
 splashScreen = "1.0.1"
 ksp = "2.0.21-1.0.28"
 material-icons-extended = "1.7.8"
+pager = "1.7.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -65,6 +66,8 @@ coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 splash-screen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material-icons-extended" }
+
+pager = { group = "androidx.compose.foundation", name = "foundation", version.ref = "pager" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

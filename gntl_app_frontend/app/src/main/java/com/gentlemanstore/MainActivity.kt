@@ -22,6 +22,7 @@ import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
+import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -121,7 +122,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("swipe") {
-                            PlaceholderScreen("SWIPE EKRAN")
+                            SwipeScreen(
+                                onNavigateToDetail = { productId ->
+                                    navController.navigate("product_detail/$productId")
+                                }
+                            )
                         }
                         composable("cart") {
                             PlaceholderScreen("KORPA")
