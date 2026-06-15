@@ -26,7 +26,10 @@ fun ProductListScreen(
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(gridState.canScrollForward) {
-        if (!gridState.canScrollForward && !uiState.isLastPage && !uiState.isLoadingMore) {
+        if (!gridState.canScrollForward
+            && !uiState.isLastPage
+            && !uiState.isLoadingMore
+            && uiState.products.isNotEmpty()) {
             viewModel.loadMoreProducts()
         }
     }

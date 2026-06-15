@@ -2,6 +2,7 @@ package com.gentlemanstore.product.service;
 
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.product.dto.CategoryDTO;
 import com.gentlemanstore.product.dto.CreateProductRequest;
 import com.gentlemanstore.product.dto.ProductDTO;
 import com.gentlemanstore.product.mapper.ProductMapper;
@@ -10,6 +11,7 @@ import com.gentlemanstore.product.repository.CategoryRepository;
 import com.gentlemanstore.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +36,10 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
-        return repo.findAllByDeletedFalse(pageable)
-                .map(mapper::toDTO);
+        Page<Long> ids = repo.findIdsByDeletedFalse(pageable);
+        List<Product> products = repo.findAllByIdInWithDetails(ids.getContent());
+        List<ProductDTO> dtos = products.stream().map(mapper::toDTO).collect(Collectors.toList());
+        return new PageImpl<>(dtos, pageable, ids.getTotalElements());
     }
 
     @Transactional()
@@ -118,5 +122,17 @@ public class ProductService {
         repo.save(product);
 
         return mapper.toDTO(product);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> getAllCategories() {
+        return categoryRepository.findAllByDeletedFalse()
+                .stream()
+                .map(c -> CategoryDTO.builder()
+                        .id(c.getId())
+                        .name(c.getName())
+                        .description(c.getDescription())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

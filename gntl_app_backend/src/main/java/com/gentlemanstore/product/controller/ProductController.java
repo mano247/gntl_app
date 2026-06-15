@@ -1,6 +1,7 @@
 package com.gentlemanstore.product.controller;
 
 import com.gentlemanstore.common.response.ApiResponse;
+import com.gentlemanstore.product.dto.CategoryDTO;
 import com.gentlemanstore.product.dto.CreateProductRequest;
 import com.gentlemanstore.product.dto.ProductDTO;
 import com.gentlemanstore.product.service.ProductService;
@@ -50,5 +51,11 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Void>> deleteProduct (@PathVariable Long id){
         service.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Product deleted successfully", null));
+    }
+
+    @GetMapping("/categories")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories(){
+        return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", service.getAllCategories()));
     }
 }

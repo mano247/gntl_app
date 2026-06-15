@@ -3,6 +3,7 @@ package com.gentlemanstore.product.model;
 import com.gentlemanstore.inventory.model.Inventory;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Table(name = "sizes")
@@ -29,6 +30,6 @@ public class ProductSize {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @OneToOne(mappedBy = "productSize")
-    private Inventory inventory;
+//    @OneToOne(mappedBy = "productSize")
+//    private Inventory inventory;
 }
