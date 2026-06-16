@@ -28,7 +28,7 @@ import com.gentlemanstore.ui.theme.Gold500
 fun ProductDetailScreen(
     productId: Long,
     onNavigateBack: () -> Unit,
-    onAddToCart: (Long, String) -> Unit,
+    onAddToCart: (productId: Long, productSizeId: Long, quantity: Int) -> Unit,
     viewModel: ProductViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.detailUiState.collectAsStateWithLifecycle()
@@ -180,8 +180,8 @@ fun ProductDetailScreen(
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                product.sizes.forEach { size ->
-                                    val isSelected = uiState.selectedSize == size
+                                product.sizes.forEach { sizeOption ->
+                                    val isSelected = uiState.selectedSize?.id == sizeOption.id
                                     Box(
                                         contentAlignment = Alignment.Center,
                                         modifier = Modifier
@@ -197,15 +197,21 @@ fun ProductDetailScreen(
                                                 else MaterialTheme.colorScheme.outline,
                                                 shape = RoundedCornerShape(8.dp)
                                             )
-                                            .clickable { viewModel.selectSize(size) }
+                                            .clickable(enabled = sizeOption.quantity > 0) {
+                                                viewModel.selectSize(sizeOption)
+                                            }
+                                            .let { mod ->
+                                                if (sizeOption.quantity == 0) mod else mod
+                                            }
                                     ) {
                                         Text(
-                                            text = size,
+                                            text = sizeOption.size,
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = if (isSelected)
-                                                MaterialTheme.colorScheme.background
-                                            else
-                                                MaterialTheme.colorScheme.onSurface
+                                            color = when {
+                                                sizeOption.quantity == 0 -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                                isSelected -> MaterialTheme.colorScheme.background
+                                                else -> MaterialTheme.colorScheme.onSurface
+                                            }
                                         )
                                     }
                                 }
@@ -250,7 +256,7 @@ fun ProductDetailScreen(
                         Button(
                             onClick = {
                                 uiState.selectedSize?.let { size ->
-                                    onAddToCart(product.id, size)
+                                    onAddToCart(product.id, size.id, 1)
                                 }
                             },
                             enabled = uiState.selectedSize != null,

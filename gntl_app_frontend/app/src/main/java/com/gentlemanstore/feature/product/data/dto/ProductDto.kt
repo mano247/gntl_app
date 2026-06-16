@@ -1,5 +1,11 @@
 package com.gentlemanstore.feature.product.data.dto
 
+data class ProductSizeResponse(
+    val id: Long,
+    val size: String,
+    val quantity: Int
+)
+
 data class ProductResponse(
     val id: Long,
     val sku: String,
@@ -7,7 +13,7 @@ data class ProductResponse(
     val description: String,
     val price: Double,
     val categoryName: String,
-    val sizes: List<String>,
+    val sizes: List<ProductSizeResponse>,
     val imageUrls: List<String>,
     val tags: List<String>
 )

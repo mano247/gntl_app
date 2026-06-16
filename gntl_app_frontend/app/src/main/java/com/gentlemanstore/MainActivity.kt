@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -20,6 +21,8 @@ import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
+import com.gentlemanstore.feature.cart.presentation.CartScreen
+import com.gentlemanstore.feature.cart.presentation.CartViewModel
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
@@ -41,6 +44,9 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                // JEDNA instanca CartViewModel za celu aplikaciju
+                val cartViewModel: CartViewModel = hiltViewModel()
 
                 val bottomNavRoutes = listOf(
                     BottomNavItem.Home.route,
@@ -115,10 +121,14 @@ class MainActivity : ComponentActivity() {
                         composable("product_detail/{productId}") { backStackEntry ->
                             val productId = backStackEntry.arguments?.getString("productId")
                                 ?.toLongOrNull() ?: return@composable
+
                             ProductDetailScreen(
                                 productId = productId,
                                 onNavigateBack = { navController.popBackStack() },
-                                onAddToCart = { id, size -> }
+                                onAddToCart = { id, sizeId, quantity ->
+                                    cartViewModel.addToCart(id, sizeId, quantity)
+                                    navController.popBackStack()
+                                }
                             )
                         }
                         composable("swipe") {
@@ -129,7 +139,15 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("cart") {
-                            PlaceholderScreen("KORPA")
+                            CartScreen(
+                                viewModel = cartViewModel,
+                                onNavigateToCheckout = {
+                                    navController.navigate("checkout")
+                                }
+                            )
+                        }
+                        composable("checkout") {
+                            PlaceholderScreen("CHECKOUT")
                         }
                         composable("profile") {
                             PlaceholderScreen("PROFIL")

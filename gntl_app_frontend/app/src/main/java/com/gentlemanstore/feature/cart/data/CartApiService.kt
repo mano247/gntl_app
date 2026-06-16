@@ -1,0 +1,29 @@
+package com.gentlemanstore.feature.cart.data
+
+import com.gentlemanstore.core.network.ApiResponse
+import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
+import com.gentlemanstore.feature.cart.data.dto.CartResponse
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+interface CartApiService {
+
+    @GET("cart")
+    suspend fun getCart(): ApiResponse<CartResponse>
+
+    @POST("cart/add")
+    suspend fun addToCart(
+        @Body request: AddToCartRequest
+    ): ApiResponse<CartResponse>
+
+    @DELETE("cart/items/{cartItemId}")
+    suspend fun removeFromCart(
+        @Path("cartItemId") cartItemId: Long
+    ): ApiResponse<CartResponse>
+
+    @POST("cart/checkout")
+    suspend fun checkout(): ApiResponse<Unit>
+}

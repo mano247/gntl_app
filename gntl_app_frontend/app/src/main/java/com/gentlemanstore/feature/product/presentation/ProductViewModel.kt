@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.product.data.dto.ProductResponse
+import com.gentlemanstore.feature.product.data.dto.ProductSizeResponse
 import com.gentlemanstore.feature.product.domain.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,7 @@ data class ProductDetailUiState(
     val isLoading: Boolean = false,
     val product: ProductResponse? = null,
     val error: String? = null,
-    val selectedSize: String? = null
+    val selectedSize: ProductSizeResponse? = null
 )
 
 @HiltViewModel
@@ -149,7 +150,7 @@ class ProductViewModel @Inject constructor(
         }
     }
 
-    fun selectSize(size: String) {
+    fun selectSize(size: ProductSizeResponse) {
         _detailUiState.value = _detailUiState.value.copy(selectedSize = size)
     }
 

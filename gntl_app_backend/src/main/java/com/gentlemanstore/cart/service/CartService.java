@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +43,7 @@ public class CartService {
     private final CartMapper cartMapper;
     private final OrderMapper orderMapper;
 
-    @Transactional(readOnly = true)
+    @Transactional()
     public CartDTO getCart(Long userId) {
         Cart cart = cartRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseGet(() -> {
@@ -55,9 +56,16 @@ public class CartService {
                     return cartRepository.save(newCart);
                 });
 
-        CartDTO cartDTO = cartMapper.toDTO(cart);
-        BigDecimal totalPrice = cart.getItems().stream()
+        List<CartItem> activeItems = cart.getItems().stream()
                 .filter(item -> !item.isDeleted())
+                .collect(Collectors.toList());
+
+        CartDTO cartDTO = cartMapper.toDTO(cart);
+        cartDTO.setItems(activeItems.stream()
+                .map(cartMapper::toItemDTO)
+                .collect(Collectors.toList()));
+
+        BigDecimal totalPrice = activeItems.stream()
                 .map(item -> item.getProduct().getPrice()
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

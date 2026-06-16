@@ -1,6 +1,8 @@
 package com.gentlemanstore.core.di
 
 import com.gentlemanstore.feature.auth.data.AuthApiService
+import com.gentlemanstore.feature.cart.data.CartApiService
+import com.gentlemanstore.feature.cart.domain.CartRepository
 import com.gentlemanstore.feature.product.data.ProductApiService
 import com.gentlemanstore.feature.product.domain.ProductRepository
 import dagger.Module
@@ -30,5 +32,17 @@ object AppModule {
     @Singleton
     fun provideProductRepository(productApiService: ProductApiService): ProductRepository {
         return ProductRepository(productApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCartApiService(retrofit: Retrofit): CartApiService {
+        return retrofit.create(CartApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCartRepository(cartApiService: CartApiService): CartRepository {
+        return CartRepository(cartApiService)
     }
 }

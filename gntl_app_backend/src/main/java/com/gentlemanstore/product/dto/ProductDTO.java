@@ -17,7 +17,7 @@ public class ProductDTO {
     private String description;
     private BigDecimal price;
     private String categoryName;
-    private List<String> sizes;
+    private List<ProductSizeDTO> sizes;
     private List<String> imageUrls;
     private List<String> tags;
 }
