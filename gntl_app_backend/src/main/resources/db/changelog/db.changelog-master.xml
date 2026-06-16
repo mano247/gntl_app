@@ -18,4 +18,7 @@
     <include file="db/changelog/migrations/V11__create_cart_tables.xml"/>
     <include file="db/changelog/migrations/V12__seed_data.xml"/>
     <include file="db/changelog/migrations/V13__seed_images.xml"/>
+    <include file="db/changelog/migrations/V14__seed_more_products.xml"/>
+    <include file="db/changelog/migrations/V15__seed_more_sizes.xml"/>
+    <include file="db/changelog/migrations/V16__seed_more_images.xml"/>
 </databaseChangeLog>

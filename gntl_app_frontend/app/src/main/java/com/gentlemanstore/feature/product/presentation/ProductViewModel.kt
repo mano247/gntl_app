@@ -84,19 +84,19 @@ class ProductViewModel @Inject constructor(
         }
     }
 
-    fun loadMoreProducts(){
+    fun loadMoreProducts() {
         val state = _listUiState.value
         if (state.isLastPage || state.isLoadingMore) return
 
         viewModelScope.launch {
-            _listUiState.value = state.copy(isLoading = true)
+            _listUiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
             when (val result = productRepository.getProducts(
                 page = nextPage,
                 category = state.selectedCategory,
                 search = state.searchQuery.ifBlank { null }
-            )){
+            )) {
                 is Resource.Success -> {
                     _listUiState.value = _listUiState.value.copy(
                         isLoadingMore = false,

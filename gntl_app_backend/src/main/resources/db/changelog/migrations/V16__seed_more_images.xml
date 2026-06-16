@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="49" author="gentlemanstore">
+        <!-- Midnight Blue Tuxedo -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611377/lucid-origin_Midnight_blue_men_s_tuxedo_with_satin_lapels_flat_lay_white_background_professio-0_yooekf.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611377/lucid-origin_Midnight_blue_men_s_tuxedo_with_satin_lapels_flat_lay_white_background_professio-0_1_vnmmi0.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+
+        <!-- Brown Tweed Suit -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611445/lucid-origin_Brown_tweed_men_s_suit_herringbone_pattern_flat_lay_white_background_professiona-0_ozipsv.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611445/lucid-origin_Brown_tweed_men_s_suit_herringbone_pattern_flat_lay_white_background_professiona-0_1_nkk9py.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+
+        <!-- Light Grey Summer Suit -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611518/lucid-origin_Light_grey_men_s_linen_summer_suit_flat_lay_white_background_professional_produc-0_u9bzjz.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611518/lucid-origin_Light_grey_men_s_linen_summer_suit_flat_lay_white_background_professional_produc-0_1_c9ursp.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+
+        <!-- Black Three-Piece Suit -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611596/lucid-origin_Black_men_s_three-piece_suit_with_waistcoat_flat_lay_white_background_profession-0_eg8f9v.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611596/lucid-origin_Black_men_s_three-piece_suit_with_waistcoat_flat_lay_white_background_profession-0_1_mguits.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+
+        <!-- Navy Pinstripe Suit -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611668/lucid-origin_Navy_blue_pinstripe_men_s_suit_flat_lay_white_background_professional_product_ph-0_vndq3c.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611667/lucid-origin_Navy_blue_pinstripe_men_s_suit_flat_lay_white_background_professional_product_ph-0_1_yscm6w.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+
+        <!-- Olive Green Suit -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611734/lucid-origin_Olive_green_men_s_suit_flat_lay_white_background_professional_product_photograph-0_fs8dxo.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611735/lucid-origin_Olive_green_men_s_suit_flat_lay_white_background_professional_product_photograph-0_1_wrcwhk.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+
+        <!-- Pink Slim Fit Shirt -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611918/lucid-origin_Pink_slim_fit_men_s_dress_shirt_flat_lay_white_background_professional_product_p-0_c40psp.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611919/lucid-origin_Pink_slim_fit_men_s_dress_shirt_flat_lay_white_background_professional_product_p-0_1_yhzjt9.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+
+        <!-- Black Dress Shirt -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611992/lucid-origin_Black_men_s_dress_shirt_flat_lay_white_background_professional_product_photograp-0_wwbry3.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781611992/lucid-origin_Black_men_s_dress_shirt_flat_lay_white_background_professional_product_photograp-0_1_gdrroq.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+
+        <!-- Striped Business Shirt -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612059/lucid-origin_Blue_white_striped_men_s_business_shirt_flat_lay_white_background_professional_p-0_x8dc4a.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612059/lucid-origin_Blue_white_striped_men_s_business_shirt_flat_lay_white_background_professional_p-0_1_man1c4.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+
+        <!-- Lavender Cotton Shirt  -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612121/lucid-origin_Lavender_cotton_men_s_dress_shirt_flat_lay_white_background_professional_product-0_a5yeg5.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612121/lucid-origin_Lavender_cotton_men_s_dress_shirt_flat_lay_white_background_professional_product-0_1_cz6mzi.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+
+        <!-- Checked Flannel Shirt -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612183/lucid-origin_Checked_flannel_men_s_shirt_flat_lay_white_background_professional_product_photo-0_ccie6m.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612184/lucid-origin_Checked_flannel_men_s_shirt_flat_lay_white_background_professional_product_photo-0_1_p7pkut.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+
+        <!-- Cream Linen Shirt -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612247/lucid-origin_Cream_linen_men_s_shirt_flat_lay_white_background_professional_product_photograp-0_cvo6gf.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612248/lucid-origin_Cream_linen_men_s_shirt_flat_lay_white_background_professional_product_photograp-0_1_u2njbl.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+
+        <!-- Beige Linen Trousers  -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612318/lucid-origin_Beige_linen_men_s_trousers_flat_lay_white_background_professional_product_photog-0_b4rdva.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612318/lucid-origin_Beige_linen_men_s_trousers_flat_lay_white_background_professional_product_photog-0_1_deyxzj.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+
+        <!-- Dark Brown Dress Trousers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612438/lucid-origin_Dark_brown_men_s_dress_trousers_wool_flat_lay_white_background_professional_prod-0_dz5hnf.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612439/lucid-origin_Dark_brown_men_s_dress_trousers_wool_flat_lay_white_background_professional_prod-0_1_bd43lk.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+
+        <!-- Black Slim Fit Trousers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612502/lucid-origin_Black_slim_fit_men_s_dress_trousers_flat_lay_white_background_professional_produ-0_gcevfl.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612501/lucid-origin_Black_slim_fit_men_s_dress_trousers_flat_lay_white_background_professional_produ-0_1_jdsb1b.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+
+        <!-- Khaki Cotton Trousers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612609/lucid-origin_Khaki_cotton_men_s_trousers_flat_lay_white_background_professional_product_photo-0_v5z9vp.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612610/lucid-origin_Khaki_cotton_men_s_trousers_flat_lay_white_background_professional_product_photo-0_1_iny12w.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+
+        <!-- Charcoal Flannel Trousers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612683/lucid-origin_Charcoal_flannel_men_s_trousers_flat_lay_white_background_professional_product_p-0_1_ij5fab.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612682/lucid-origin_Charcoal_flannel_men_s_trousers_flat_lay_white_background_professional_product_p-0_2_tnugsx.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+
+        <!-- Tan Leather Loafers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612755/lucid-origin_Tan_leather_men_s_loafers_flat_lay_white_background_professional_product_photogr-0_shp01p.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612756/lucid-origin_Tan_leather_men_s_loafers_flat_lay_white_background_professional_product_photogr-0_1_yb2qve.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+
+        <!-- Black Monk Strap Shoes -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612823/lucid-origin_Black_leather_monk_strap_shoes_flat_lay_white_background_professional_product_ph-0_zwvwnz.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612824/lucid-origin_Black_leather_monk_strap_shoes_flat_lay_white_background_professional_product_ph-0_1_p6ncb3.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+
+        <!-- Burgundy Leather Boots -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612893/lucid-origin_Burgundy_leather_men_s_boots_flat_lay_white_background_professional_product_phot-0_ubcg1l.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781612895/lucid-origin_Burgundy_leather_men_s_boots_flat_lay_white_background_professional_product_phot-0_1_tsisel.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+
+        <!-- White Leather Sneakers -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613097/lucid-origin_White_leather_men_s_sneakers_flat_lay_white_background_professional_product_phot-0_1_ffi1ta.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613097/lucid-origin_White_leather_men_s_sneakers_flat_lay_white_background_professional_product_phot-0_ppn22f.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+
+        <!-- Green Paisley Tie -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613163/lucid-origin_Green_paisley_silk_tie_flat_lay_white_background_professional_product_photograph-0_m5of2x.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="40"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613164/lucid-origin_Green_paisley_silk_tie_flat_lay_white_background_professional_product_photograph-0_1_bddhip.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="40"/></insert>
+
+        <!-- Grey Knit Tie -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613238/lucid-origin_Grey_knit_wool_tie_flat_lay_white_background_professional_product_photography_no-0_kvgs1o.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="41"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613239/lucid-origin_Grey_knit_wool_tie_flat_lay_white_background_professional_product_photography_no-0_1_hpdvdx.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="41"/></insert>
+
+        <!-- Brown Leather Wallet -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613358/lucid-origin_Brown_leather_men_s_wallet_flat_lay_white_background_professional_product_photog-0_j4pyen.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="42"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613358/lucid-origin_Brown_leather_men_s_wallet_open_showing_card_slots_flat_lay_white_background_pro-0_amokdq.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="42"/></insert>
+
+        <!-- Classic Leather Watch Strap  -->
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613466/lucid-origin_Brown_leather_watch_strap_flat_lay_white_background_professional_product_photogr-0_t0lrtl.jpg"/><column name="is_main" valueBoolean="true"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="43"/></insert>
+        <insert tableName="images"><column name="image_url" value="https://res.cloudinary.com/dludfwixn/image/upload/v1781613466/lucid-origin_Brown_leather_watch_flat_lay_white_background_professional_product_photography_n-0_xbtkm9.jpg"/><column name="is_main" valueBoolean="false"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="43"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

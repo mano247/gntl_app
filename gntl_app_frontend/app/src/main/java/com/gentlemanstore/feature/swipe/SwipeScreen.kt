@@ -81,7 +81,10 @@ fun SwipeScreen(
                 ) { page ->
                     val product = uiState.products[page]
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                    ) {
                         AsyncImage(
                             model = product.imageUrls.firstOrNull(),
                             contentDescription = product.name,
@@ -215,14 +218,9 @@ fun SwipeScreen(
                             Text(
                                 text = "DISCOVER",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color.White,
+                                color = Gold500,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 2.sp
-                            )
-                            Text(
-                                text = "${pagerState.currentPage + 1} / ${uiState.products.size}",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color.White.copy(alpha = 0.7f)
                             )
                         }
                     }

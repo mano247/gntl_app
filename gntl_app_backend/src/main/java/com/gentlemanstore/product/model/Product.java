@@ -51,6 +51,7 @@ public class Product {
     private Set<ProductSize> sizes = new HashSet<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("isMain DESC, id ASC")
     private Set<ProductImage> images = new HashSet<>();
 
     @ManyToMany

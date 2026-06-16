@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="48" author="gentlemanstore">
+        <!-- Midnight Blue Tuxedo (19) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="19"/></insert>
+
+        <!-- Brown Tweed Suit (20) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="20"/></insert>
+
+        <!-- Light Grey Summer Suit (21) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="21"/></insert>
+
+        <!-- Black Three-Piece Suit (22) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="22"/></insert>
+
+        <!-- Navy Pinstripe Suit (23) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="23"/></insert>
+
+        <!-- Olive Green Suit (24) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="24"/></insert>
+
+        <!-- Pink Slim Fit Shirt (25) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="12"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="25"/></insert>
+
+        <!-- Black Dress Shirt (26) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="9"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="26"/></insert>
+
+        <!-- Striped Business Shirt (27) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="9"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="13"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="11"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="27"/></insert>
+
+        <!-- Lavender Cotton Shirt (28) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="11"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="9"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="28"/></insert>
+
+        <!-- Checked Flannel Shirt (29) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="29"/></insert>
+
+        <!-- Cream Linen Shirt (30) -->
+        <insert tableName="sizes"><column name="size" value="S"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+        <insert tableName="sizes"><column name="size" value="M"/><column name="quantity" valueNumeric="12"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+        <insert tableName="sizes"><column name="size" value="L"/><column name="quantity" valueNumeric="10"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+        <insert tableName="sizes"><column name="size" value="XL"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+        <insert tableName="sizes"><column name="size" value="XXL"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="30"/></insert>
+
+        <!-- Beige Linen Trousers (31) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="31"/></insert>
+
+        <!-- Dark Brown Dress Trousers (32) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="32"/></insert>
+
+        <!-- Black Slim Fit Trousers (33) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="33"/></insert>
+
+        <!-- Khaki Cotton Trousers (34) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="34"/></insert>
+
+        <!-- Charcoal Flannel Trousers (35) -->
+        <insert tableName="sizes"><column name="size" value="46"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+        <insert tableName="sizes"><column name="size" value="48"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+        <insert tableName="sizes"><column name="size" value="50"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+        <insert tableName="sizes"><column name="size" value="52"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+        <insert tableName="sizes"><column name="size" value="54"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="35"/></insert>
+
+        <!-- Tan Leather Loafers (36) -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="36"/></insert>
+
+        <!-- Black Monk Strap Shoes (37) -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="2"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="37"/></insert>
+
+        <!-- Burgundy Leather Boots (38) -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="3"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="38"/></insert>
+
+        <!-- White Leather Sneakers (39) -->
+        <insert tableName="sizes"><column name="size" value="40"/><column name="quantity" valueNumeric="5"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+        <insert tableName="sizes"><column name="size" value="41"/><column name="quantity" valueNumeric="7"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+        <insert tableName="sizes"><column name="size" value="42"/><column name="quantity" valueNumeric="8"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+        <insert tableName="sizes"><column name="size" value="43"/><column name="quantity" valueNumeric="6"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+        <insert tableName="sizes"><column name="size" value="44"/><column name="quantity" valueNumeric="4"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="39"/></insert>
+
+        <!-- Green Paisley Tie (40) -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="18"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="40"/></insert>
+
+        <!-- Grey Knit Tie (41) -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="16"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="41"/></insert>
+
+        <!-- Brown Leather Wallet (42) -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="20"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="42"/></insert>
+
+        <!-- Classic Leather Watch Strap (43) -->
+        <insert tableName="sizes"><column name="size" value="One Size"/><column name="quantity" valueNumeric="22"/><column name="deleted" valueBoolean="false"/><column name="product_id" valueNumeric="43"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

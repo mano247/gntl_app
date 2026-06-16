@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.core.util.Constants
@@ -25,8 +26,13 @@ fun ProductListScreen(
     val currency = Constants.CURRENCY_RSD
     val gridState = rememberLazyGridState()
 
-    LaunchedEffect(gridState.canScrollForward) {
-        if (!gridState.canScrollForward
+    LaunchedEffect(gridState.firstVisibleItemIndex, gridState.layoutInfo.totalItemsCount) {
+        val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        val totalItems = gridState.layoutInfo.totalItemsCount
+
+        android.util.Log.d("ProductList", "lastVisible=$lastVisibleItem, total=$totalItems, isLastPage=${uiState.isLastPage}, isLoadingMore=${uiState.isLoadingMore}")
+
+        if (lastVisibleItem >= totalItems - 4
             && !uiState.isLastPage
             && !uiState.isLoadingMore
             && uiState.products.isNotEmpty()) {
@@ -39,23 +45,25 @@ fun ProductListScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "GENTLEMAN",
-                style = MaterialTheme.typography.titleLarge,
-                color = Gold500
-            )
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "GENTLEMAN",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Gold500
+                )
+                Text(
+                    text = "STORE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 3.sp
+                )
+            }
         }
 
         OutlinedTextField(
