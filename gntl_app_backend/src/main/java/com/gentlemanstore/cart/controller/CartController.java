@@ -2,6 +2,7 @@ package com.gentlemanstore.cart.controller;
 
 import com.gentlemanstore.cart.dto.AddToCartRequest;
 import com.gentlemanstore.cart.dto.CartDTO;
+import com.gentlemanstore.cart.dto.CheckoutRequest;
 import com.gentlemanstore.cart.service.CartService;
 import com.gentlemanstore.common.response.ApiResponse;
 import com.gentlemanstore.order.dto.OrderDTO;
@@ -48,8 +49,9 @@ public class CartController {
     @PostMapping("/checkout")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<OrderDTO>> checkout(
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody CheckoutRequest request){
         return ResponseEntity.ok(ApiResponse.success("Checkout successful",
-                service.checkout(currentUser.getId())));
+                service.checkout(currentUser.getId(), request)));
     }
 }

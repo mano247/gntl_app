@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
 import com.gentlemanstore.feature.cart.domain.CartRepository
+import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ data class CartUiState(
     val error: String? = null,
     val checkoutSuccess: Boolean = false,
     val isCheckingOut: Boolean = false,
-    val removingItemId: Long? = null
+    val removingItemId: Long? = null,
+    val completedOrder: OrderResponse? = null
 )
 
 @HiltViewModel
@@ -94,15 +96,16 @@ class CartViewModel @Inject constructor(
         }
     }
 
-    fun checkout() {
+    fun checkout(addressId: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCheckingOut = true)
 
-            when (val result = cartRepository.checkout()) {
+            when (val result = cartRepository.checkout(addressId)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isCheckingOut = false,
                         checkoutSuccess = true,
+                        completedOrder = result.data,
                         cart = null
                     )
                 }

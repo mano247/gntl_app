@@ -1,5 +1,7 @@
 package com.gentlemanstore.core.di
 
+import com.gentlemanstore.feature.address.data.AddressApiService
+import com.gentlemanstore.feature.address.domain.AddressRepository
 import com.gentlemanstore.feature.auth.data.AuthApiService
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.domain.CartRepository
@@ -44,5 +46,17 @@ object AppModule {
     @Singleton
     fun provideCartRepository(cartApiService: CartApiService): CartRepository {
         return CartRepository(cartApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAddressApiService(retrofit: Retrofit): AddressApiService {
+        return retrofit.create(AddressApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAddressRepository(addressApiService: AddressApiService): AddressRepository {
+        return AddressRepository(addressApiService)
     }
 }

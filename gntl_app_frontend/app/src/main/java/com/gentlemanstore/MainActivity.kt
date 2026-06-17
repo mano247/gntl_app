@@ -9,6 +9,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,6 +24,8 @@ import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
 import com.gentlemanstore.feature.cart.presentation.CartScreen
 import com.gentlemanstore.feature.cart.presentation.CartViewModel
+import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
+import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
@@ -147,7 +150,28 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("checkout") {
-                            PlaceholderScreen("CHECKOUT")
+                            CheckoutScreen(
+                                cartViewModel = cartViewModel,
+                                onOrderPlaced = { order ->
+                                    navController.navigate("order_confirmation") {
+                                        popUpTo("home_customer")
+                                    }
+                                },
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("order_confirmation") {
+                            val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
+                            cartState.completedOrder?.let { order ->
+                                OrderConfirmationScreen(
+                                    order = order,
+                                    onContinueShopping = {
+                                        navController.navigate("home_customer") {
+                                            popUpTo("home_customer") { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
                         }
                         composable("profile") {
                             PlaceholderScreen("PROFIL")

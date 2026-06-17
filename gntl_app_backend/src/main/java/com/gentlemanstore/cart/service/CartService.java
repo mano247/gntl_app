@@ -2,6 +2,7 @@ package com.gentlemanstore.cart.service;
 
 import com.gentlemanstore.cart.dto.AddToCartRequest;
 import com.gentlemanstore.cart.dto.CartDTO;
+import com.gentlemanstore.cart.dto.CheckoutRequest;
 import com.gentlemanstore.cart.mapper.CartMapper;
 import com.gentlemanstore.cart.model.Cart;
 import com.gentlemanstore.cart.model.CartItem;
@@ -14,12 +15,16 @@ import com.gentlemanstore.order.mapper.OrderMapper;
 import com.gentlemanstore.order.model.Order;
 import com.gentlemanstore.order.model.OrderItem;
 import com.gentlemanstore.order.model.OrderStatus;
+import com.gentlemanstore.order.model.Shipment;
 import com.gentlemanstore.order.repository.OrderRepository;
+import com.gentlemanstore.order.repository.ShipmentRepository;
 import com.gentlemanstore.product.model.Product;
 import com.gentlemanstore.product.model.ProductSize;
 import com.gentlemanstore.product.repository.ProductRepository;
 import com.gentlemanstore.product.repository.ProductSizeRepository;
+import com.gentlemanstore.user.model.Address;
 import com.gentlemanstore.user.model.User;
+import com.gentlemanstore.user.repository.AddressRepository;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +47,8 @@ public class CartService {
     private final UserRepository userRepository;
     private final CartMapper cartMapper;
     private final OrderMapper orderMapper;
+    private final AddressRepository addressRepository;
+    private final ShipmentRepository shipmentRepository;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -115,7 +122,7 @@ public class CartService {
     }
 
     @Transactional()
-    public OrderDTO checkout(Long userId) {
+    public OrderDTO checkout(Long userId, CheckoutRequest request) {
         Cart cart = cartRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
@@ -127,6 +134,13 @@ public class CartService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Address address = addressRepository.findByIdAndDeletedFalse(request.getAddressId())
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+
+        if (!address.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Address not found");
+        }
 
         Order order = Order.builder()
                 .user(user)
@@ -157,10 +171,35 @@ public class CartService {
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
 
+        String formattedAddress = formatAddress(address);
+        Shipment shipment = Shipment.builder()
+                .trackingNumber(generateTrackingNumber())
+                .shippingAddress(formattedAddress)
+                .order(order)
+                .deleted(false)
+                .build();
+        shipmentRepository.save(shipment);
+
         items.forEach(item -> item.setDeleted(true));
         cartItemRepository.saveAll(items);
 
         return orderMapper.toDTO(order);
+    }
+
+    private String formatAddress(Address address) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(address.getStreet());
+        if (address.getApartment() != null && !address.getApartment().isBlank()) {
+            sb.append(", ").append(address.getApartment());
+        }
+        sb.append(", ").append(address.getCity());
+        sb.append(", ").append(address.getPostalCode());
+        sb.append(", ").append(address.getCountry());
+        return sb.toString();
+    }
+
+    private String generateTrackingNumber() {
+        return "GS-" + System.currentTimeMillis();
     }
 
 

@@ -3,6 +3,8 @@ package com.gentlemanstore.feature.cart.data
 import com.gentlemanstore.core.network.ApiResponse
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
+import com.gentlemanstore.feature.order.data.dto.CheckoutRequest
+import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -25,5 +27,7 @@ interface CartApiService {
     ): ApiResponse<CartResponse>
 
     @POST("cart/checkout")
-    suspend fun checkout(): ApiResponse<Unit>
+    suspend fun checkout(
+        @Body request: CheckoutRequest
+    ): ApiResponse<OrderResponse>
 }

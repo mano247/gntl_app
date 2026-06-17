@@ -5,6 +5,8 @@ import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
+import com.gentlemanstore.feature.order.data.dto.CheckoutRequest
+import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,9 +47,9 @@ class CartRepository @Inject constructor(
         }
     }
 
-    suspend fun checkout(): Resource<Unit> {
+    suspend fun checkout(addressId: Long): Resource<OrderResponse> {
         return try {
-            val response = cartApiService.checkout()
+            val response = cartApiService.checkout(CheckoutRequest(addressId))
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Checkout failed")
