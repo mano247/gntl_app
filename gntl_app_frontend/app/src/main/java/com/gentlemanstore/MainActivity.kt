@@ -26,7 +26,9 @@ import com.gentlemanstore.feature.cart.presentation.CartScreen
 import com.gentlemanstore.feature.cart.presentation.CartViewModel
 import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
 import com.gentlemanstore.feature.loyalty.presentation.LoyaltyScreen
+import com.gentlemanstore.feature.order.presentation.MyOrdersScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
+import com.gentlemanstore.feature.order.presentation.OrderDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.feature.profile.presentation.ProfileScreen
@@ -194,7 +196,20 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("my_orders") {
-                            PlaceholderScreen("MY ORDERS")
+                            MyOrdersScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onOrderClick = { orderId ->
+                                    navController.navigate("order_detail/$orderId")
+                                }
+                            )
+                        }
+                        composable("order_detail/{orderId}") { backStackEntry ->
+                            val orderId = backStackEntry.arguments?.getString("orderId")
+                                ?.toLongOrNull() ?: return@composable
+                            OrderDetailScreen(
+                                orderId = orderId,
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                         composable("settings") {
                             PlaceholderScreen("SETTINGS")

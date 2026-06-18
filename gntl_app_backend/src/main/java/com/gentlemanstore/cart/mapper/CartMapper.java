@@ -13,6 +13,7 @@ public interface CartMapper {
     @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "productSize.size", target = "size")
     @Mapping(source = "product.price", target = "price")
+    @Mapping(target = "imageUrl", expression = "java(cartItem.getProduct().getImages().isEmpty() ? null : cartItem.getProduct().getImages().iterator().next().getImageUrl())")
     CartItemDTO toItemDTO(CartItem cartItem);
 
     @Mapping(target = "totalPrice", ignore = true)

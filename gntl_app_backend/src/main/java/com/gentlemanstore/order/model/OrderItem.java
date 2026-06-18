@@ -1,6 +1,7 @@
 package com.gentlemanstore.order.model;
 
 import com.gentlemanstore.product.model.Product;
+import com.gentlemanstore.product.model.ProductSize;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,4 +35,8 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_size_id")
+    private ProductSize productSize;
 }

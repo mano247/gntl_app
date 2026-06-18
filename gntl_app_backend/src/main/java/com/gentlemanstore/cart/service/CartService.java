@@ -157,6 +157,7 @@ public class CartService {
 
             OrderItem orderItem = OrderItem.builder()
                     .product(cartItem.getProduct())
+                    .productSize(cartItem.getProductSize())
                     .quantity(cartItem.getQuantity())
                     .totalPrice(itemPrice)
                     .order(order)

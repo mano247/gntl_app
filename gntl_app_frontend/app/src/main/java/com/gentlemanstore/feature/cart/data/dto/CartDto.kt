@@ -6,6 +6,7 @@ data class CartItemResponse(
     val id: Long,
     val productName: String,
     val productId: Long,
+    val imageUrl: String?,
     val size: String,
     val quantity: Int,
     val price: BigDecimal

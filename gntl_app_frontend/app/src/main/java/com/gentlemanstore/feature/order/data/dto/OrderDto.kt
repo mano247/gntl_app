@@ -5,6 +5,8 @@ import java.math.BigDecimal
 data class OrderItemResponse(
     val id: Long,
     val productName: String,
+    val imageUrl: String?,
+    val size: String?,
     val quantity: Int,
     val price: BigDecimal
 )
@@ -19,4 +21,15 @@ data class OrderResponse(
 
 data class CheckoutRequest(
     val addressId: Long
+)
+
+data class PagedOrderResponse(
+    val content: List<OrderResponse>,
+    val totalPages: Int,
+    val totalElements: Long,
+    val last: Boolean,
+    val first: Boolean,
+    val number: Int,
+    val size: Int,
+    val numberOfElements: Int
 )

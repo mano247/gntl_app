@@ -13,6 +13,7 @@ public class CartItemDTO {
     private Long id;
     private String productName;
     private Long productId;
+    private String imageUrl;
     private String size;
     private Integer quantity;
     private BigDecimal price;
