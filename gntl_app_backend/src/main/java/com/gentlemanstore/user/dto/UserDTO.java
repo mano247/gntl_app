@@ -19,5 +19,5 @@ public class UserDTO {
     private String lastName;
     private String phoneNumber;
     private LocalDateTime createdAt;
-    private List<Address> addresses;
+    private List<AddressDTO> addresses;
 }

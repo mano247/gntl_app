@@ -5,8 +5,12 @@ import com.gentlemanstore.feature.address.domain.AddressRepository
 import com.gentlemanstore.feature.auth.data.AuthApiService
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.domain.CartRepository
+import com.gentlemanstore.feature.loyalty.data.LoyaltyApiService
+import com.gentlemanstore.feature.loyalty.domain.LoyaltyRepository
 import com.gentlemanstore.feature.product.data.ProductApiService
 import com.gentlemanstore.feature.product.domain.ProductRepository
+import com.gentlemanstore.feature.profile.data.UserApiService
+import com.gentlemanstore.feature.profile.domain.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,5 +62,29 @@ object AppModule {
     @Singleton
     fun provideAddressRepository(addressApiService: AddressApiService): AddressRepository {
         return AddressRepository(addressApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService {
+        return retrofit.create(UserApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(userApiService: UserApiService): UserRepository {
+        return UserRepository(userApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLoyaltyApiService(retrofit: Retrofit): LoyaltyApiService {
+        return retrofit.create(LoyaltyApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLoyaltyRepository(loyaltyApiService: LoyaltyApiService): LoyaltyRepository {
+        return LoyaltyRepository(loyaltyApiService)
     }
 }

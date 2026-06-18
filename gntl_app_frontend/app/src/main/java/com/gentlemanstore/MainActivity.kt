@@ -28,6 +28,7 @@ import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
+import com.gentlemanstore.feature.profile.presentation.ProfileScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -174,7 +175,17 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable("profile") {
-                            PlaceholderScreen("PROFIL")
+                            ProfileScreen(
+                                onNavigateToOrders = { navController.navigate("my_orders") },
+                                onNavigateToLoyalty = { navController.navigate("loyalty") },
+                                onNavigateToSettings = { navController.navigate("settings") },
+                                onNavigateToNotifications = { navController.navigate("notifications") },
+                                onLoggedOut = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
                         composable("home_employee") {
                             PlaceholderScreen("EMPLOYEE HOME")
