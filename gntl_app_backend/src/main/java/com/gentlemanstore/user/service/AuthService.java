@@ -3,6 +3,10 @@ package com.gentlemanstore.user.service;
 import com.gentlemanstore.common.exception.EmailAlreadyExistsException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.common.util.EmailService;
+import com.gentlemanstore.loyalty.model.LoyaltyAccount;
+import com.gentlemanstore.loyalty.model.LoyaltyTier;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyTierRepository;
 import com.gentlemanstore.security.JwtService;
 import com.gentlemanstore.user.dto.AuthResponse;
 import com.gentlemanstore.user.dto.LoginRequest;
@@ -32,6 +36,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RoleRepository roleRepository;
     private final EmailService emailService;
+    private final LoyaltyAccountRepository loyaltyAccountRepository;
+    private final LoyaltyTierRepository loyaltyTierRepository;
 
     @Transactional(noRollbackFor = Exception.class)
     public AuthResponse register(RegisterRequest request) {
@@ -53,6 +59,18 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
+        LoyaltyTier startingTier = loyaltyTierRepository.findTopByMinPointsLessThanEqualOrderByMinPointsDesc(0)
+                .orElseThrow(() -> new ResourceNotFoundException("Default loyalty tier not found"));
+
+        LoyaltyAccount loyaltyAccount = LoyaltyAccount.builder()
+                .user(user)
+                .points(0)
+                .loyaltyTier(startingTier)
+                .deleted(false)
+                .build();
+
+        loyaltyAccountRepository.save(loyaltyAccount);
 
         String token = jwtService.generateToken(user);
 

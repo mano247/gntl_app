@@ -25,6 +25,7 @@ import com.gentlemanstore.feature.auth.presentation.SplashScreen
 import com.gentlemanstore.feature.cart.presentation.CartScreen
 import com.gentlemanstore.feature.cart.presentation.CartViewModel
 import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
+import com.gentlemanstore.feature.loyalty.presentation.LoyaltyScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
@@ -186,6 +187,20 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             )
+                        }
+                        composable("loyalty") {
+                            LoyaltyScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("my_orders") {
+                            PlaceholderScreen("MY ORDERS")
+                        }
+                        composable("settings") {
+                            PlaceholderScreen("SETTINGS")
+                        }
+                        composable("notifications") {
+                            PlaceholderScreen("NOTIFICATIONS")
                         }
                         composable("home_employee") {
                             PlaceholderScreen("EMPLOYEE HOME")
