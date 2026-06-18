@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.ui.theme.Gold500
+import com.gentlemanstore.core.util.CurrencyFormatter
+import com.gentlemanstore.core.util.rememberCurrentCurrency
 
 @Composable
 fun OrderDetailScreen(
@@ -24,6 +26,7 @@ fun OrderDetailScreen(
     onNavigateBack: () -> Unit,
     viewModel: OrderDetailViewModel = hiltViewModel()
 ) {
+    val currency = rememberCurrentCurrency()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(orderId) {
@@ -168,7 +171,7 @@ fun OrderDetailScreen(
                                         }
                                     }
                                     Text(
-                                        text = "${item.price} din",
+                                        text = CurrencyFormatter.format(item.price.toDouble(), currency),
                                         style = MaterialTheme.typography.titleMedium,
                                         color = Gold500
                                     )
@@ -193,7 +196,7 @@ fun OrderDetailScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${order.totalPrice} din",
+                                text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = Gold500,
                                 fontWeight = FontWeight.Bold

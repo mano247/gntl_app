@@ -22,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.ui.theme.Gold500
 import androidx.compose.ui.draw.clip
+import com.gentlemanstore.core.util.CurrencyFormatter
+import com.gentlemanstore.core.util.rememberCurrentCurrency
 
 fun getStatusColor(status: String): Color {
     return when (status.uppercase()) {
@@ -40,6 +42,7 @@ fun MyOrdersScreen(
     onOrderClick: (Long) -> Unit,
     viewModel: MyOrdersViewModel = hiltViewModel()
 ) {
+    val currency = rememberCurrentCurrency()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
@@ -138,6 +141,7 @@ fun MyOrdersScreen(
                         items(uiState.orders, key = { it.id }) { order ->
                             OrderCard(
                                 order = order,
+                                currency = currency,
                                 onClick = { onOrderClick(order.id) }
                             )
                         }
@@ -167,6 +171,7 @@ fun MyOrdersScreen(
 @Composable
 private fun OrderCard(
     order: OrderResponse,
+    currency: String,
     onClick: () -> Unit
 ) {
     Card(
@@ -216,7 +221,7 @@ private fun OrderCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "${order.totalPrice} din",
+                text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
                 style = MaterialTheme.typography.titleMedium,
                 color = Gold500,
                 fontWeight = FontWeight.Bold

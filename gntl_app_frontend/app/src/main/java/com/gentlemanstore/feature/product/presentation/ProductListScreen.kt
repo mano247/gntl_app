@@ -23,7 +23,7 @@ fun ProductListScreen(
     viewModel: ProductViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
-    val currency = Constants.CURRENCY_RSD
+    val currency = com.gentlemanstore.core.util.rememberCurrentCurrency()
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(gridState.firstVisibleItemIndex, gridState.layoutInfo.totalItemsCount) {

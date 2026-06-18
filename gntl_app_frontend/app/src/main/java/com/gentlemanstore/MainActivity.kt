@@ -32,6 +32,7 @@ import com.gentlemanstore.feature.order.presentation.OrderDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.feature.profile.presentation.ProfileScreen
+import com.gentlemanstore.feature.settings.presentation.SettingsScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -212,7 +213,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("settings") {
-                            PlaceholderScreen("SETTINGS")
+                            SettingsScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                         composable("notifications") {
                             PlaceholderScreen("NOTIFICATIONS")

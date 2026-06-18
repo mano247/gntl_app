@@ -26,6 +26,8 @@ import com.gentlemanstore.feature.address.presentation.AddressViewModel
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.ui.theme.Gold500
 import androidx.compose.ui.draw.clip
+import com.gentlemanstore.core.util.CurrencyFormatter
+import com.gentlemanstore.core.util.rememberCurrentCurrency
 
 enum class PaymentMethod(val label: String) {
     CASH("Cash on Delivery"),
@@ -41,6 +43,7 @@ fun CheckoutScreen(
 ) {
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     val addressState by addressViewModel.uiState.collectAsStateWithLifecycle()
+    val currency = rememberCurrentCurrency()
 
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH) }
     var promoCode by remember { mutableStateOf("") }
@@ -200,7 +203,7 @@ fun CheckoutScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "${cart.totalPrice} din",
+                            text = CurrencyFormatter.format(cart.totalPrice.toDouble(), currency),
                             style = MaterialTheme.typography.titleLarge,
                             color = Gold500,
                             fontWeight = FontWeight.Bold

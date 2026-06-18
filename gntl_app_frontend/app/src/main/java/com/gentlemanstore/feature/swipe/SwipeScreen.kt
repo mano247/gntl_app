@@ -33,6 +33,7 @@ fun SwipeScreen(
     viewModel: SwipeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currency = com.gentlemanstore.core.util.rememberCurrentCurrency()
 
     Box(
         modifier = Modifier
@@ -141,7 +142,7 @@ fun SwipeScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
-                                text = "${product.price.toInt()} din",
+                                text = com.gentlemanstore.core.util.CurrencyFormatter.format(product.price, currency),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Gold500,
                                 fontWeight = FontWeight.Bold

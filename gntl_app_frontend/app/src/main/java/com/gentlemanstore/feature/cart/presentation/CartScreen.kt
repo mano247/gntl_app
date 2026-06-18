@@ -18,6 +18,8 @@ import com.gentlemanstore.feature.cart.data.dto.CartItemResponse
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.gentlemanstore.core.util.CurrencyFormatter
+import com.gentlemanstore.core.util.rememberCurrentCurrency
 import com.gentlemanstore.ui.theme.Gold500
 import androidx.compose.ui.draw.clip
 
@@ -27,6 +29,7 @@ fun CartScreen(
     viewModel: CartViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currency = rememberCurrentCurrency()
 
     Box(
         modifier = Modifier
@@ -97,6 +100,7 @@ fun CartScreen(
                     LazyColumnCartItems(
                         cartItems = cart.items,
                         removingItemId = uiState.removingItemId,
+                        currency = currency,
                         onRemove = { viewModel.removeFromCart(it) }
                     )
 
@@ -117,7 +121,7 @@ fun CartScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${cart.totalPrice} din",
+                                text = CurrencyFormatter.format(cart.totalPrice.toDouble(), currency),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = Gold500,
                                 fontWeight = FontWeight.Bold
@@ -153,6 +157,7 @@ fun CartScreen(
 private fun ColumnScope.LazyColumnCartItems(
     cartItems: List<CartItemResponse>,
     removingItemId: Long?,
+    currency: String,
     onRemove: (Long) -> Unit
 ) {
     LazyColumn(
@@ -166,6 +171,7 @@ private fun ColumnScope.LazyColumnCartItems(
             CartItemCard(
                 item = item,
                 isRemoving = removingItemId == item.id,
+                currency = currency,
                 onRemove = { onRemove(item.id) }
             )
         }
@@ -176,6 +182,7 @@ private fun ColumnScope.LazyColumnCartItems(
 private fun CartItemCard(
     item: CartItemResponse,
     isRemoving: Boolean,
+    currency: String,
     onRemove: () -> Unit
 ) {
     Card(
@@ -215,7 +222,7 @@ private fun CartItemCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${item.price} din",
+                    text = CurrencyFormatter.format(item.price.toDouble(), currency),
                     style = MaterialTheme.typography.titleMedium,
                     color = Gold500
                 )

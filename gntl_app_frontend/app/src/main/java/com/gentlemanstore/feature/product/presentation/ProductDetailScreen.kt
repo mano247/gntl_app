@@ -32,7 +32,7 @@ fun ProductDetailScreen(
     viewModel: ProductViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.detailUiState.collectAsStateWithLifecycle()
-    val currency = Constants.CURRENCY_RSD
+    val currency = com.gentlemanstore.core.util.rememberCurrentCurrency()
     var selectedImageIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(productId) {
