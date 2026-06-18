@@ -7,6 +7,8 @@ import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.domain.CartRepository
 import com.gentlemanstore.feature.loyalty.data.LoyaltyApiService
 import com.gentlemanstore.feature.loyalty.domain.LoyaltyRepository
+import com.gentlemanstore.feature.notification.data.NotificationApiService
+import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import com.gentlemanstore.feature.order.data.OrderApiService
 import com.gentlemanstore.feature.order.domain.OrderRepository
 import com.gentlemanstore.feature.product.data.ProductApiService
@@ -100,5 +102,17 @@ object AppModule {
     @Singleton
     fun provideOrderRepository(orderApiService: OrderApiService): OrderRepository {
         return OrderRepository(orderApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService {
+        return retrofit.create(NotificationApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(notificationApiService: NotificationApiService): NotificationRepository {
+        return NotificationRepository(notificationApiService)
     }
 }

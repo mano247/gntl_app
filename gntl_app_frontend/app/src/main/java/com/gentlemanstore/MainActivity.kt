@@ -26,6 +26,7 @@ import com.gentlemanstore.feature.cart.presentation.CartScreen
 import com.gentlemanstore.feature.cart.presentation.CartViewModel
 import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
 import com.gentlemanstore.feature.loyalty.presentation.LoyaltyScreen
+import com.gentlemanstore.feature.notification.presentation.NotificationsScreen
 import com.gentlemanstore.feature.order.presentation.MyOrdersScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
 import com.gentlemanstore.feature.order.presentation.OrderDetailScreen
@@ -218,7 +219,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("notifications") {
-                            PlaceholderScreen("NOTIFICATIONS")
+                            NotificationsScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                         composable("home_employee") {
                             PlaceholderScreen("EMPLOYEE HOME")
