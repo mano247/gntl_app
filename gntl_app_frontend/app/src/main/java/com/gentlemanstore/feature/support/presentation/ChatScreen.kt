@@ -30,6 +30,7 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.chatUiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val currentRole by viewModel.currentRole.collectAsStateWithLifecycle()
 
     LaunchedEffect(sessionId) {
         viewModel.loadMessages(sessionId)
@@ -97,7 +98,7 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.messages, key = { it.id }) { message ->
-                            ChatMessageBubble(message = message)
+                            ChatMessageBubble(message = message, currentRole = currentRole ?: "CUSTOMER")
                         }
                     }
 
@@ -154,14 +155,18 @@ fun ChatScreen(
 }
 
 @Composable
-private fun ChatMessageBubble(message: ChatMessageResponse) {
-    val isUser = message.sender.uppercase() == "USER"
+private fun ChatMessageBubble(message: ChatMessageResponse, currentRole: String) {
+    val isRightSide = when (message.sender.uppercase()) {
+        "USER" -> currentRole.contains("CUSTOMER")
+        "EMPLOYEE" -> !currentRole.contains("CUSTOMER")
+        else -> false
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isRightSide) Arrangement.End else Arrangement.Start
     ) {
-        if (!isUser) {
+        if (!isRightSide) {
             Box(
                 modifier = Modifier
                     .size(32.dp)
@@ -180,9 +185,9 @@ private fun ChatMessageBubble(message: ChatMessageResponse) {
         }
 
         Column(
-            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+            horizontalAlignment = if (isRightSide) Alignment.End else Alignment.Start
         ) {
-            if (!isUser) {
+            if (!isRightSide) {
                 Text(
                     text = message.sender.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelSmall,
@@ -194,10 +199,10 @@ private fun ChatMessageBubble(message: ChatMessageResponse) {
             Box(
                 modifier = Modifier
                     .background(
-                        color = if (isUser) Gold500 else MaterialTheme.colorScheme.surface,
+                        color = if (isRightSide) Gold500 else MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(
-                            topStart = if (isUser) 16.dp else 4.dp,
-                            topEnd = if (isUser) 4.dp else 16.dp,
+                            topStart = if (isRightSide) 16.dp else 4.dp,
+                            topEnd = if (isRightSide) 4.dp else 16.dp,
                             bottomStart = 16.dp,
                             bottomEnd = 16.dp
                         )
@@ -208,7 +213,7 @@ private fun ChatMessageBubble(message: ChatMessageResponse) {
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isUser) MaterialTheme.colorScheme.background
+                    color = if (isRightSide) MaterialTheme.colorScheme.background
                     else MaterialTheme.colorScheme.onSurface
                 )
             }

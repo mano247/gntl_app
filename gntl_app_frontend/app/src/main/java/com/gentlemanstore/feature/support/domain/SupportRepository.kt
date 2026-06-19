@@ -48,11 +48,11 @@ class SupportRepository @Inject constructor(
         }
     }
 
-    suspend fun sendMessage(sessionId: Long, content: String): Resource<ChatMessageResponse> {
+    suspend fun sendMessage(sessionId: Long, content: String, sender: String = "USER"): Resource<ChatMessageResponse> {
         return try {
             val response = supportApiService.sendMessage(
                 sessionId = sessionId,
-                request = SendMessageRequest(content = content, sender = "USER")
+                request = SendMessageRequest(content = content, sender = sender)
             )
             response.toResource()
         } catch (e: Exception) {

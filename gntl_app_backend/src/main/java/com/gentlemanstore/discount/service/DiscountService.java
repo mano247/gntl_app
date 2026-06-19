@@ -13,6 +13,10 @@ import com.gentlemanstore.discount.model.UserPromotion;
 import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.discount.repository.PromotionRepository;
 import com.gentlemanstore.discount.repository.UserPromotionRepository;
+import com.gentlemanstore.product.model.Category;
+import com.gentlemanstore.product.model.Product;
+import com.gentlemanstore.product.repository.CategoryRepository;
+import com.gentlemanstore.product.repository.ProductRepository;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,8 @@ public class DiscountService {
     private final UserPromotionRepository userPromotionRepository;
     private final UserRepository userRepository;
     private final DiscountMapper mapper;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
     public DiscountDTO getDiscount(String code){
@@ -51,12 +57,26 @@ public class DiscountService {
 
     @Transactional()
     public DiscountDTO createDiscount(CreateDiscountRequest request){
+        Product product = null;
+        if (request.getProductId() != null) {
+            product = productRepository.findByIdAndDeletedFalse(request.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        }
+
+        Category category = null;
+        if (request.getCategoryId() != null) {
+            category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        }
+
         Discount discount = Discount.builder()
                 .code(request.getCode())
                 .discountType(DiscountType.valueOf(request.getDiscountType()))
                 .value(request.getValue())
                 .validFrom(request.getValidFrom())
                 .validTo(request.getValidTo())
+                .product(product)
+                .category(category)
                 .deleted(false)
                 .build();
 

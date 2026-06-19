@@ -3,6 +3,7 @@ package com.gentlemanstore.feature.product.domain
 import com.gentlemanstore.core.network.toResource
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.product.data.ProductApiService
+import com.gentlemanstore.feature.product.data.dto.CategoryResponse
 import com.gentlemanstore.feature.product.data.dto.PagedProductResponse
 import com.gentlemanstore.feature.product.data.dto.ProductResponse
 import javax.inject.Inject
@@ -35,7 +36,7 @@ class ProductRepository @Inject constructor(
         }
     }
 
-    suspend fun getCategories(): Resource<List<String>> {
+    suspend fun getCategories(): Resource<List<CategoryResponse>> {
         return try {
             val response = productApiService.getCategories()
             response.toResource()

@@ -1,5 +1,7 @@
 package com.gentlemanstore.discount.model;
 
+import com.gentlemanstore.product.model.Category;
+import com.gentlemanstore.product.model.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,5 +39,13 @@ public class Discount {
 
     @Column(nullable = false)
     private boolean deleted = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
 }

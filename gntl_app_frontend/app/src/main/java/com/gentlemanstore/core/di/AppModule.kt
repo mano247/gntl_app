@@ -2,11 +2,17 @@ package com.gentlemanstore.core.di
 
 import com.gentlemanstore.feature.address.data.AddressApiService
 import com.gentlemanstore.feature.address.domain.AddressRepository
+import com.gentlemanstore.feature.admin.data.AdminApiService
+import com.gentlemanstore.feature.admin.domain.AdminRepository
 import com.gentlemanstore.feature.auth.data.AuthApiService
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.domain.CartRepository
+import com.gentlemanstore.feature.employee.data.EmployeeApiService
+import com.gentlemanstore.feature.employee.domain.EmployeeRepository
 import com.gentlemanstore.feature.loyalty.data.LoyaltyApiService
 import com.gentlemanstore.feature.loyalty.domain.LoyaltyRepository
+import com.gentlemanstore.feature.manager.data.ManagerApiService
+import com.gentlemanstore.feature.manager.domain.ManagerRepository
 import com.gentlemanstore.feature.notification.data.NotificationApiService
 import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import com.gentlemanstore.feature.order.data.OrderApiService
@@ -128,5 +134,41 @@ object AppModule {
     @Singleton
     fun provideSupportRepository(supportApiService: SupportApiService): SupportRepository {
         return SupportRepository(supportApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmployeeApiService(retrofit: Retrofit): EmployeeApiService {
+        return retrofit.create(EmployeeApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmployeeRepository(employeeApiService: EmployeeApiService): EmployeeRepository {
+        return EmployeeRepository(employeeApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideManagerApiService(retrofit: Retrofit): ManagerApiService {
+        return retrofit.create(ManagerApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideManagerRepository(managerApiService: ManagerApiService): ManagerRepository {
+        return ManagerRepository(managerApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminApiService(retrofit: Retrofit): AdminApiService {
+        return retrofit.create(AdminApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdminRepository(adminApiService: AdminApiService): AdminRepository {
+        return AdminRepository(adminApiService)
     }
 }

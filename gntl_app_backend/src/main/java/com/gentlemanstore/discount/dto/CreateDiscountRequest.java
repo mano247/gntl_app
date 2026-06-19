@@ -29,4 +29,8 @@ public class CreateDiscountRequest {
 
     @NotNull
     private LocalDateTime validTo;
+
+    private Long productId;
+
+    private Long categoryId;
 }

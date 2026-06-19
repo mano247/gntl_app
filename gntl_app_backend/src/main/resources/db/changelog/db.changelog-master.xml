@@ -22,4 +22,5 @@
     <include file="db/changelog/migrations/V15__seed_more_sizes.xml"/>
     <include file="db/changelog/migrations/V16__seed_more_images.xml"/>
     <include file="db/changelog/migrations/V17__add_product_size_to_order_items.xml"/>
+    <include file="db/changelog/migrations/V18__add_product_category_to_discounts.xml"/>
 </databaseChangeLog>

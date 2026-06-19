@@ -17,4 +17,8 @@ public class DiscountDTO {
     private BigDecimal value;
     private LocalDateTime validFrom;
     private LocalDateTime validTo;
+    private Long productId;
+    private String productName;
+    private Long categoryId;
+    private String categoryName;
 }

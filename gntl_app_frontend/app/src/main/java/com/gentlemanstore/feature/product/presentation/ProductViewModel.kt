@@ -159,7 +159,7 @@ class ProductViewModel @Inject constructor(
             when (val result = productRepository.getCategories()) {
                 is Resource.Success -> {
                     _listUiState.value = _listUiState.value.copy(
-                        categories = listOf("All") + result.data
+                        categories = listOf("All") + result.data.map { it.name }
                     )
                 }
                 else -> Unit

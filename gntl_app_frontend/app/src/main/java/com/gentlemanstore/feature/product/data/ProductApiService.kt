@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.product.data
 
 import com.gentlemanstore.core.network.ApiResponse
+import com.gentlemanstore.feature.product.data.dto.CategoryResponse
 import com.gentlemanstore.feature.product.data.dto.PagedProductResponse
 import com.gentlemanstore.feature.product.data.dto.ProductResponse
 import retrofit2.http.GET
@@ -22,5 +23,5 @@ interface ProductApiService {
     ): ApiResponse<ProductResponse>
 
     @GET("products/categories")
-    suspend fun getCategories(): ApiResponse<List<String>>
+    suspend fun getCategories(): ApiResponse<List<CategoryResponse>>
 }

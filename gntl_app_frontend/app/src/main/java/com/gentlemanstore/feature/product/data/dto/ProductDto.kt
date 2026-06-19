@@ -28,3 +28,9 @@ data class PagedProductResponse(
     val size: Int,
     val numberOfElements: Int
 )
+
+data class CategoryResponse(
+    val id: Long,
+    val name: String,
+    val description: String?
+)

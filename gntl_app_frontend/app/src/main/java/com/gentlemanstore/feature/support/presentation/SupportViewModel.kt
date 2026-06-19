@@ -3,16 +3,20 @@ package com.gentlemanstore.feature.support.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
+import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.support.data.dto.*
 import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 
 data class SupportUiState(
     val isLoading: Boolean = false,
@@ -45,7 +49,8 @@ data class ChatUiState(
 
 @HiltViewModel
 class SupportViewModel @Inject constructor(
-    private val supportRepository: SupportRepository
+    private val supportRepository: SupportRepository,
+    private val tokenDataStore: TokenDataStore
 ) : ViewModel() {
 
     private val _supportUiState = MutableStateFlow(SupportUiState())
@@ -58,6 +63,9 @@ class SupportViewModel @Inject constructor(
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
     private var pollingJob: Job? = null
+
+    val currentRole = tokenDataStore.userRole
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "CUSTOMER")
 
     init {
         loadMyTickets()
@@ -232,12 +240,15 @@ class SupportViewModel @Inject constructor(
         if (message.isBlank()) return
 
         viewModelScope.launch {
+            val role = tokenDataStore.userRole.first() ?: "CUSTOMER"
+            val sender = if (role == "CUSTOMER") "USER" else "EMPLOYEE"
+
             _chatUiState.value = _chatUiState.value.copy(
                 isSending = true,
                 currentMessage = ""
             )
 
-            when (val result = supportRepository.sendMessage(sessionId, message)) {
+            when (val result = supportRepository.sendMessage(sessionId, message, sender)) {
                 is Resource.Success -> {
                     _chatUiState.value = _chatUiState.value.copy(
                         isSending = false,

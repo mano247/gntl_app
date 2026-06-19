@@ -19,13 +19,16 @@ import com.gentlemanstore.core.ui.BottomNavItem
 import com.gentlemanstore.core.ui.PlaceholderScreen
 import com.gentlemanstore.core.util.Constants
 import com.gentlemanstore.data.datastore.TokenDataStore
+import com.gentlemanstore.feature.admin.presentation.AdminHomeScreen
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
 import com.gentlemanstore.feature.cart.presentation.CartScreen
 import com.gentlemanstore.feature.cart.presentation.CartViewModel
 import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
+import com.gentlemanstore.feature.employee.presentation.EmployeeHomeScreen
 import com.gentlemanstore.feature.loyalty.presentation.LoyaltyScreen
+import com.gentlemanstore.feature.manager.presentation.ManagerHomeScreen
 import com.gentlemanstore.feature.notification.presentation.NotificationsScreen
 import com.gentlemanstore.feature.order.presentation.MyOrdersScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
@@ -256,13 +259,17 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("home_employee") {
-                            PlaceholderScreen("EMPLOYEE HOME")
+                            EmployeeHomeScreen(
+                                onOpenChat = { ticketId, sessionId ->
+                                    navController.navigate("chat/$ticketId/$sessionId")
+                                }
+                            )
                         }
                         composable("home_manager") {
-                            PlaceholderScreen("MANAGER HOME")
+                            ManagerHomeScreen()
                         }
                         composable("home_admin") {
-                            PlaceholderScreen("ADMIN HOME")
+                            AdminHomeScreen()
                         }
                     }
                 }
