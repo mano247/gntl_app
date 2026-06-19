@@ -47,6 +47,15 @@ public class SupportService {
                 .build();
 
         supportTicketRepository.save(ticket);
+
+        ChatMessage welcomeMessage = ChatMessage.builder()
+                .content("Thank you for reaching out! Your support request has been received and a ticket has been created. One of our team members will get back to you here in the chat shortly.")
+                .sender(MessageSender.BOT)
+                .chatSession(chatSession)
+                .deleted(false)
+                .build();
+        chatMessageRepository.save(welcomeMessage);
+
         return mapper.toDTO(ticket);
     }
 
