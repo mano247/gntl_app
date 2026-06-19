@@ -29,7 +29,8 @@ class EmployeeRepository @Inject constructor(
 
     suspend fun updateOrderStatus(id: Long, status: String): Resource<OrderResponse> {
         return try {
-            val response = employeeApiService.updateOrderStatus(id, status)
+            val body = status.toRequestBody("text/plain".toMediaType())
+            val response = employeeApiService.updateOrderStatus(id, body)
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Failed to update order status")

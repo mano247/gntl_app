@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -43,6 +44,7 @@ import com.gentlemanstore.feature.support.presentation.SupportScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -262,14 +264,40 @@ class MainActivity : ComponentActivity() {
                             EmployeeHomeScreen(
                                 onOpenChat = { ticketId, sessionId ->
                                     navController.navigate("chat/$ticketId/$sessionId")
+                                },
+                                onLogout = {
+                                    lifecycleScope.launch {
+                                        tokenDataStore.clearAll()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
                                 }
                             )
                         }
                         composable("home_manager") {
-                            ManagerHomeScreen()
+                            ManagerHomeScreen(
+                                onLogout = {
+                                    lifecycleScope.launch {
+                                        tokenDataStore.clearAll()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
                         }
                         composable("home_admin") {
-                            AdminHomeScreen()
+                            AdminHomeScreen(
+                                onLogout = {
+                                    lifecycleScope.launch {
+                                        tokenDataStore.clearAll()
+                                        navController.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
                 }

@@ -24,4 +24,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT MONTH(o.createdAt) as month, YEAR(o.createdAt) as year, SUM(o.totalPrice) as revenue FROM Order o WHERE o.deleted = false GROUP BY YEAR(o.createdAt), MONTH(o.createdAt) ORDER BY YEAR(o.createdAt), MONTH(o.createdAt)")
     List<Object[]> getMonthlyRevenue();
+
+    Page<Order> findAllByDeletedFalse(Pageable pageable);
 }

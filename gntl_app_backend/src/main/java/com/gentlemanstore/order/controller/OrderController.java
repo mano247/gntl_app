@@ -38,6 +38,13 @@ public class OrderController {
                 service.getUserOrdersPaged(currentUser.getId(), pageable)));
     }
 
+    @GetMapping("/paged")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'MANAGER')")
+    public ResponseEntity<ApiResponse<Page<OrderDTO>>> getAllOrdersPaged(Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully",
+                service.getAllOrdersPaged(pageable)));
+    }
+
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(@PathVariable Long id,@RequestBody  String status){

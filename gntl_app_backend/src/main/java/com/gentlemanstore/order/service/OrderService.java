@@ -15,6 +15,7 @@ import com.gentlemanstore.product.repository.ProductRepository;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -85,12 +87,16 @@ public class OrderService {
 
         repo.save(order);
 
-        emailService.sendOrderConfirmationEmail(
-                order.getUser().getEmail(),
-                order.getUser().getFirstName(),
-                order.getId(),
-                order.getTotalPrice()
-        );
+        try {
+            emailService.sendOrderConfirmationEmail(
+                    order.getUser().getEmail(),
+                    order.getUser().getFirstName(),
+                    order.getId(),
+                    order.getTotalPrice()
+            );
+        } catch (Exception e) {
+            log.warn("Order confirmation email sending failed: {}", e.getMessage());
+        }
 
         return mapper.toDTO(order);
     }
@@ -100,16 +106,20 @@ public class OrderService {
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-        order.setStatus(OrderStatus.valueOf(status));
+        order.setStatus(OrderStatus.valueOf(status.trim().replace("\"", "")));
 
         repo.save(order);
 
-        emailService.sendOrderStatusEmail(
-                order.getUser().getEmail(),
-                order.getUser().getFirstName(),
-                order.getId(),
-                status
-        );
+        try {
+            emailService.sendOrderStatusEmail(
+                    order.getUser().getEmail(),
+                    order.getUser().getFirstName(),
+                    order.getId(),
+                    status
+            );
+        } catch (Exception e) {
+            log.warn("Order status email sending failed: {}", e.getMessage());
+        }
 
         return mapper.toDTO(order);
     }
@@ -131,5 +141,11 @@ public class OrderService {
 
         order.setDeleted(true);
         repo.save(order);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getAllOrdersPaged(Pageable pageable) {
+        return repo.findAllByDeletedFalse(pageable)
+                .map(mapper::toDTO);
     }
 }

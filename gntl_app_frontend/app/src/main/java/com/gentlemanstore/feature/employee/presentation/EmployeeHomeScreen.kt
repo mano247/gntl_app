@@ -1,7 +1,6 @@
 package com.gentlemanstore.feature.employee.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,6 +25,7 @@ import com.gentlemanstore.ui.theme.Gold500
 @Composable
 fun EmployeeHomeScreen(
     onOpenChat: (Long, Long) -> Unit,
+    onLogout: () -> Unit,
     viewModel: EmployeeViewModel = hiltViewModel()
 ) {
     val ordersState by viewModel.ordersUiState.collectAsStateWithLifecycle()
@@ -40,17 +39,26 @@ fun EmployeeHomeScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(modifier = Modifier.width(48.dp))
             Text(
                 text = "EMPLOYEE PANEL",
                 style = MaterialTheme.typography.titleLarge,
                 color = Gold500
             )
+            IconButton(onClick = onLogout) {
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Logout",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         TabRow(

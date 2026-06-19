@@ -22,7 +22,14 @@ data class ManagerUiState(
     val error: String? = null,
     val isCreatingDiscount: Boolean = false,
     val isCreatingPromotion: Boolean = false,
-    val deletingDiscountId: Long? = null
+    val deletingDiscountId: Long? = null,
+    // Loyalty
+    val loyaltyUserId: String = "",
+    val loyaltyAccount: LoyaltyAccountResponse? = null,
+    val isLoadingLoyalty: Boolean = false,
+    val isAddingPoints: Boolean = false,
+    val loyaltyError: String? = null,
+    val loyaltySuccess: String? = null
 )
 
 @HiltViewModel
@@ -186,5 +193,60 @@ class ManagerViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun onLoyaltyUserIdChange(id: String) {
+        _uiState.value = _uiState.value.copy(loyaltyUserId = id, loyaltyAccount = null, loyaltyError = null)
+    }
+
+    fun loadUserLoyaltyAccount() {
+        val userId = _uiState.value.loyaltyUserId.toLongOrNull() ?: run {
+            _uiState.value = _uiState.value.copy(loyaltyError = "Invalid user ID")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingLoyalty = true, loyaltyError = null)
+            when (val result = managerRepository.getUserLoyaltyAccount(userId)) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingLoyalty = false,
+                        loyaltyAccount = result.data
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingLoyalty = false,
+                        loyaltyError = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun addPointsToUser(points: Int, description: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isAddingPoints = true, loyaltyError = null, loyaltySuccess = null)
+            when (val result = managerRepository.addPoints(points, description)) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingPoints = false,
+                        loyaltyAccount = result.data,
+                        loyaltySuccess = "Points added successfully!"
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingPoints = false,
+                        loyaltyError = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun clearLoyaltyMessages() {
+        _uiState.value = _uiState.value.copy(loyaltyError = null, loyaltySuccess = null)
     }
 }

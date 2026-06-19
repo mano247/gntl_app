@@ -8,10 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,28 +26,38 @@ import java.math.BigDecimal
 
 @Composable
 fun ManagerHomeScreen(
+    onLogout: () -> Unit,
     viewModel: ManagerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Analytics", "Discounts", "Promotions")
+    val tabs = listOf("Analytics", "Discounts", "Promotions", "Loyalty")
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(modifier = Modifier.width(48.dp))
             Text(
                 text = "MANAGER PANEL",
                 style = MaterialTheme.typography.titleLarge,
                 color = Gold500
             )
+            IconButton(onClick = onLogout) {
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Logout",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         TabRow(
@@ -87,6 +99,12 @@ fun ManagerHomeScreen(
                 onCreate = { name, desc, from, to, discountId ->
                     viewModel.createPromotion(name, desc, from, to, discountId)
                 }
+            )
+            3 -> LoyaltyTab(
+                uiState = uiState,
+                onUserIdChange = { viewModel.onLoyaltyUserIdChange(it) },
+                onLoadAccount = { viewModel.loadUserLoyaltyAccount() },
+                onAddPoints = { points, desc -> viewModel.addPointsToUser(points, desc) }
             )
         }
     }
@@ -178,8 +196,6 @@ private fun DiscountsTab(
     var value by remember { mutableStateOf("") }
     var validFrom by remember { mutableStateOf("") }
     var validTo by remember { mutableStateOf("") }
-
-    // Scope: GLOBAL, CATEGORY
     var selectedScope by remember { mutableStateOf("GLOBAL") }
     var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
     var showCategoryMenu by remember { mutableStateOf(false) }
@@ -220,7 +236,6 @@ private fun DiscountsTab(
                             singleLine = true
                         )
 
-                        // Discount type dropdown
                         Box {
                             OutlinedButton(
                                 onClick = { showTypeMenu = true },
@@ -262,7 +277,6 @@ private fun DiscountsTab(
                             singleLine = true
                         )
 
-                        // Scope selection
                         Text(
                             text = "Applies to:",
                             style = MaterialTheme.typography.labelMedium,
@@ -285,7 +299,6 @@ private fun DiscountsTab(
                             }
                         }
 
-                        // Category dropdown — samo ako je CATEGORY scope
                         if (selectedScope == "CATEGORY") {
                             Box {
                                 OutlinedButton(
@@ -353,7 +366,6 @@ private fun DiscountsTab(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        // Prikaz scope-a
                         val scopeText = when {
                             discount.categoryName != null -> "Category: ${discount.categoryName}"
                             discount.productName != null -> "Product: ${discount.productName}"
@@ -462,6 +474,156 @@ private fun PromotionsTab(
                     Text(text = promotion.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     promotion.discountCode?.let {
                         Text(text = "Code: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoyaltyTab(
+    uiState: ManagerUiState,
+    onUserIdChange: (String) -> Unit,
+    onLoadAccount: () -> Unit,
+    onAddPoints: (Int, String) -> Unit
+) {
+    var points by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(
+                text = "SEARCH USER",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = uiState.loyaltyUserId,
+                    onValueChange = onUserIdChange,
+                    label = { Text("User ID") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Button(
+                    onClick = onLoadAccount,
+                    enabled = uiState.loyaltyUserId.isNotBlank() && !uiState.isLoadingLoyalty,
+                    colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (uiState.isLoadingLoyalty) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Search", color = MaterialTheme.colorScheme.background)
+                    }
+                }
+            }
+        }
+
+        uiState.loyaltyError?.let {
+            item {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        uiState.loyaltySuccess?.let {
+            item {
+                Text(text = it, color = Color(0xFF4CAF50), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        uiState.loyaltyAccount?.let { account ->
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "LOYALTY ACCOUNT",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Tier", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(account.tierName, style = MaterialTheme.typography.bodyMedium, color = Gold500, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Points", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${account.points} pts", style = MaterialTheme.typography.bodyMedium, color = Gold500, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Discount", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${account.discountPercentage}%", style = MaterialTheme.typography.bodyMedium, color = Gold500, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "ADD POINTS",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = points,
+                            onValueChange = { points = it },
+                            label = { Text("Points") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Description") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Button(
+                            onClick = {
+                                val p = points.toIntOrNull() ?: return@Button
+                                onAddPoints(p, description)
+                                points = ""
+                                description = ""
+                            },
+                            enabled = !uiState.isAddingPoints && points.isNotBlank() && description.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (uiState.isAddingPoints) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("Add Points", color = MaterialTheme.colorScheme.background)
+                            }
+                        }
                     }
                 }
             }

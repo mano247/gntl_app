@@ -9,17 +9,16 @@ import retrofit2.http.*
 
 interface EmployeeApiService {
 
-    @GET("orders")
+    @GET("orders/paged")
     suspend fun getAllOrders(
         @Query("page") page: Int,
         @Query("size") size: Int = 20
     ): ApiResponse<PagedOrderResponse>
 
-    @Headers("Content-Type: text/plain")
     @PUT("orders/{id}/status")
     suspend fun updateOrderStatus(
         @Path("id") id: Long,
-        @Body status: String
+        @Body status: okhttp3.RequestBody
     ): ApiResponse<OrderResponse>
 
     @GET("support/tickets")

@@ -65,4 +65,22 @@ class ManagerRepository @Inject constructor(
             Resource.Error(e.message ?: "Failed to create promotion")
         }
     }
+
+    suspend fun getUserLoyaltyAccount(userId: Long): Resource<LoyaltyAccountResponse> {
+        return try {
+            val response = managerApiService.getUserLoyaltyAccount(userId)
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to load loyalty account")
+        }
+    }
+
+    suspend fun addPoints(points: Int, description: String): Resource<LoyaltyAccountResponse> {
+        return try {
+            val response = managerApiService.addPoints(AddPointsRequest(points, description))
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Failed to add points")
+        }
+    }
 }
