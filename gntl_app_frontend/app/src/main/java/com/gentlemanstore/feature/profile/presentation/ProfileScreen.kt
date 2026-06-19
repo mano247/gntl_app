@@ -26,9 +26,10 @@ fun ProfileScreen(
     onNavigateToLoyalty: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToSupport: () -> Unit,
     onLoggedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
-) {
+){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.logoutComplete) {
@@ -122,6 +123,11 @@ fun ProfileScreen(
                             icon = Icons.Default.Notifications,
                             label = "Notifications",
                             onClick = onNavigateToNotifications
+                        )
+                        ProfileMenuItem(
+                            icon = Icons.Default.Support,
+                            label = "Support",
+                            onClick = onNavigateToSupport
                         )
                         ProfileMenuItem(
                             icon = Icons.Default.Settings,

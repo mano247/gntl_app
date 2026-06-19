@@ -15,6 +15,8 @@ import com.gentlemanstore.feature.product.data.ProductApiService
 import com.gentlemanstore.feature.product.domain.ProductRepository
 import com.gentlemanstore.feature.profile.data.UserApiService
 import com.gentlemanstore.feature.profile.domain.UserRepository
+import com.gentlemanstore.feature.support.data.SupportApiService
+import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -114,5 +116,17 @@ object AppModule {
     @Singleton
     fun provideNotificationRepository(notificationApiService: NotificationApiService): NotificationRepository {
         return NotificationRepository(notificationApiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportApiService(retrofit: Retrofit): SupportApiService {
+        return retrofit.create(SupportApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupportRepository(supportApiService: SupportApiService): SupportRepository {
+        return SupportRepository(supportApiService)
     }
 }

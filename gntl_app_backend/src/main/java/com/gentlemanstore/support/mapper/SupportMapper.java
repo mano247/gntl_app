@@ -15,6 +15,7 @@ import org.mapstruct.Mapping;
 public interface SupportMapper {
     @Mapping(source = "user.email", target = "userEmail")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "chatSession.id", target = "sessionId")
     SupportTicketDTO toDTO(SupportTicket ticket);
 
     @Mapping(source = "sender", target = "sender")

@@ -15,4 +15,5 @@ public class SupportTicketDTO {
     private String status;
     private LocalDateTime createdAt;
     private String userEmail;
+    private Long sessionId;
 }

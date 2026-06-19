@@ -34,6 +34,9 @@ import com.gentlemanstore.feature.product.presentation.ProductDetailScreen
 import com.gentlemanstore.feature.product.presentation.ProductListScreen
 import com.gentlemanstore.feature.profile.presentation.ProfileScreen
 import com.gentlemanstore.feature.settings.presentation.SettingsScreen
+import com.gentlemanstore.feature.support.presentation.BotFlowScreen
+import com.gentlemanstore.feature.support.presentation.ChatScreen
+import com.gentlemanstore.feature.support.presentation.SupportScreen
 import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -185,11 +188,40 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToLoyalty = { navController.navigate("loyalty") },
                                 onNavigateToSettings = { navController.navigate("settings") },
                                 onNavigateToNotifications = { navController.navigate("notifications") },
+                                onNavigateToSupport = { navController.navigate("support") },
                                 onLoggedOut = {
                                     navController.navigate("login") {
                                         popUpTo(0) { inclusive = true }
                                     }
                                 }
+                            )
+                        }
+                        composable("support") {
+                            SupportScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onStartBotFlow = { navController.navigate("bot_flow") },
+                                onOpenChat = { ticketId, sessionId ->
+                                    navController.navigate("chat/$ticketId/$sessionId")
+                                }
+                            )
+                        }
+                        composable("bot_flow") {
+                            BotFlowScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onFlowComplete = { ticketId, sessionId ->
+                                    navController.navigate("chat/$ticketId/$sessionId") {
+                                        popUpTo("support")
+                                    }
+                                }
+                            )
+                        }
+                        composable("chat/{ticketId}/{sessionId}") { backStackEntry ->
+                            val ticketId = backStackEntry.arguments?.getString("ticketId")?.toLongOrNull() ?: return@composable
+                            val sessionId = backStackEntry.arguments?.getString("sessionId")?.toLongOrNull() ?: return@composable
+                            ChatScreen(
+                                ticketId = ticketId,
+                                sessionId = sessionId,
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("loyalty") {
