@@ -22,6 +22,7 @@ splashScreen = "1.0.1"
 ksp = "2.0.21-1.0.28"
 material-icons-extended = "1.7.8"
 pager = "1.7.8"
+pullrefresh = "1.3.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -68,6 +69,8 @@ splash-screen = { group = "androidx.core", name = "core-splashscreen", version.r
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "material-icons-extended" }
 
 pager = { group = "androidx.compose.foundation", name = "foundation", version.ref = "pager" }
+
+androidx-material-pullrefresh = { group = "androidx.compose.material", name = "material", version.ref = "pullrefresh" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

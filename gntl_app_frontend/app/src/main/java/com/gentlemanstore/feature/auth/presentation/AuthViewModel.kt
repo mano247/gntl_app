@@ -26,20 +26,20 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun login(email: String, password: String){
+    fun login(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
 
-            when(val result = authRepository.login(email, password)) {
+            when (val result = authRepository.login(email, password)) {
                 is Resource.Success -> {
                     _uiState.value = AuthUiState(
                         isSuccess = true,
-                        userRole =  result.data.role
+                        userRole = result.data.role
                     )
                 }
                 is Resource.Error -> {
                     _uiState.value = AuthUiState(
-                        error = result.message
+                        error = mapAuthError(result.message)
                     )
                 }
                 is Resource.Loading -> Unit
@@ -53,7 +53,7 @@ class AuthViewModel @Inject constructor(
         email: String,
         password: String,
         phone: String? = null
-    ){
+    ) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
 
@@ -63,16 +63,30 @@ class AuthViewModel @Inject constructor(
                 is Resource.Success -> {
                     _uiState.value = AuthUiState(
                         isSuccess = true,
-                        userRole =  result.data.role
+                        userRole = result.data.role
                     )
                 }
                 is Resource.Error -> {
                     _uiState.value = AuthUiState(
-                        error = result.message
+                        error = mapAuthError(result.message)
                     )
                 }
                 is Resource.Loading -> Unit
             }
+        }
+    }
+
+    private fun mapAuthError(message: String?): String {
+        return when {
+            message == null -> "Something went wrong. Please try again."
+            message.contains("401") || message.contains("Unauthorized") || message.contains("Bad credentials") -> "Invalid email or password."
+            message.contains("403") || message.contains("Forbidden") -> "Access denied."
+            message.contains("404") -> "Account not found."
+            message.contains("409") || message.contains("already exists") || message.contains("already taken") -> "An account with this email already exists."
+            message.contains("400") || message.contains("Bad Request") -> "Invalid input. Please check your details."
+            message.contains("500") || message.contains("Internal Server") -> "Server error. Please try again later."
+            message.contains("timeout") || message.contains("Unable to resolve") || message.contains("failed to connect") -> "No internet connection. Please check your network."
+            else -> "Something went wrong. Please try again."
         }
     }
 

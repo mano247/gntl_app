@@ -102,4 +102,5 @@ dependencies {
 
     implementation(libs.material.icons.extended)
     implementation(libs.pager)
+    implementation(libs.androidx.material.pullrefresh)
 }

@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.product.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.product.data.ProductApiService
 import com.gentlemanstore.feature.product.data.dto.CategoryResponse
@@ -23,7 +24,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.getProducts(page, size, category, search)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load products")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -32,7 +33,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.getProductById(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load product")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -41,7 +42,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.getCategories()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load categories")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

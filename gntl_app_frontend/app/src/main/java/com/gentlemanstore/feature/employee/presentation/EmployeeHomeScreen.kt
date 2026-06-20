@@ -5,8 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,19 +21,28 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
+import com.gentlemanstore.feature.order.presentation.getStatusColor
 import com.gentlemanstore.feature.support.data.dto.SupportTicketResponse
 import com.gentlemanstore.feature.support.presentation.getTicketStatusColor
-import com.gentlemanstore.feature.order.presentation.getStatusColor
 import com.gentlemanstore.ui.theme.Gold500
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EmployeeHomeScreen(
     onOpenChat: (Long, Long) -> Unit,
     onLogout: () -> Unit,
+    onShowError: (String) -> Unit = {},
     viewModel: EmployeeViewModel = hiltViewModel()
 ) {
     val ordersState by viewModel.ordersUiState.collectAsStateWithLifecycle()
     val ticketsState by viewModel.ticketsUiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(ordersState.error) {
+        ordersState.error?.let { onShowError(it) }
+    }
+    LaunchedEffect(ticketsState.error) {
+        ticketsState.error?.let { onShowError(it) }
+    }
 
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Orders", "Support Tickets")
@@ -84,52 +97,128 @@ fun EmployeeHomeScreen(
         when (selectedTab) {
             0 -> EmployeeOrdersTab(
                 state = ordersState,
-                onUpdateStatus = { orderId, status ->
-                    viewModel.updateOrderStatus(orderId, status)
-                }
+                onUpdateStatus = { orderId, status -> viewModel.updateOrderStatus(orderId, status) },
+                onRefresh = { viewModel.loadOrders() }
             )
             1 -> EmployeeTicketsTab(
                 state = ticketsState,
-                onUpdateStatus = { ticketId, status ->
-                    viewModel.updateTicketStatus(ticketId, status)
-                },
-                onOpenChat = onOpenChat
+                onUpdateStatus = { ticketId, status -> viewModel.updateTicketStatus(ticketId, status) },
+                onOpenChat = onOpenChat,
+                onRefresh = { viewModel.loadTickets() }
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun EmployeeOrdersTab(
     state: EmployeeOrdersUiState,
-    onUpdateStatus: (Long, String) -> Unit
+    onUpdateStatus: (Long, String) -> Unit,
+    onRefresh: () -> Unit
 ) {
-    when {
-        state.isLoading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Gold500)
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = state.isLoading,
+        onRefresh = onRefresh
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(pullRefreshState)
+    ) {
+        when {
+            state.isLoading && state.orders.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Gold500)
+                }
             }
-        }
-        state.orders.isEmpty() -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No orders found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            state.orders.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No orders found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-        }
-        else -> {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(state.orders, key = { it.id }) { order ->
-                    EmployeeOrderCard(
-                        order = order,
-                        isUpdating = state.updatingOrderId == order.id,
-                        onUpdateStatus = onUpdateStatus
-                    )
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.orders, key = { it.id }) { order ->
+                        EmployeeOrderCard(
+                            order = order,
+                            isUpdating = state.updatingOrderId == order.id,
+                            onUpdateStatus = onUpdateStatus
+                        )
+                    }
                 }
             }
         }
+
+        PullRefreshIndicator(
+            refreshing = state.isLoading,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            contentColor = Gold500
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun EmployeeTicketsTab(
+    state: EmployeeTicketsUiState,
+    onUpdateStatus: (Long, String) -> Unit,
+    onOpenChat: (Long, Long) -> Unit,
+    onRefresh: () -> Unit
+) {
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = state.isLoading,
+        onRefresh = onRefresh
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(pullRefreshState)
+    ) {
+        when {
+            state.isLoading && state.tickets.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Gold500)
+                }
+            }
+            state.tickets.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No tickets found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.tickets, key = { it.id }) { ticket ->
+                        EmployeeTicketCard(
+                            ticket = ticket,
+                            isUpdating = state.updatingTicketId == ticket.id,
+                            onUpdateStatus = onUpdateStatus,
+                            onOpenChat = onOpenChat
+                        )
+                    }
+                }
+            }
+        }
+
+        PullRefreshIndicator(
+            refreshing = state.isLoading,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            contentColor = Gold500
+        )
     }
 }
 
@@ -197,55 +286,13 @@ private fun EmployeeOrderCard(
                     }
                 }
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     orderStatuses.forEach { status ->
                         DropdownMenuItem(
                             text = { Text(status) },
-                            onClick = {
-                                onUpdateStatus(order.id, status)
-                                showMenu = false
-                            }
+                            onClick = { onUpdateStatus(order.id, status); showMenu = false }
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmployeeTicketsTab(
-    state: EmployeeTicketsUiState,
-    onUpdateStatus: (Long, String) -> Unit,
-    onOpenChat: (Long, Long) -> Unit
-) {
-    when {
-        state.isLoading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Gold500)
-            }
-        }
-        state.tickets.isEmpty() -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No tickets found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        else -> {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(state.tickets, key = { it.id }) { ticket ->
-                    EmployeeTicketCard(
-                        ticket = ticket,
-                        isUpdating = state.updatingTicketId == ticket.id,
-                        onUpdateStatus = onUpdateStatus,
-                        onOpenChat = onOpenChat
-                    )
                 }
             }
         }
@@ -294,16 +341,8 @@ private fun EmployeeTicketCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = ticket.subject,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = ticket.userEmail,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = ticket.subject, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = ticket.userEmail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -323,28 +362,18 @@ private fun EmployeeTicketCard(
                         }
                     }
 
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         ticketStatuses.forEach { status ->
                             DropdownMenuItem(
                                 text = { Text(status) },
-                                onClick = {
-                                    onUpdateStatus(ticket.id, status)
-                                    showMenu = false
-                                }
+                                onClick = { onUpdateStatus(ticket.id, status); showMenu = false }
                             )
                         }
                     }
                 }
 
                 Button(
-                    onClick = {
-                        ticket.sessionId?.let { sessionId ->
-                            onOpenChat(ticket.id, sessionId)
-                        }
-                    },
+                    onClick = { ticket.sessionId?.let { sessionId -> onOpenChat(ticket.id, sessionId) } },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                     shape = RoundedCornerShape(8.dp)

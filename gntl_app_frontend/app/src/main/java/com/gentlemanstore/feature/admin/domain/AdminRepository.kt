@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.admin.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.admin.data.AdminApiService
 import com.gentlemanstore.feature.admin.data.dto.*
@@ -17,7 +18,7 @@ class AdminRepository @Inject constructor(
             val response = adminApiService.getAllUsers(page)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load users")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -26,7 +27,7 @@ class AdminRepository @Inject constructor(
             val response = adminApiService.changeUserRole(id, role)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to change user role")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -35,7 +36,7 @@ class AdminRepository @Inject constructor(
             val response = adminApiService.deleteUser(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to delete user")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

@@ -23,9 +23,17 @@ import com.gentlemanstore.ui.theme.Gold500
 @Composable
 fun AdminHomeScreen(
     onLogout: () -> Unit,
+    onShowError: (String) -> Unit = {},
     viewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            onShowError(it)
+            viewModel.clearError()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -67,11 +75,6 @@ fun AdminHomeScreen(
             uiState.isLoading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Gold500)
-                }
-            }
-            uiState.error != null -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = uiState.error!!, color = MaterialTheme.colorScheme.error)
                 }
             }
             uiState.users.isEmpty() -> {

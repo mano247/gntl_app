@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -17,7 +19,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.gentlemanstore.core.ui.BottomNavBar
 import com.gentlemanstore.core.ui.BottomNavItem
-import com.gentlemanstore.core.ui.PlaceholderScreen
 import com.gentlemanstore.core.util.Constants
 import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.admin.presentation.AdminHomeScreen
@@ -61,8 +62,9 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
 
-                // JEDNA instanca CartViewModel za celu aplikaciju
                 val cartViewModel: CartViewModel = hiltViewModel()
 
                 val bottomNavRoutes = listOf(
@@ -74,7 +76,14 @@ class MainActivity : ComponentActivity() {
 
                 val showBottomBar = currentRoute in bottomNavRoutes
 
+                val showSnackbar: (String) -> Unit = { message ->
+                    scope.launch {
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+
                 Scaffold(
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
                         if (showBottomBar) {
                             BottomNavBar(navController = navController)
@@ -138,7 +147,6 @@ class MainActivity : ComponentActivity() {
                         composable("product_detail/{productId}") { backStackEntry ->
                             val productId = backStackEntry.arguments?.getString("productId")
                                 ?.toLongOrNull() ?: return@composable
-
                             ProductDetailScreen(
                                 productId = productId,
                                 onNavigateBack = { navController.popBackStack() },
@@ -157,10 +165,11 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("cart") {
                             CartScreen(
-                                viewModel = cartViewModel,
                                 onNavigateToCheckout = {
                                     navController.navigate("checkout")
-                                }
+                                },
+                                onShowError = showSnackbar,
+                                viewModel = cartViewModel
                             )
                         }
                         composable("checkout") {
@@ -171,7 +180,8 @@ class MainActivity : ComponentActivity() {
                                         popUpTo("home_customer")
                                     }
                                 },
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onShowError = showSnackbar
                             )
                         }
                         composable("order_confirmation") {
@@ -239,7 +249,8 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { navController.popBackStack() },
                                 onOrderClick = { orderId ->
                                     navController.navigate("order_detail/$orderId")
-                                }
+                                },
+                                onShowError = showSnackbar
                             )
                         }
                         composable("order_detail/{orderId}") { backStackEntry ->
@@ -257,7 +268,8 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("notifications") {
                             NotificationsScreen(
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onShowError = showSnackbar
                             )
                         }
                         composable("home_employee") {
@@ -272,7 +284,8 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0) { inclusive = true }
                                         }
                                     }
-                                }
+                                },
+                                onShowError = showSnackbar
                             )
                         }
                         composable("home_manager") {
@@ -284,7 +297,8 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0) { inclusive = true }
                                         }
                                     }
-                                }
+                                },
+                                onShowError = showSnackbar
                             )
                         }
                         composable("home_admin") {
@@ -296,7 +310,8 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0) { inclusive = true }
                                         }
                                     }
-                                }
+                                },
+                                onShowError = showSnackbar
                             )
                         }
                     }

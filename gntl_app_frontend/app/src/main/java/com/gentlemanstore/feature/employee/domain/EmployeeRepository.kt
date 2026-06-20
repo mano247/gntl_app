@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.employee.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.employee.data.EmployeeApiService
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
@@ -23,7 +24,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.getAllOrders(page)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load orders")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -33,7 +34,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.updateOrderStatus(id, body)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to update order status")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -42,7 +43,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.getAllTickets(page)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load tickets")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -52,7 +53,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.updateTicketStatus(id, body)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to update ticket status")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

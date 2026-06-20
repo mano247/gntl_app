@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.order.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.order.data.OrderApiService
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
@@ -17,7 +18,7 @@ class OrderRepository @Inject constructor(
             val response = orderApiService.getMyOrders(page, size)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load orders")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -26,7 +27,7 @@ class OrderRepository @Inject constructor(
             val response = orderApiService.getOrderById(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load order")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -35,7 +36,7 @@ class OrderRepository @Inject constructor(
             val response = orderApiService.cancelOrder(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to cancel order")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

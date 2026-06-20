@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.address.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.address.data.AddressApiService
 import com.gentlemanstore.feature.address.data.dto.AddressRequest
@@ -18,7 +19,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.getAddresses()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load addresses")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -27,7 +28,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.createAddress(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to create address")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -36,7 +37,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.updateAddress(id, request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to update address")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -45,7 +46,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.deleteAddress(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to delete address")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

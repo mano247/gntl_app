@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.manager.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.manager.data.ManagerApiService
 import com.gentlemanstore.feature.manager.data.dto.*
@@ -17,7 +18,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getDashboard()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load dashboard")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -26,7 +27,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getAllDiscounts()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load discounts")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -35,7 +36,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.createDiscount(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to create discount")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -44,7 +45,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.deleteDiscount(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to delete discount")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -53,7 +54,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getActivePromotions()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load promotions")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -62,7 +63,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.createPromotion(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to create promotion")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -71,7 +72,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getUserLoyaltyAccount(userId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load loyalty account")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -80,7 +81,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.addPoints(AddPointsRequest(points, description))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to add points")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

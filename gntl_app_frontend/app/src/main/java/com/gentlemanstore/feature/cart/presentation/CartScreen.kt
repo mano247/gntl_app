@@ -26,11 +26,18 @@ import androidx.compose.ui.draw.clip
 @Composable
 fun CartScreen(
     onNavigateToCheckout: () -> Unit,
+    onShowError: (String) -> Unit = {},
     viewModel: CartViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currency = rememberCurrentCurrency()
 
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            onShowError(it)
+            viewModel.clearError()
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -60,17 +67,6 @@ fun CartScreen(
                     }
                 }
 
-                uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = uiState.error!!,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
 
                 uiState.cart == null || uiState.cart!!.items.isEmpty() -> {
                     Box(

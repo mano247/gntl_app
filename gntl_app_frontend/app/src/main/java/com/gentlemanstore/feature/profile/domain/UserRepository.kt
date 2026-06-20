@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.profile.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.profile.data.UserApiService
 import com.gentlemanstore.feature.profile.data.dto.UpdateUserRequest
@@ -18,7 +19,7 @@ class UserRepository @Inject constructor(
             val response = userApiService.getMyProfile()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load profile")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -27,7 +28,7 @@ class UserRepository @Inject constructor(
             val response = userApiService.updateMyProfile(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to update profile")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.notification.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.notification.data.NotificationApiService
 import com.gentlemanstore.feature.notification.data.dto.NotificationResponse
@@ -18,7 +19,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.getMyNotifications(page, size)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load notifications")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -27,7 +28,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.markAsRead(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to mark as read")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

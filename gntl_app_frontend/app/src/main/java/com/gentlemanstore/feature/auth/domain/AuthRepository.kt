@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.auth.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.auth.data.AuthApiService
@@ -27,7 +28,7 @@ class AuthRepository @Inject constructor(
             }
             resource
         } catch (e: Exception){
-            Resource.Error(e.message ?: "Unknown error occurred")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -48,7 +49,7 @@ class AuthRepository @Inject constructor(
             }
             resource
         }catch (e: Exception){
-            Resource.Error(e.message ?: "Unknown error occurred")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 

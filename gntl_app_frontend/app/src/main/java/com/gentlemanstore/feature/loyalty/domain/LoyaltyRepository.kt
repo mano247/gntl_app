@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.loyalty.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.loyalty.data.LoyaltyApiService
 import com.gentlemanstore.feature.loyalty.data.dto.LoyaltyAccountResponse
@@ -16,7 +17,7 @@ class LoyaltyRepository @Inject constructor(
             val response = loyaltyApiService.getLoyaltyAccount()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load loyalty account")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

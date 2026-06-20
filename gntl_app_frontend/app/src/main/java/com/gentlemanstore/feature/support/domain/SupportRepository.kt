@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.support.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.support.data.SupportApiService
 import com.gentlemanstore.feature.support.data.dto.*
@@ -17,7 +18,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.createTicket(CreateTicketRequest(subject))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to create ticket")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -26,7 +27,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getMyTickets(page, size)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load tickets")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -35,7 +36,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getTicket(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load ticket")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -44,7 +45,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getMessages(sessionId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load messages")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -56,7 +57,7 @@ class SupportRepository @Inject constructor(
             )
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to send message")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -65,7 +66,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getBotQuestions()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load bot questions")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -80,7 +81,7 @@ class SupportRepository @Inject constructor(
             )
             apiResponse.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to save bot response")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }

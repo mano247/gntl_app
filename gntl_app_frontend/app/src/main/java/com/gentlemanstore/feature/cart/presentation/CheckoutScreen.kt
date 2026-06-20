@@ -38,6 +38,7 @@ enum class PaymentMethod(val label: String) {
 fun CheckoutScreen(
     onOrderPlaced: (OrderResponse) -> Unit,
     onNavigateBack: () -> Unit,
+    onShowError: (String) -> Unit = {},
     cartViewModel: CartViewModel,
     addressViewModel: AddressViewModel = hiltViewModel()
 ) {
@@ -51,6 +52,13 @@ fun CheckoutScreen(
     LaunchedEffect(cartState.checkoutSuccess) {
         if (cartState.checkoutSuccess && cartState.completedOrder != null) {
             onOrderPlaced(cartState.completedOrder!!)
+        }
+    }
+
+    LaunchedEffect(cartState.error) {
+        cartState.error?.let {
+            onShowError(it)
+            cartViewModel.clearError()
         }
     }
 
@@ -172,16 +180,6 @@ fun CheckoutScreen(
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
-                }
-
-                if (cartState.error != null) {
-                    item {
-                        Text(
-                            text = cartState.error!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
                 }
             }
 

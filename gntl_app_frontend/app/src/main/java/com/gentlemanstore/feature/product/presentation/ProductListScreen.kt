@@ -4,8 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,17 +18,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.gentlemanstore.core.util.Constants
+import com.gentlemanstore.core.util.rememberCurrentCurrency
 import com.gentlemanstore.ui.theme.Gold500
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ProductListScreen(
     onProductClick: (Long) -> Unit,
     viewModel: ProductViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
-    val currency = com.gentlemanstore.core.util.rememberCurrentCurrency()
+    val currency = rememberCurrentCurrency()
     val gridState = rememberLazyGridState()
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = uiState.isLoading,
+        onRefresh = { viewModel.loadProducts(refresh = true) }
+    )
 
     LaunchedEffect(gridState.firstVisibleItemIndex, gridState.layoutInfo.totalItemsCount) {
         val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
@@ -119,77 +129,89 @@ fun ProductListScreen(
             }
         }
 
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Gold500)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+            when {
+                uiState.isLoading && uiState.products.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Gold500)
+                    }
                 }
-            }
 
-            uiState.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.error!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { viewModel.loadProducts(refresh = true) },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Gold500
+                uiState.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = uiState.error!!,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
                             )
-                        ) {
-                            Text("Try Again")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { viewModel.loadProducts(refresh = true) },
+                                colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+                            ) {
+                                Text("Try Again")
+                            }
                         }
                     }
                 }
-            }
 
-            else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    state = gridState,
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(
-                        items = uiState.products,
-                        key = { it.id }
-                    ) { product ->
-                        ProductCard(
-                            product = product,
-                            currency = currency,
-                            onClick = { onProductClick(product.id) }
-                        )
-                    }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = gridState,
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(
+                            items = uiState.products,
+                            key = { it.id }
+                        ) { product ->
+                            ProductCard(
+                                product = product,
+                                currency = currency,
+                                onClick = { onProductClick(product.id) }
+                            )
+                        }
 
-                    if (uiState.isLoadingMore) {
-                        item(span = { GridItemSpan(2) }) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    color = Gold500,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                        if (uiState.isLoadingMore) {
+                            item(span = { GridItemSpan(2) }) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = Gold500,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            PullRefreshIndicator(
+                refreshing = uiState.isLoading,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                contentColor = Gold500
+            )
         }
     }
 }

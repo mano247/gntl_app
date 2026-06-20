@@ -1,16 +1,16 @@
-package com.gentlemanstore.feature.support.presentation
+package com.gentlemanstore.feature.notification.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -19,37 +19,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.gentlemanstore.feature.support.data.dto.SupportTicketResponse
+import com.gentlemanstore.feature.notification.data.dto.NotificationResponse
 import com.gentlemanstore.ui.theme.Gold500
-
-fun getTicketStatusColor(status: String): Color {
-    return when (status.uppercase()) {
-        "OPEN" -> Color(0xFF4CAF50)
-        "IN_PROGRESS" -> Color(0xFF4A90D9)
-        "RESOLVED" -> Color(0xFF9E9E9E)
-        "CLOSED" -> Color(0xFFE05252)
-        else -> Color.Gray
-    }
-}
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun SupportScreen(
+fun NotificationsScreen(
     onNavigateBack: () -> Unit,
-    onStartBotFlow: () -> Unit,
-    onOpenChat: (Long, Long) -> Unit,
-    viewModel: SupportViewModel = hiltViewModel()
+    onShowError: (String) -> Unit = {},
+    viewModel: NotificationViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.supportUiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { onShowError(it) }
+    }
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isLoading,
-        onRefresh = { viewModel.loadMyTickets() }
+        onRefresh = { viewModel.loadNotifications() }
     )
 
     Box(
@@ -73,7 +66,7 @@ fun SupportScreen(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "SUPPORT",
+                    text = "NOTIFICATIONS",
                     style = MaterialTheme.typography.titleLarge,
                     color = Gold500
                 )
@@ -81,46 +74,36 @@ fun SupportScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
-            Button(
-                onClick = onStartBotFlow,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.background)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "New Support Request", color = MaterialTheme.colorScheme.background, style = MaterialTheme.typography.labelLarge)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .pullRefresh(pullRefreshState)
             ) {
                 when {
-                    uiState.isLoading && uiState.tickets.isEmpty() -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    uiState.isLoading && uiState.notifications.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             CircularProgressIndicator(color = Gold500)
                         }
                     }
 
-                    uiState.tickets.isEmpty() -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    uiState.notifications.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    imageVector = Icons.Default.Chat,
+                                    imageVector = Icons.Default.Notifications,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(64.dp)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "No support tickets yet",
+                                    text = "No notifications yet",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -129,28 +112,36 @@ fun SupportScreen(
                     }
 
                     else -> {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            Text(
-                                text = "MY TICKETS",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                items(uiState.tickets, key = { it.id }) { ticket ->
-                                    TicketCard(
-                                        ticket = ticket,
-                                        onClick = {
-                                            ticket.sessionId?.let { sessionId ->
-                                                onOpenChat(ticket.id, sessionId)
-                                            }
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(uiState.notifications, key = { it.id }) { notification ->
+                                NotificationCard(
+                                    notification = notification,
+                                    onClick = {
+                                        if (!notification.read) {
+                                            viewModel.markAsRead(notification.id)
                                         }
-                                    )
+                                    }
+                                )
+                            }
+
+                            if (uiState.isLoadingMore) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = Gold500,
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .padding(vertical = 8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -170,44 +161,46 @@ fun SupportScreen(
 }
 
 @Composable
-private fun TicketCard(
-    ticket: SupportTicketResponse,
+private fun NotificationCard(
+    notification: NotificationResponse,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(
+                if (notification.read) MaterialTheme.colorScheme.surface
+                else Gold500.copy(alpha = 0.08f)
+            )
             .clickable { onClick() }
             .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
+        if (!notification.read) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 6.dp, end = 10.dp)
+                    .size(8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Gold500)
+            )
+        } else {
+            Spacer(modifier = Modifier.width(18.dp))
+        }
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = ticket.subject,
+                text = notification.title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium
+                fontWeight = if (notification.read) FontWeight.Normal else FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Ticket #${ticket.id}",
+                text = notification.message,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f))
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = ticket.status,
-                style = MaterialTheme.typography.labelSmall,
-                color = getTicketStatusColor(ticket.status)
             )
         }
     }

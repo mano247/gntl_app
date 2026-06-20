@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.cart.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
@@ -19,7 +20,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.getCart()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to load cart")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -34,7 +35,7 @@ class CartRepository @Inject constructor(
             )
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to add to cart")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -43,7 +44,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.removeFromCart(cartItemId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to remove item")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
@@ -52,7 +53,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.checkout(CheckoutRequest(addressId))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Checkout failed")
+            Resource.Error(ErrorMapper.map(e.message))
         }
     }
 }
