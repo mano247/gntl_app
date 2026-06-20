@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailAndDeletedFalse(String email);
     boolean existsByEmail(String email);
+    Page<User> findAllByDeletedTrue(Pageable pageable);
     Page<User> findAllByDeletedFalse(Pageable pageable);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.deleted = false AND MONTH(u.createdAt) = MONTH(CURRENT_DATE) AND YEAR(u.createdAt) = YEAR(CURRENT_DATE)")

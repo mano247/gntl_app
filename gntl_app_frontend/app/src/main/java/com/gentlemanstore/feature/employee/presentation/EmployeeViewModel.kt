@@ -125,10 +125,15 @@ class EmployeeViewModel @Inject constructor(
             _ticketsUiState.value = _ticketsUiState.value.copy(updatingTicketId = ticketId)
             when (val result = employeeRepository.updateTicketStatus(ticketId, status)) {
                 is Resource.Success -> {
-                    _ticketsUiState.value = _ticketsUiState.value.copy(
-                        tickets = _ticketsUiState.value.tickets.map {
+                    val updatedTickets = if (status == "CLOSED") {
+                        _ticketsUiState.value.tickets.filter { it.id != ticketId }
+                    } else {
+                        _ticketsUiState.value.tickets.map {
                             if (it.id == ticketId) result.data else it
-                        },
+                        }
+                    }
+                    _ticketsUiState.value = _ticketsUiState.value.copy(
+                        tickets = updatedTickets,
                         updatingTicketId = null
                     )
                 }

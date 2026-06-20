@@ -7,7 +7,9 @@ data class UserListResponse(
     val lastName: String,
     val phoneNumber: String?,
     val createdAt: String,
-    val addresses: List<Any>?
+    val addresses: List<Any>?,
+    val role: String? = null,
+    val deleted: Boolean? = false
 )
 
 data class PagedUserResponse(

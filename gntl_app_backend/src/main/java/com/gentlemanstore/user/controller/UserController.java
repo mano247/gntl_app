@@ -24,9 +24,12 @@ public class UserController {
     private final UserService service;
 
     @GetMapping("/paged")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<Page<UserDTO>>> getAllUsersPaged(Pageable pageable){
-        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", service.getAllUsers(pageable)));
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<UserDTO>>> getAllUsers(
+            @RequestParam(required = false) Boolean deleted,
+            Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully",
+                service.getAllUsers(pageable, deleted)));
     }
 
     @GetMapping("/{id}")
@@ -78,4 +81,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDTO>> changeRole(@PathVariable Long id, @RequestBody String roleName) {
         return ResponseEntity.ok(ApiResponse.success("Role changed successfully", service.changeRole(id, roleName)));
     }
+
+    @PutMapping("/{id}/reactivate")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserDTO>> reactivateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("User reactivated successfully", service.reactivateUser(id)));
+    }
+
 }

@@ -16,10 +16,14 @@ data class AdminUiState(
     val isLoading: Boolean = false,
     val users: List<UserListResponse> = emptyList(),
     val error: String? = null,
+    val successMessage: String? = null,
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
     val updatingUserId: Long? = null,
-    val deletingUserId: Long? = null
+    val deletingUserId: Long? = null,
+    val searchQuery: String = "",
+    val selectedFilter: String = "ACTIVE",
+    val reactivatingUserId: Long? = null
 )
 
 @HiltViewModel
@@ -31,13 +35,13 @@ class AdminViewModel @Inject constructor(
     val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
     init {
-        loadUsers()
+        loadUsers(deleted = false)
     }
 
-    fun loadUsers() {
+    fun loadUsers(deleted: Boolean? = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            when (val result = adminRepository.getAllUsers(0)) {
+            when (val result = adminRepository.getAllUsers(0, deleted)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -58,6 +62,16 @@ class AdminViewModel @Inject constructor(
         }
     }
 
+    fun onFilterChange(filter: String) {
+        val deleted = when (filter) {
+            "ACTIVE" -> false
+            "DEACTIVATED" -> true
+            else -> null
+        }
+        _uiState.value = _uiState.value.copy(selectedFilter = filter)
+        loadUsers(deleted)
+    }
+
     fun changeUserRole(userId: Long, role: String) {
         if (_uiState.value.updatingUserId == userId) return
         viewModelScope.launch {
@@ -68,7 +82,8 @@ class AdminViewModel @Inject constructor(
                         users = _uiState.value.users.map {
                             if (it.id == userId) result.data else it
                         },
-                        updatingUserId = null
+                        updatingUserId = null,
+                        successMessage = "Role changed successfully!"
                     )
                 }
                 is Resource.Error -> {
@@ -90,7 +105,8 @@ class AdminViewModel @Inject constructor(
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         users = _uiState.value.users.filter { it.id != userId },
-                        deletingUserId = null
+                        deletingUserId = null,
+                        successMessage = "User deleted successfully!"
                     )
                 }
                 is Resource.Error -> {
@@ -102,6 +118,36 @@ class AdminViewModel @Inject constructor(
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    fun reactivateUser(userId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(reactivatingUserId = userId)
+            when (val result = adminRepository.reactivateUser(userId)) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        users = _uiState.value.users.filter { it.id != userId },
+                        reactivatingUserId = null,
+                        successMessage = "User reactivated successfully!"
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        error = result.message,
+                        reactivatingUserId = null
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun clearSuccess() {
+        _uiState.value = _uiState.value.copy(successMessage = null)
     }
 
     fun clearError() {

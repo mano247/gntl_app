@@ -49,6 +49,10 @@ fun CheckoutScreen(
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH) }
     var promoCode by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        cartViewModel.loadCart()
+    }
+
     LaunchedEffect(cartState.checkoutSuccess) {
         if (cartState.checkoutSuccess && cartState.completedOrder != null) {
             onOrderPlaced(cartState.completedOrder!!)

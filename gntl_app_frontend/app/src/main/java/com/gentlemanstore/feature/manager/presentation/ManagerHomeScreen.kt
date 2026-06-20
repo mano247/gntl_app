@@ -135,7 +135,7 @@ private fun AnalyticsTab(
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AnalyticsCard(modifier = Modifier.weight(1f), title = "New Users", value = analytics.newUsers.toString())
-                        AnalyticsCard(modifier = Modifier.weight(1f), title = "Avg Order", value = "${analytics.averageOrderValue} din")
+                        AnalyticsCard(modifier = Modifier.weight(1f), title = "Avg Order", value = "${"%.2f".format(analytics.averageOrderValue)} din")
                     }
                 }
                 item {

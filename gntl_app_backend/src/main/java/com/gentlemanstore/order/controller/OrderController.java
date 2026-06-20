@@ -46,9 +46,11 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(@PathVariable Long id,@RequestBody  String status){
-        return ResponseEntity.ok(ApiResponse.success("Order updated successfully", service.updateOrderStatus(id, status)));
+    public ResponseEntity<ApiResponse<OrderDTO>> updateStatus(
+            @PathVariable Long id,
+            @RequestBody String status) {
+        OrderDTO dto = service.updateOrderStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success("Status updated", dto));
     }
 
     @PutMapping("/{id}/cancel")

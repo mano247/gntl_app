@@ -312,7 +312,8 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
-                                onShowError = showSnackbar
+                                onShowError = showSnackbar,
+                                onShowSuccess = showSnackbar
                             )
                         }
                     }

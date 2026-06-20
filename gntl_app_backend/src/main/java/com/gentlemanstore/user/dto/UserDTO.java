@@ -20,4 +20,6 @@ public class UserDTO {
     private String phoneNumber;
     private LocalDateTime createdAt;
     private List<AddressDTO> addresses;
+    private String role;
+    private Boolean deleted;
 }

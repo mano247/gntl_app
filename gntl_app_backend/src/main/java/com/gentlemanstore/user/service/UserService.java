@@ -36,9 +36,22 @@ public class UserService{
     }
 
     @Transactional(readOnly = true)
-    public Page<UserDTO> getAllUsers(Pageable pageable) {
-        return repo.findAllByDeletedFalse(pageable)
-                .map(mapper::toDTO);
+    public Page<UserDTO> getAllUsers(Pageable pageable, Boolean deleted) {
+        Page<User> users;
+        if (deleted == null) {
+            users = repo.findAll(pageable);
+        } else {
+            users = deleted ? repo.findAllByDeletedTrue(pageable) : repo.findAllByDeletedFalse(pageable);
+        }
+        return users.map(user -> {
+            UserDTO dto = mapper.toDTO(user);
+            if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                String role = user.getRoles().iterator().next().getName().name().replace("ROLE_", "");
+                dto.setRole(role);
+            }
+            dto.setDeleted(user.isDeleted());
+            return dto;
+        });
     }
 
     @Transactional()
@@ -65,18 +78,40 @@ public class UserService{
         repo.save(user);
     }
 
-    @Transactional()
+    @Transactional
     public UserDTO changeRole(Long id, String roleName) {
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Role role = roleRepository.findByName(RoleName.valueOf(roleName))
+        String normalizedRole = roleName.trim().replace("\"", "");
+        if (!normalizedRole.startsWith("ROLE_")) {
+            normalizedRole = "ROLE_" + normalizedRole;
+        }
+
+        Role role = roleRepository.findByName(RoleName.valueOf(normalizedRole))
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         user.setRoles(new HashSet<>(Set.of(role)));
         repo.save(user);
 
-        return mapper.toDTO(user);
+        UserDTO dto = mapper.toDTO(user);
+        dto.setRole(normalizedRole.replace("ROLE_", ""));
+        return dto;
     }
+
+    @Transactional
+    public UserDTO reactivateUser(Long id) {
+        User user = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setDeleted(false);
+        repo.save(user);
+        UserDTO dto = mapper.toDTO(user);
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            String role = user.getRoles().iterator().next().getName().name().replace("ROLE_", "");
+            dto.setRole(role);
+        }
+        return dto;
+    }
+
 
 }

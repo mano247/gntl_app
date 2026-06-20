@@ -32,8 +32,10 @@ class EmployeeRepository @Inject constructor(
         return try {
             val body = status.toRequestBody("text/plain".toMediaType())
             val response = employeeApiService.updateOrderStatus(id, body)
+            android.util.Log.d("EmployeeRepo", "updateOrderStatus response: success=${response.success}, message=${response.message}, data=${response.data}")
             response.toResource()
         } catch (e: Exception) {
+            android.util.Log.e("EmployeeRepo", "updateOrderStatus error: ${e.message}")
             Resource.Error(ErrorMapper.map(e.message))
         }
     }

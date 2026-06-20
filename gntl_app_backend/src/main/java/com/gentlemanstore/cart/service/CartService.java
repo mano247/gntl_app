@@ -10,6 +10,7 @@ import com.gentlemanstore.cart.repository.CartItemRepository;
 import com.gentlemanstore.cart.repository.CartRepository;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.mapper.OrderMapper;
 import com.gentlemanstore.order.model.Order;
@@ -27,6 +28,7 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.AddressRepository;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CartService {
@@ -49,6 +52,7 @@ public class CartService {
     private final OrderMapper orderMapper;
     private final AddressRepository addressRepository;
     private final ShipmentRepository shipmentRepository;
+    private final LoyaltyService loyaltyService;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -171,6 +175,16 @@ public class CartService {
         order.setOrderItems(orderItems);
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
+
+        try {
+            int points = order.getTotalPrice().divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.DOWN).intValue();
+            log.info("Adding {} loyalty points for user {}", points, userId);
+            if (points > 0) {
+                loyaltyService.addPoints(userId, points, "Purchase #" + order.getId());
+            }
+        } catch (Exception e) {
+            log.warn("Loyalty points adding failed: {}", e.getMessage());
+        }
 
         String formattedAddress = formatAddress(address);
         Shipment shipment = Shipment.builder()

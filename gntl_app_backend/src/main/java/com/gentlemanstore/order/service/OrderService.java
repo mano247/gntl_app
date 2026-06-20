@@ -1,7 +1,9 @@
 package com.gentlemanstore.order.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.common.util.EmailService;
+import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.CreateOrderRequest;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.dto.OrderItemRequest;
@@ -36,6 +38,7 @@ public class OrderService {
     private final OrderMapper mapper;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final LoyaltyService loyaltyService;
 
     @Transactional(readOnly = true)
     public OrderDTO getOrder(Long id){
@@ -88,6 +91,16 @@ public class OrderService {
         repo.save(order);
 
         try {
+            int points = order.getTotalPrice().divide(BigDecimal.valueOf(100), 0, java.math.RoundingMode.DOWN).intValue();
+            log.info("Adding {} loyalty points for user {}", points, userId);
+            if (points > 0) {
+                loyaltyService.addPoints(userId, points, "Purchase #" + order.getId());
+            }
+        } catch (Exception e) {
+            log.warn("Loyalty points adding failed: {}", e.getMessage());
+        }
+
+        try {
             emailService.sendOrderConfirmationEmail(
                     order.getUser().getEmail(),
                     order.getUser().getFirstName(),
@@ -101,28 +114,34 @@ public class OrderService {
         return mapper.toDTO(order);
     }
 
-    @Transactional()
+    @Transactional
     public OrderDTO updateOrderStatus(Long id, String status){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-        order.setStatus(OrderStatus.valueOf(status.trim().replace("\"", "")));
-
-        repo.save(order);
-
         try {
-            emailService.sendOrderStatusEmail(
-                    order.getUser().getEmail(),
-                    order.getUser().getFirstName(),
-                    order.getId(),
-                    status
-            );
-        } catch (Exception e) {
-            log.warn("Order status email sending failed: {}", e.getMessage());
+            OrderStatus orderStatus = OrderStatus.valueOf(status.trim().replace("\"", "").toUpperCase());
+            order.setStatus(orderStatus);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid order status: " + status);
         }
 
-        return mapper.toDTO(order);
+        Order savedOrder = repo.save(order);
+        return mapper.toDTO(savedOrder);
     }
+
+//    public void sendStatusEmailAsync(Order order, String status) {
+//        try {
+//            emailService.sendOrderStatusEmail(
+//                    order.getUser().getEmail(),
+//                    order.getUser().getFirstName(),
+//                    order.getId(),
+//                    status
+//            );
+//        } catch (Exception e) {
+//            log.warn("Order status email sending failed: {}", e.getMessage());
+//        }
+//    }
 
     @Transactional()
     public void cancelOrder(Long id){
