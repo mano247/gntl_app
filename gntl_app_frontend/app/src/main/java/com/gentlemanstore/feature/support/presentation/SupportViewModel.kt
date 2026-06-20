@@ -263,8 +263,8 @@ class SupportViewModel @Inject constructor(
         if (message.isBlank()) return
 
         viewModelScope.launch {
-            val role = tokenDataStore.userRole.first() ?: "CUSTOMER"
-            val sender = if (role == "CUSTOMER") "USER" else "EMPLOYEE"
+            val role = tokenDataStore.userRole.first() ?: "ROLE_CUSTOMER"
+            val sender = if (role.contains("CUSTOMER")) "USER" else "EMPLOYEE"
 
             _chatUiState.value = _chatUiState.value.copy(
                 isSending = true,
