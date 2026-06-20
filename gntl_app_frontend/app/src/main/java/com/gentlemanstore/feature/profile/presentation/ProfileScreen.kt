@@ -38,6 +38,10 @@ fun ProfileScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

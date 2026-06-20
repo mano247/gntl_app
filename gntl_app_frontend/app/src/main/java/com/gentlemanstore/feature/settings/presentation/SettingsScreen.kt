@@ -3,7 +3,9 @@ package com.gentlemanstore.feature.settings.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -17,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.core.util.Constants
 import com.gentlemanstore.ui.theme.Gold500
+import kotlinx.coroutines.launch
 
 data class CurrencyOption(
     val code: String,
@@ -36,13 +39,30 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentCurrency by viewModel.currency.collectAsState()
+    val profileState by viewModel.profileState.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(profileState.successMessage) {
+        profileState.successMessage?.let {
+            scope.launch {
+                snackbarHostState.showSnackbar(it)
+            }
+            viewModel.clearMessages()
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -66,6 +86,78 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
+            // Edit Profile sekcija
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Text(
+                    text = "EDIT PROFILE",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = profileState.firstName,
+                            onValueChange = { viewModel.onFirstNameChange(it) },
+                            label = { Text("First Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = profileState.lastName,
+                            onValueChange = { viewModel.onLastNameChange(it) },
+                            label = { Text("Last Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = profileState.phoneNumber,
+                            onValueChange = { viewModel.onPhoneNumberChange(it) },
+                            label = { Text("Phone (optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        profileState.error?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
+
+                        profileState.successMessage?.let {
+                            Text(text = it, color = androidx.compose.ui.graphics.Color(0xFF4CAF50), style = MaterialTheme.typography.bodySmall)
+                        }
+
+                        Button(
+                            onClick = { viewModel.updateProfile() },
+                            enabled = !profileState.isUpdating && profileState.firstName.isNotBlank() && profileState.lastName.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (profileState.isUpdating) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("Save Changes", color = MaterialTheme.colorScheme.background)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Currency sekcija
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,6 +219,13 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
