@@ -23,7 +23,8 @@ data class SupportUiState(
     val tickets: List<SupportTicketResponse> = emptyList(),
     val error: String? = null,
     val isLastPage: Boolean = false,
-    val currentPage: Int = 0
+    val currentPage: Int = 0,
+    val successMessage: String? = null
 )
 
 data class BotFlowUiState(
@@ -67,9 +68,7 @@ class SupportViewModel @Inject constructor(
     val currentRole = tokenDataStore.userRole
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "CUSTOMER")
 
-    init {
-        loadMyTickets()
-    }
+
 
     // --- Tickets ---
     fun loadMyTickets() {
@@ -233,6 +232,30 @@ class SupportViewModel @Inject constructor(
 
     fun onMessageChange(message: String) {
         _chatUiState.value = _chatUiState.value.copy(currentMessage = message)
+    }
+
+    fun deleteTicket(ticketId: Long) {
+        viewModelScope.launch {
+            when (supportRepository.deleteTicket(ticketId)) {
+                is Resource.Success -> {
+                    _supportUiState.value = _supportUiState.value.copy(
+                        successMessage = "Ticket deleted successfully!"
+                    )
+                    delay(300)
+                    loadMyTickets()
+                }
+                is Resource.Error -> {
+                    _supportUiState.value = _supportUiState.value.copy(
+                        error = "Failed to delete ticket"
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun clearMessages() {
+        _supportUiState.value = _supportUiState.value.copy(error = null, successMessage = null)
     }
 
     fun sendMessage(sessionId: Long) {

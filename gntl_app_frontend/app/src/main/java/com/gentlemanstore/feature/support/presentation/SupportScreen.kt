@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -26,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.feature.support.data.dto.SupportTicketResponse
 import com.gentlemanstore.ui.theme.Gold500
+import kotlinx.coroutines.launch
 
 fun getTicketStatusColor(status: String): Color {
     return when (status.uppercase()) {
@@ -51,6 +53,20 @@ fun SupportScreen(
         refreshing = uiState.isLoading,
         onRefresh = { viewModel.loadMyTickets() }
     )
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let {
+            scope.launch { snackbarHostState.showSnackbar(it) }
+            viewModel.clearMessages()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMyTickets()
+    }
 
     Box(
         modifier = Modifier
@@ -149,7 +165,8 @@ fun SupportScreen(
                                             ticket.sessionId?.let { sessionId ->
                                                 onOpenChat(ticket.id, sessionId)
                                             }
-                                        }
+                                        },
+                                        onDelete = { viewModel.deleteTicket(ticket.id) }
                                     )
                                 }
                             }
@@ -166,14 +183,38 @@ fun SupportScreen(
                 )
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
 @Composable
 private fun TicketCard(
     ticket: SupportTicketResponse,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Ticket") },
+            text = { Text("Are you sure you want to delete this support ticket?") },
+            confirmButton = {
+                Button(
+                    onClick = { onDelete(); showDeleteDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -208,6 +249,20 @@ private fun TicketCard(
                 text = ticket.status,
                 style = MaterialTheme.typography.labelSmall,
                 color = getTicketStatusColor(ticket.status)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        IconButton(
+            onClick = { showDeleteDialog = true },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete ticket",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp)
             )
         }
     }

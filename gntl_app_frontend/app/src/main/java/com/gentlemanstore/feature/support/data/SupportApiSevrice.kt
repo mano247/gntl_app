@@ -40,4 +40,9 @@ interface SupportApiService {
     suspend fun saveBotResponse(
         @Body request: SaveBotResponseRequest
     ): ApiResponse<BotResponseResponse>
+
+    @DELETE("support/tickets/{id}")
+    suspend fun deleteTicket(
+        @Path("id") id: Long
+    ): ApiResponse<Unit>
 }

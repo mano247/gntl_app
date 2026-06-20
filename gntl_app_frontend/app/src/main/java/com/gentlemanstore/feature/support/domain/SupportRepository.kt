@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.support.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.support.data.SupportApiService
@@ -80,6 +81,15 @@ class SupportRepository @Inject constructor(
                 SaveBotResponseRequest(ticketId, questionId, response)
             )
             apiResponse.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun deleteTicket(ticketId: Long): Resource<Unit> {
+        return try {
+            val response = supportApiService.deleteTicket(ticketId)
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

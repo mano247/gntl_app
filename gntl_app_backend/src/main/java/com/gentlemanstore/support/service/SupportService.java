@@ -136,4 +136,17 @@ public class SupportService {
         botResponseRepository.save(botResponse);
         return mapper.toResponseDTO(botResponse);
     }
+
+    @Transactional
+    public void deleteTicket(Long ticketId, Long userId) {
+        SupportTicket ticket = supportTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        if (!ticket.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Ticket not found");
+        }
+
+        ticket.setDeleted(true);
+        supportTicketRepository.save(ticket);
+    }
 }

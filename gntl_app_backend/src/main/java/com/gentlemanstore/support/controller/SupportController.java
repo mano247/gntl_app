@@ -87,4 +87,13 @@ public class SupportController {
     public ResponseEntity<ApiResponse<BotResponseDTO>> saveBotResponse(@Valid @RequestBody SaveBotResponseRequest request){
         return ResponseEntity.ok(ApiResponse.success("Bot responses saved successfully", service.saveBotResponse(request.getTicketId(), request.getQuestionId(), request.getResponse())));
     }
+
+    @DeleteMapping("/tickets/{id}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteTicket(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        service.deleteTicket(id, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Ticket deleted successfully", null));
+    }
 }
