@@ -35,8 +35,8 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> getAllProducts(Pageable pageable) {
-        Page<Long> ids = repo.findIdsByDeletedFalse(pageable);
+    public Page<ProductDTO> getAllProducts(String category, String search, Pageable pageable) {
+        Page<Long> ids = repo.findIdsByFilters(category, search, pageable);
         List<Product> products = repo.findAllByIdInWithDetails(ids.getContent());
         List<ProductDTO> dtos = products.stream().map(mapper::toDTO).collect(Collectors.toList());
         return new PageImpl<>(dtos, pageable, ids.getTotalElements());

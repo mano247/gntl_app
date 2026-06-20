@@ -24,8 +24,12 @@ public class ProductController {
 
     @GetMapping("/paged")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getAll(Pageable pageable){
-        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully", service.getAllProducts(pageable)));
+    public ResponseEntity<ApiResponse<Page<ProductDTO>>> getAll(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search,
+            Pageable pageable){
+        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully",
+                service.getAllProducts(category, search, pageable)));
     }
 
     @GetMapping("/{id}")
