@@ -160,7 +160,8 @@ class MainActivity : ComponentActivity() {
                             SwipeScreen(
                                 onNavigateToDetail = { productId ->
                                     navController.navigate("product_detail/$productId")
-                                }
+                                },
+                                cartViewModel = cartViewModel
                             )
                         }
                         composable("cart") {
