@@ -3,6 +3,7 @@ package com.gentlemanstore.order.service;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.common.util.EmailService;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.CreateOrderRequest;
 import com.gentlemanstore.order.dto.OrderDTO;
@@ -39,18 +40,25 @@ public class OrderService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final LoyaltyService loyaltyService;
+    private final LoyaltyAccountRepository loyaltyAccountRepository;
 
     @Transactional(readOnly = true)
-    public OrderDTO getOrder(Long id){
+    public OrderDTO getOrder(Long id) {
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-        return mapper.toDTO(order);
+        OrderDTO dto = mapper.toDTO(order);
+        applyLoyaltyDiscount(dto, order.getUser().getId());
+        return dto;
     }
 
     @Transactional(readOnly = true)
     public Page<OrderDTO> getUserOrdersPaged(Long userId, Pageable pageable) {
         return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
-                .map(mapper::toDTO);
+                .map(order -> {
+                    OrderDTO dto = mapper.toDTO(order);
+                    applyLoyaltyDiscount(dto, userId);
+                    return dto;
+                });
     }
 
     @Transactional()
@@ -166,5 +174,24 @@ public class OrderService {
     public Page<OrderDTO> getAllOrdersPaged(Pageable pageable) {
         return repo.findAllByDeletedFalse(pageable)
                 .map(mapper::toDTO);
+    }
+
+    private void applyLoyaltyDiscount(OrderDTO orderDTO, Long userId) {
+        try {
+            loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+                BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
+                BigDecimal totalPrice = orderDTO.getTotalPrice();
+                if (discountPct != null && discountPct.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal discount = totalPrice.multiply(discountPct).divide(BigDecimal.valueOf(100));
+                    orderDTO.setLoyaltyDiscount(discount);
+                    orderDTO.setFinalPrice(totalPrice.subtract(discount));
+                } else {
+                    orderDTO.setLoyaltyDiscount(BigDecimal.ZERO);
+                    orderDTO.setFinalPrice(totalPrice);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Loyalty discount calculation failed: {}", e.getMessage());
+        }
     }
 }

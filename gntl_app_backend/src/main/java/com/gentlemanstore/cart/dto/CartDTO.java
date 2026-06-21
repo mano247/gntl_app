@@ -14,4 +14,6 @@ public class CartDTO {
     private Long id;
     private List<CartItemDTO> items;
     private BigDecimal totalPrice;
+    private BigDecimal loyaltyDiscount;
+    private BigDecimal finalPrice;
 }

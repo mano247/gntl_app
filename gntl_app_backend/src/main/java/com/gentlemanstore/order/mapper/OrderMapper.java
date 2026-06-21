@@ -11,6 +11,8 @@ import org.mapstruct.Mapping;
 public interface OrderMapper {
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderItems", target = "items")
+    @Mapping(source = "loyaltyDiscount", target = "loyaltyDiscount")
+    @Mapping(source = "finalPrice", target = "finalPrice")
     OrderDTO toDTO(Order order);
 
     @Mapping(source = "product.name", target = "productName")

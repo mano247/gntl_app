@@ -256,26 +256,27 @@ private fun OrderCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "${order.items.size} item${if (order.items.size != 1) "s" else ""}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Ordered: ${order.createdAt.take(10)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
-                style = MaterialTheme.typography.titleMedium,
-                color = Gold500,
-                fontWeight = FontWeight.Bold
-            )
+            if (order.loyaltyDiscount != null && order.loyaltyDiscount > java.math.BigDecimal.ZERO) {
+                Text(
+                    text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                )
+                Text(
+                    text = CurrencyFormatter.format((order.finalPrice ?: order.totalPrice).toDouble(), currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Gold500,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Text(
+                    text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Gold500,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

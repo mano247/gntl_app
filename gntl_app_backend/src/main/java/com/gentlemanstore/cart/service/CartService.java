@@ -11,6 +11,7 @@ import com.gentlemanstore.cart.repository.CartRepository;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.discount.repository.DiscountRepository;
+import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.mapper.OrderMapper;
@@ -55,6 +56,7 @@ public class CartService {
     private final ShipmentRepository shipmentRepository;
     private final LoyaltyService loyaltyService;
     private final DiscountRepository discountRepository;
+    private final LoyaltyAccountRepository loyaltyAccountRepository;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -83,6 +85,24 @@ public class CartService {
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         cartDTO.setTotalPrice(totalPrice);
+        // Loyalty popust
+        try {
+            loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+                BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
+                if (discountPct != null && discountPct.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal discount = totalPrice.multiply(discountPct).divide(BigDecimal.valueOf(100));
+                    cartDTO.setLoyaltyDiscount(discount);
+                    cartDTO.setFinalPrice(totalPrice.subtract(discount));
+                } else {
+                    cartDTO.setLoyaltyDiscount(BigDecimal.ZERO);
+                    cartDTO.setFinalPrice(totalPrice);
+                }
+            });
+        } catch (Exception e) {
+            cartDTO.setLoyaltyDiscount(BigDecimal.ZERO);
+            cartDTO.setFinalPrice(totalPrice);
+        }
+
         return cartDTO;
     }
 
@@ -195,6 +215,20 @@ public class CartService {
 
         order.setOrderItems(orderItems);
         order.setTotalPrice(totalPrice);
+
+        final BigDecimal finalTotalPrice = totalPrice;
+        loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+            BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
+            if (discountPct != null && discountPct.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal discount = finalTotalPrice.multiply(discountPct).divide(BigDecimal.valueOf(100));
+                order.setLoyaltyDiscount(discount);
+                order.setFinalPrice(finalTotalPrice.subtract(discount));
+            } else {
+                order.setLoyaltyDiscount(BigDecimal.ZERO);
+                order.setFinalPrice(finalTotalPrice);
+            }
+        });
+
         orderRepository.save(order);
 
         try {

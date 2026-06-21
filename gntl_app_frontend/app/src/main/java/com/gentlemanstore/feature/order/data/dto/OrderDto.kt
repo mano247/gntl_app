@@ -17,7 +17,9 @@ data class OrderResponse(
     val totalPrice: BigDecimal,
     val status: String,
     val createdAt: String,
-    val items: List<OrderItemResponse>
+    val items: List<OrderItemResponse>,
+    val loyaltyDiscount: BigDecimal?,
+    val finalPrice: BigDecimal?
 )
 
 data class CheckoutRequest(

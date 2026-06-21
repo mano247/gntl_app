@@ -159,12 +159,53 @@ fun OrderConfirmationScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
+                        text = "Subtotal",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (order.loyaltyDiscount != null && order.loyaltyDiscount > java.math.BigDecimal.ZERO) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Loyalty Discount",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        )
+                        Text(
+                            text = "- ${CurrencyFormatter.format(order.loyaltyDiscount.toDouble(), currency)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
                         text = "Total",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
+                        text = CurrencyFormatter.format(
+                            (order.finalPrice ?: order.totalPrice).toDouble(), currency
+                        ),
                         style = MaterialTheme.typography.titleLarge,
                         color = Gold500,
                         fontWeight = FontWeight.Bold

@@ -25,6 +25,12 @@ public class Order {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
+    @Column
+    private BigDecimal finalPrice;
+
+    @Column
+    private BigDecimal loyaltyDiscount;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private OrderStatus status;

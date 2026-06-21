@@ -10,13 +10,15 @@ data class CartItemResponse(
     val size: String,
     val quantity: Int,
     val price: BigDecimal,
-    val originalPrice: BigDecimal?
+    val originalPrice: BigDecimal?,
 )
 
 data class CartResponse(
     val id: Long,
     val items: List<CartItemResponse>,
-    val totalPrice: BigDecimal
+    val totalPrice: BigDecimal,
+    val loyaltyDiscount: BigDecimal?,
+    val finalPrice: BigDecimal?
 )
 
 data class AddToCartRequest(
