@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -30,6 +31,15 @@ fun ProductListScreen(
     val uiState by viewModel.listUiState.collectAsStateWithLifecycle()
     val currency = rememberCurrentCurrency()
     val gridState = rememberLazyGridState()
+    var showSortMenu by remember { mutableStateOf(false) }
+
+    val sortOptions = mapOf(
+        "DEFAULT" to "Default",
+        "PRICE_ASC" to "Price ↑",
+        "PRICE_DESC" to "Price ↓",
+        "NAME_ASC" to "A → Z",
+        "NAME_DESC" to "Z → A"
+    )
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isLoading,
@@ -40,14 +50,16 @@ fun ProductListScreen(
         val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
         val totalItems = gridState.layoutInfo.totalItemsCount
 
-        android.util.Log.d("ProductList", "lastVisible=$lastVisibleItem, total=$totalItems, isLastPage=${uiState.isLastPage}, isLoadingMore=${uiState.isLoadingMore}")
-
         if (lastVisibleItem >= totalItems - 4
             && !uiState.isLastPage
             && !uiState.isLoadingMore
             && uiState.products.isNotEmpty()) {
             viewModel.loadMoreProducts()
         }
+    }
+
+    LaunchedEffect(uiState.sortOption) {
+        gridState.scrollToItem(0)
     }
 
     Column(
@@ -76,23 +88,47 @@ fun ProductListScreen(
             }
         }
 
-        OutlinedTextField(
-            value = uiState.searchQuery,
-            onValueChange = { viewModel.onSearchQueryChange(it) },
-            placeholder = { Text("Search products...") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    tint = Gold500
-                )
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+        // Search + Sort row
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        )
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = uiState.searchQuery,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                placeholder = { Text("Search products...") },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = Gold500)
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(1f)
+            )
+
+            Box {
+                OutlinedButton(
+                    onClick = { showSortMenu = true },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 14.dp)
+                ) {
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Gold500)
+                }
+                DropdownMenu(
+                    expanded = showSortMenu,
+                    onDismissRequest = { showSortMenu = false }
+                ) {
+                    sortOptions.forEach { (key, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = { viewModel.onSortChange(key); showSortMenu = false }
+                        )
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -136,19 +172,13 @@ fun ProductListScreen(
         ) {
             when {
                 uiState.isLoading && uiState.products.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Gold500)
                     }
                 }
 
                 uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = uiState.error!!,
@@ -176,7 +206,7 @@ fun ProductListScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(
-                            items = uiState.products,
+                            items = viewModel.sortedProducts,
                             key = { it.id }
                         ) { product ->
                             ProductCard(
@@ -189,15 +219,10 @@ fun ProductListScreen(
                         if (uiState.isLoadingMore) {
                             item(span = { GridItemSpan(2) }) {
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(
-                                        color = Gold500,
-                                        modifier = Modifier.size(24.dp)
-                                    )
+                                    CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
                                 }
                             }
                         }

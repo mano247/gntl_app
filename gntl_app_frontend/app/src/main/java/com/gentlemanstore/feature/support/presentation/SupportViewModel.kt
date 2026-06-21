@@ -24,7 +24,8 @@ data class SupportUiState(
     val error: String? = null,
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val selectedStatus: String? = null
 )
 
 data class BotFlowUiState(
@@ -288,6 +289,17 @@ class SupportViewModel @Inject constructor(
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    val filteredTickets: List<SupportTicketResponse>
+        get() = if (_supportUiState.value.selectedStatus == null) {
+            _supportUiState.value.tickets
+        } else {
+            _supportUiState.value.tickets.filter { it.status == _supportUiState.value.selectedStatus }
+        }
+
+    fun onStatusFilter(status: String?) {
+        _supportUiState.value = _supportUiState.value.copy(selectedStatus = status)
     }
 
     override fun onCleared() {

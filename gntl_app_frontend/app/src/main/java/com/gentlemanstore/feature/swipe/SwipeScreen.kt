@@ -115,18 +115,6 @@ fun SwipeScreen(
                                 )
                         )
 
-                        // Static DISCOVER title
-                        Text(
-                            text = "DISCOVER",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Gold500,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 52.dp)
-                        )
-
                         // Product info
                         Column(
                             modifier = Modifier
@@ -190,6 +178,18 @@ fun SwipeScreen(
                         }
                     }
                 }
+
+                // Static DISCOVER title
+                Text(
+                    text = "DISCOVER",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Gold500,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 16.dp, top = 52.dp)
+                )
 
                 // Added to cart toast
                 AnimatedVisibility(

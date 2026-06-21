@@ -44,6 +44,11 @@ fun EmployeeHomeScreen(
         ticketsState.error?.let { onShowError(it) }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.loadOrders()
+        viewModel.loadTickets()
+    }
+
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Orders", "Support Tickets")
 
@@ -97,14 +102,18 @@ fun EmployeeHomeScreen(
         when (selectedTab) {
             0 -> EmployeeOrdersTab(
                 state = ordersState,
+                filteredOrders = viewModel.filteredOrders,
                 onUpdateStatus = { orderId, status -> viewModel.updateOrderStatus(orderId, status) },
-                onRefresh = { viewModel.loadOrders() }
+                onRefresh = { viewModel.loadOrders() },
+                onStatusFilter = { viewModel.onOrderStatusFilter(it) }
             )
             1 -> EmployeeTicketsTab(
                 state = ticketsState,
+                filteredTickets = viewModel.filteredTickets,
                 onUpdateStatus = { ticketId, status -> viewModel.updateTicketStatus(ticketId, status) },
                 onOpenChat = onOpenChat,
-                onRefresh = { viewModel.loadTickets() }
+                onRefresh = { viewModel.loadTickets() },
+                onStatusFilter = { viewModel.onTicketStatusFilter(it) }
             )
         }
     }
@@ -114,54 +123,84 @@ fun EmployeeHomeScreen(
 @Composable
 private fun EmployeeOrdersTab(
     state: EmployeeOrdersUiState,
+    filteredOrders: List<OrderResponse>,
     onUpdateStatus: (Long, String) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onStatusFilter: (String?) -> Unit
 ) {
     val pullRefreshState = rememberPullRefreshState(
         refreshing = state.isLoading,
         onRefresh = onRefresh
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pullRefresh(pullRefreshState)
-    ) {
-        when {
-            state.isLoading && state.orders.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Gold500)
+    val statuses = listOf("ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        androidx.compose.foundation.lazy.LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            items(count = statuses.size, key = { statuses[it] }) { index ->
+                val status = statuses[index]
+                val isSelected = when {
+                    status == "ALL" && state.selectedStatus == null -> true
+                    status == state.selectedStatus -> true
+                    else -> false
                 }
-            }
-            state.orders.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No orders found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(state.orders, key = { it.id }) { order ->
-                        EmployeeOrderCard(
-                            order = order,
-                            isUpdating = state.updatingOrderId == order.id,
-                            onUpdateStatus = onUpdateStatus
-                        )
-                    }
-                }
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onStatusFilter(if (status == "ALL") null else status) },
+                    label = { Text(status) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Gold500,
+                        selectedLabelColor = MaterialTheme.colorScheme.background
+                    )
+                )
             }
         }
 
-        PullRefreshIndicator(
-            refreshing = state.isLoading,
-            state = pullRefreshState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            backgroundColor = MaterialTheme.colorScheme.surface,
-            contentColor = Gold500
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+            when {
+                state.isLoading && state.orders.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Gold500)
+                    }
+                }
+                filteredOrders.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No orders found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(filteredOrders, key = { it.id }) { order ->
+                            EmployeeOrderCard(
+                                order = order,
+                                isUpdating = state.updatingOrderId == order.id,
+                                onUpdateStatus = onUpdateStatus
+                            )
+                        }
+                    }
+                }
+            }
+
+            PullRefreshIndicator(
+                refreshing = state.isLoading,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                contentColor = Gold500
+            )
+        }
     }
 }
 
@@ -169,56 +208,86 @@ private fun EmployeeOrdersTab(
 @Composable
 private fun EmployeeTicketsTab(
     state: EmployeeTicketsUiState,
+    filteredTickets: List<SupportTicketResponse>,
     onUpdateStatus: (Long, String) -> Unit,
     onOpenChat: (Long, Long) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onStatusFilter: (String?) -> Unit
 ) {
     val pullRefreshState = rememberPullRefreshState(
         refreshing = state.isLoading,
         onRefresh = onRefresh
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pullRefresh(pullRefreshState)
-    ) {
-        when {
-            state.isLoading && state.tickets.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Gold500)
+    val statuses = listOf("ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        androidx.compose.foundation.lazy.LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            items(count = statuses.size, key = { statuses[it] }) { index ->
+                val status = statuses[index]
+                val isSelected = when {
+                    status == "ALL" && state.selectedStatus == null -> true
+                    status == state.selectedStatus -> true
+                    else -> false
                 }
-            }
-            state.tickets.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No tickets found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(state.tickets, key = { it.id }) { ticket ->
-                        EmployeeTicketCard(
-                            ticket = ticket,
-                            isUpdating = state.updatingTicketId == ticket.id,
-                            onUpdateStatus = onUpdateStatus,
-                            onOpenChat = onOpenChat
-                        )
-                    }
-                }
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onStatusFilter(if (status == "ALL") null else status) },
+                    label = { Text(status) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Gold500,
+                        selectedLabelColor = MaterialTheme.colorScheme.background
+                    )
+                )
             }
         }
 
-        PullRefreshIndicator(
-            refreshing = state.isLoading,
-            state = pullRefreshState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            backgroundColor = MaterialTheme.colorScheme.surface,
-            contentColor = Gold500
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+            when {
+                state.isLoading && state.tickets.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Gold500)
+                    }
+                }
+                filteredTickets.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No tickets found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(filteredTickets, key = { it.id }) { ticket ->
+                            EmployeeTicketCard(
+                                ticket = ticket,
+                                isUpdating = state.updatingTicketId == ticket.id,
+                                onUpdateStatus = onUpdateStatus,
+                                onOpenChat = onOpenChat
+                            )
+                        }
+                    }
+                }
+            }
+
+            PullRefreshIndicator(
+                refreshing = state.isLoading,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                backgroundColor = MaterialTheme.colorScheme.surface,
+                contentColor = Gold500
+            )
+        }
     }
 }
 
@@ -229,6 +298,7 @@ private fun EmployeeOrderCard(
     onUpdateStatus: (Long, String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     val orderStatuses = listOf("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED")
 
     Card(
@@ -264,12 +334,83 @@ private fun EmployeeOrderCard(
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
+                text = "Ordered: ${order.createdAt.take(10)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
                 text = "${order.items.size} items · ${order.totalPrice} din",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Expand/collapse dugme
+            TextButton(
+                onClick = { expanded = !expanded },
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    text = if (expanded) "Hide details ▲" else "Show details ▼",
+                    color = Gold500,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+
+            // Detalji proizvoda
+            if (expanded) {
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(8.dp))
+                order.items.forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = item.productName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Size: ${item.size ?: "N/A"} · Qty: ${item.quantity}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "${item.price} din",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Gold500,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Total",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${order.totalPrice} din",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Gold500
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             Box {
                 OutlinedButton(

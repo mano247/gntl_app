@@ -19,7 +19,8 @@ data class EmployeeOrdersUiState(
     val error: String? = null,
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
-    val updatingOrderId: Long? = null
+    val updatingOrderId: Long? = null,
+    val selectedStatus: String? = null
 )
 
 data class EmployeeTicketsUiState(
@@ -28,7 +29,8 @@ data class EmployeeTicketsUiState(
     val error: String? = null,
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
-    val updatingTicketId: Long? = null
+    val updatingTicketId: Long? = null,
+    val selectedStatus: String? = null
 )
 
 @HiltViewModel
@@ -146,5 +148,27 @@ class EmployeeViewModel @Inject constructor(
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    val filteredTickets: List<SupportTicketResponse>
+        get() = if (_ticketsUiState.value.selectedStatus == null) {
+            _ticketsUiState.value.tickets
+        } else {
+            _ticketsUiState.value.tickets.filter { it.status == _ticketsUiState.value.selectedStatus }
+        }
+
+    fun onTicketStatusFilter(status: String?) {
+        _ticketsUiState.value = _ticketsUiState.value.copy(selectedStatus = status)
+    }
+
+    val filteredOrders: List<OrderResponse>
+        get() = if (_ordersUiState.value.selectedStatus == null) {
+            _ordersUiState.value.orders
+        } else {
+            _ordersUiState.value.orders.filter { it.status == _ordersUiState.value.selectedStatus }
+        }
+
+    fun onOrderStatusFilter(status: String?) {
+        _ordersUiState.value = _ordersUiState.value.copy(selectedStatus = status)
     }
 }

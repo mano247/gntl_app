@@ -104,6 +104,34 @@ fun MyOrdersScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
+            val statuses = listOf("ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED")
+
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                items(count = statuses.size, key = { statuses[it] }) { index ->
+                    val status = statuses[index]
+                    val isSelected = when {
+                        status == "ALL" && uiState.selectedStatus == null -> true
+                        status == uiState.selectedStatus -> true
+                        else -> false
+                    }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            viewModel.onStatusFilter(if (status == "ALL") null else status)
+                        },
+                        label = { Text(status) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Gold500,
+                            selectedLabelColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -148,7 +176,7 @@ fun MyOrdersScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.orders, key = { it.id }) { order ->
+                            items(viewModel.filteredOrders, key = { it.id }) { order ->
                                 OrderCard(
                                     order = order,
                                     currency = currency,
@@ -231,6 +259,12 @@ private fun OrderCard(
             Text(
                 text = "${order.items.size} item${if (order.items.size != 1) "s" else ""}",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = "Ordered: ${order.createdAt.take(10)}",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 

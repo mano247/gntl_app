@@ -102,6 +102,17 @@ fun OrderDetailScreen(
 
                         Box(
                             modifier = Modifier
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "Ordered: ${order.createdAt.take(10)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .background(getStatusColor(order.status).copy(alpha = 0.2f))
                                 .padding(horizontal = 10.dp, vertical = 4.dp)

@@ -18,7 +18,8 @@ data class MyOrdersUiState(
     val error: String? = null,
     val currentPage: Int = 0,
     val isLastPage: Boolean = false,
-    val isLoadingMore: Boolean = false
+    val isLoadingMore: Boolean = false,
+    val selectedStatus: String? = null
 )
 
 @HiltViewModel
@@ -84,5 +85,16 @@ class MyOrdersViewModel @Inject constructor(
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    val filteredOrders: List<OrderResponse>
+        get() = if (_uiState.value.selectedStatus == null) {
+            _uiState.value.orders
+        } else {
+            _uiState.value.orders.filter { it.status == _uiState.value.selectedStatus }
+        }
+
+    fun onStatusFilter(status: String?) {
+        _uiState.value = _uiState.value.copy(selectedStatus = status)
     }
 }

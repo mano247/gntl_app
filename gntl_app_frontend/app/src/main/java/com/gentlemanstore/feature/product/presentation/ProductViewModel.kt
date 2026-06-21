@@ -22,7 +22,8 @@ data class ProductListUiState(
     val error: String? = null,
     val currentPage: Int = 0,
     val isLastPage: Boolean = false,
-    val isLoadingMore: Boolean = false
+    val isLoadingMore: Boolean = false,
+    val sortOption: String = "DEFAULT"
 )
 
 data class ProductDetailUiState(
@@ -42,6 +43,9 @@ class ProductViewModel @Inject constructor(
 
     private val _detailUiState = MutableStateFlow(ProductDetailUiState())
     val detailUiState: StateFlow<ProductDetailUiState> = _detailUiState.asStateFlow()
+
+    val sortedProducts: List<ProductResponse>
+        get() = getSortedProducts(_listUiState.value.products, _listUiState.value.sortOption)
 
     init {
         loadProducts()
@@ -164,6 +168,20 @@ class ProductViewModel @Inject constructor(
                 }
                 else -> Unit
             }
+        }
+    }
+
+    fun onSortChange(sort: String) {
+        _listUiState.value = _listUiState.value.copy(sortOption = sort)
+    }
+
+    private fun getSortedProducts(products: List<ProductResponse>, sortOption: String): List<ProductResponse> {
+        return when (sortOption) {
+            "PRICE_ASC" -> products.sortedBy { it.price }
+            "PRICE_DESC" -> products.sortedByDescending { it.price }
+            "NAME_ASC" -> products.sortedBy { it.name }
+            "NAME_DESC" -> products.sortedByDescending { it.name }
+            else -> products
         }
     }
 }
