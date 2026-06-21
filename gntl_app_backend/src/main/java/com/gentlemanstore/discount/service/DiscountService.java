@@ -1,17 +1,16 @@
 package com.gentlemanstore.discount.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.discount.dto.CreateDiscountRequest;
 import com.gentlemanstore.discount.dto.CreatePromotionRequest;
 import com.gentlemanstore.discount.dto.DiscountDTO;
 import com.gentlemanstore.discount.dto.PromotionDTO;
 import com.gentlemanstore.discount.mapper.DiscountMapper;
-import com.gentlemanstore.discount.model.Discount;
-import com.gentlemanstore.discount.model.DiscountType;
-import com.gentlemanstore.discount.model.Promotion;
-import com.gentlemanstore.discount.model.UserPromotion;
+import com.gentlemanstore.discount.model.*;
 import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.discount.repository.PromotionRepository;
+import com.gentlemanstore.discount.repository.UserDiscountRepository;
 import com.gentlemanstore.discount.repository.UserPromotionRepository;
 import com.gentlemanstore.product.model.Category;
 import com.gentlemanstore.product.model.Product;
@@ -38,6 +37,7 @@ public class DiscountService {
     private final DiscountMapper mapper;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final UserDiscountRepository userDiscountRepository;
 
     @Transactional(readOnly = true)
     public DiscountDTO getDiscount(String code){
@@ -136,5 +136,40 @@ public class DiscountService {
                 .build();
 
         userPromotionRepository.save(userPromotion);
+    }
+
+    @Transactional
+    public DiscountDTO validateAndUsePromoCode(String code, Long userId) {
+        Discount discount = discountRepository.findByCodeAndDeletedFalse(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Promo code not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(discount.getValidFrom()) || now.isAfter(discount.getValidTo())) {
+            throw new BadRequestException("Promo code has expired");
+        }
+
+        if (userDiscountRepository.existsByUserIdAndDiscountIdAndDeletedFalse(userId, discount.getId())) {
+            throw new BadRequestException("Promo code already used");
+        }
+
+        return mapper.toDTO(discount);
+    }
+
+    @Transactional
+    public void markPromoCodeAsUsed(String code, Long userId) {
+        Discount discount = discountRepository.findByCodeAndDeletedFalse(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Promo code not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        UserDiscount userDiscount = UserDiscount.builder()
+                .user(user)
+                .discount(discount)
+                .usedAt(LocalDateTime.now())
+                .deleted(false)
+                .build();
+
+        userDiscountRepository.save(userDiscount);
     }
 }

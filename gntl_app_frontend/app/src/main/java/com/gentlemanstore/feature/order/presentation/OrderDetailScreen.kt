@@ -253,6 +253,27 @@ fun OrderDetailScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        if (order.promoDiscount != null && order.promoDiscount > java.math.BigDecimal.ZERO) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Promo Code",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                )
+                                Text(
+                                    text = "- ${CurrencyFormatter.format(order.promoDiscount.toDouble(), currency)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween

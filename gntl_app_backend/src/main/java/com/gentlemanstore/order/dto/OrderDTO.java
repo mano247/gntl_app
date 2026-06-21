@@ -19,4 +19,5 @@ public class OrderDTO {
     private List<OrderItemDTO> items;
     private BigDecimal loyaltyDiscount;
     private BigDecimal finalPrice;
+    private BigDecimal promoDiscount;
 }

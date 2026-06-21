@@ -256,7 +256,8 @@ private fun OrderCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (order.loyaltyDiscount != null && order.loyaltyDiscount > java.math.BigDecimal.ZERO) {
+            if (order.loyaltyDiscount != null && order.loyaltyDiscount > java.math.BigDecimal.ZERO ||
+                order.promoDiscount != null && order.promoDiscount > java.math.BigDecimal.ZERO) {
                 Text(
                     text = CurrencyFormatter.format(order.totalPrice.toDouble(), currency),
                     style = MaterialTheme.typography.bodySmall,

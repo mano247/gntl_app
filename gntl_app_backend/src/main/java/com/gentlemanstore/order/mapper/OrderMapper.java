@@ -13,6 +13,7 @@ public interface OrderMapper {
     @Mapping(source = "orderItems", target = "items")
     @Mapping(source = "loyaltyDiscount", target = "loyaltyDiscount")
     @Mapping(source = "finalPrice", target = "finalPrice")
+    @Mapping(source = "promoDiscount", target = "promoDiscount")
     OrderDTO toDTO(Order order);
 
     @Mapping(source = "product.name", target = "productName")

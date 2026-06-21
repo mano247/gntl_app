@@ -47,7 +47,6 @@ fun CheckoutScreen(
     val currency = rememberCurrentCurrency()
 
     var selectedPayment by remember { mutableStateOf(PaymentMethod.CASH) }
-    var promoCode by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         cartViewModel.loadCart()
@@ -234,6 +233,7 @@ fun CheckoutScreen(
                 }
 
                 // Promo kod
+                // Promo kod
                 item {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -242,14 +242,55 @@ fun CheckoutScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = promoCode,
-                        onValueChange = { promoCode = it },
-                        placeholder = { Text("Enter promo code") },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = cartState.promoCode,
+                            onValueChange = { cartViewModel.onPromoCodeChange(it) },
+                            placeholder = { Text("Enter promo code") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            isError = cartState.promoError != null
+                        )
+                        Button(
+                            onClick = { cartViewModel.validatePromoCode() },
+                            enabled = cartState.promoCode.isNotBlank() && !cartState.isValidatingPromo,
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (cartState.isValidatingPromo) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.background
+                                )
+                            } else {
+                                Text("Apply", color = MaterialTheme.colorScheme.background)
+                            }
+                        }
+                    }
+
+                    cartState.promoError?.let {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    cartState.promoDiscount?.let {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "✓ Promo code applied! Saving ${CurrencyFormatter.format(it, currency)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        )
+                    }
                 }
             }
 
@@ -300,6 +341,29 @@ fun CheckoutScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    cartState.promoDiscount?.let { promoDisc ->
+                        if (promoDisc > 0.0) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Promo Code",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                )
+                                Text(
+                                    text = "- ${CurrencyFormatter.format(promoDisc, currency)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -309,10 +373,9 @@ fun CheckoutScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                        val finalPrice = (cart.finalPrice ?: cart.totalPrice).toDouble() - (cartState.promoDiscount ?: 0.0)
                         Text(
-                            text = CurrencyFormatter.format(
-                                (cart.finalPrice ?: cart.totalPrice).toDouble(), currency
-                            ),
+                            text = CurrencyFormatter.format(finalPrice, currency),
                             style = MaterialTheme.typography.titleLarge,
                             color = Gold500,
                             fontWeight = FontWeight.Bold

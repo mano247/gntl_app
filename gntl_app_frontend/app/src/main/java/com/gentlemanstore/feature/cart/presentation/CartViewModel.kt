@@ -20,7 +20,11 @@ data class CartUiState(
     val checkoutSuccess: Boolean = false,
     val isCheckingOut: Boolean = false,
     val removingItemId: Long? = null,
-    val completedOrder: OrderResponse? = null
+    val completedOrder: OrderResponse? = null,
+    val promoCode: String = "",
+    val promoDiscount: Double? = null,
+    val promoError: String? = null,
+    val isValidatingPromo: Boolean = false
 )
 
 @HiltViewModel
@@ -96,11 +100,47 @@ class CartViewModel @Inject constructor(
         }
     }
 
+    fun onPromoCodeChange(code: String) {
+        _uiState.value = _uiState.value.copy(promoCode = code, promoError = null, promoDiscount = null)
+    }
+
+    fun validatePromoCode() {
+        val code = _uiState.value.promoCode.trim()
+        if (code.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isValidatingPromo = true, promoError = null)
+            when (val result = cartRepository.validatePromoCode(code)) {
+                is Resource.Success -> {
+                    val discount = result.data
+                    val cart = _uiState.value.cart
+                    val basePrice = cart?.finalPrice ?: cart?.totalPrice
+                    val discountAmount = if (discount.discountType == "PERCENTAGE") {
+                        basePrice?.toDouble()?.times(discount.value.toDouble() / 100)
+                    } else {
+                        discount.value.toDouble()
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        isValidatingPromo = false,
+                        promoDiscount = discountAmount
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isValidatingPromo = false,
+                        promoError = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
     fun checkout(addressId: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCheckingOut = true)
-
-            when (val result = cartRepository.checkout(addressId)) {
+            val promoCode = _uiState.value.promoCode.ifBlank { null }
+            when (val result = cartRepository.checkout(addressId, promoCode)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isCheckingOut = false,

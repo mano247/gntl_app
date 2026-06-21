@@ -20,7 +20,8 @@ data class EmployeeOrdersUiState(
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
     val updatingOrderId: Long? = null,
-    val selectedStatus: String? = null
+    val selectedStatus: String? = null,
+    val isLoadingMore: Boolean = false
 )
 
 data class EmployeeTicketsUiState(
@@ -65,6 +66,34 @@ class EmployeeViewModel @Inject constructor(
                 is Resource.Error -> {
                     _ordersUiState.value = _ordersUiState.value.copy(
                         isLoading = false,
+                        error = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun loadMoreOrders() {
+        val state = _ordersUiState.value
+        if (state.isLastPage || state.isLoadingMore) return
+
+        viewModelScope.launch {
+            _ordersUiState.value = state.copy(isLoadingMore = true)
+            val nextPage = state.currentPage + 1
+
+            when (val result = employeeRepository.getAllOrders(nextPage)) {
+                is Resource.Success -> {
+                    _ordersUiState.value = _ordersUiState.value.copy(
+                        isLoadingMore = false,
+                        orders = state.orders + result.data.content,
+                        currentPage = nextPage,
+                        isLastPage = result.data.last
+                    )
+                }
+                is Resource.Error -> {
+                    _ordersUiState.value = _ordersUiState.value.copy(
+                        isLoadingMore = false,
                         error = result.message
                     )
                 }

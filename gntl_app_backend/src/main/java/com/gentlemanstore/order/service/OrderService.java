@@ -46,19 +46,13 @@ public class OrderService {
     public OrderDTO getOrder(Long id) {
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-        OrderDTO dto = mapper.toDTO(order);
-        applyLoyaltyDiscount(dto, order.getUser().getId());
-        return dto;
+        return mapper.toDTO(order);
     }
 
     @Transactional(readOnly = true)
     public Page<OrderDTO> getUserOrdersPaged(Long userId, Pageable pageable) {
         return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
-                .map(order -> {
-                    OrderDTO dto = mapper.toDTO(order);
-                    applyLoyaltyDiscount(dto, userId);
-                    return dto;
-                });
+                .map(mapper::toDTO);
     }
 
     @Transactional()

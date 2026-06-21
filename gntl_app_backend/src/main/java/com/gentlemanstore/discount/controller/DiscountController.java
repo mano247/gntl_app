@@ -6,10 +6,12 @@ import com.gentlemanstore.discount.dto.CreatePromotionRequest;
 import com.gentlemanstore.discount.dto.DiscountDTO;
 import com.gentlemanstore.discount.dto.PromotionDTO;
 import com.gentlemanstore.discount.service.DiscountService;
+import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,5 +65,14 @@ public class DiscountController {
     public ResponseEntity<ApiResponse<Void>> applyPromotion(@PathVariable Long promotionId, @PathVariable Long userId){
         service.applyPromotion(userId, promotionId);
         return ResponseEntity.ok(ApiResponse.success("Promotion applied successfully", null));
+    }
+
+    @GetMapping("/validate/{code}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<DiscountDTO>> validatePromoCode(
+            @PathVariable String code,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Promo code valid",
+                service.validateAndUsePromoCode(code, currentUser.getId())));
     }
 }

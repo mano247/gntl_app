@@ -19,11 +19,13 @@ data class OrderResponse(
     val createdAt: String,
     val items: List<OrderItemResponse>,
     val loyaltyDiscount: BigDecimal?,
-    val finalPrice: BigDecimal?
+    val finalPrice: BigDecimal?,
+    val promoDiscount: BigDecimal?
 )
 
 data class CheckoutRequest(
-    val addressId: Long
+    val addressId: Long,
+    val promoCode: String? = null
 )
 
 data class PagedOrderResponse(

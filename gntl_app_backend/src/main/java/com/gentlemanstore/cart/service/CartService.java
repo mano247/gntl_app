@@ -10,7 +10,9 @@ import com.gentlemanstore.cart.repository.CartItemRepository;
 import com.gentlemanstore.cart.repository.CartRepository;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.discount.dto.DiscountDTO;
 import com.gentlemanstore.discount.repository.DiscountRepository;
+import com.gentlemanstore.discount.service.DiscountService;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.OrderDTO;
@@ -57,6 +59,7 @@ public class CartService {
     private final LoyaltyService loyaltyService;
     private final DiscountRepository discountRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
+    private final DiscountService discountService;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -216,6 +219,7 @@ public class CartService {
         order.setOrderItems(orderItems);
         order.setTotalPrice(totalPrice);
 
+        // Loyalty popust
         final BigDecimal finalTotalPrice = totalPrice;
         loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
             BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
@@ -228,6 +232,33 @@ public class CartService {
                 order.setFinalPrice(finalTotalPrice);
             }
         });
+
+        // Promo kod popust
+        if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
+            try {
+                DiscountDTO promoDiscount = discountService.validateAndUsePromoCode(
+                        request.getPromoCode(), userId
+                );
+
+                BigDecimal basePrice = order.getFinalPrice() != null ?
+                        order.getFinalPrice() : order.getTotalPrice();
+
+                BigDecimal promoDiscountAmount;
+                if (promoDiscount.getDiscountType().equals("PERCENTAGE")) {
+                    promoDiscountAmount = basePrice.multiply(promoDiscount.getValue())
+                            .divide(BigDecimal.valueOf(100));
+                } else {
+                    promoDiscountAmount = promoDiscount.getValue();
+                }
+
+                order.setPromoDiscount(promoDiscountAmount);
+                order.setFinalPrice(basePrice.subtract(promoDiscountAmount));
+
+                discountService.markPromoCodeAsUsed(request.getPromoCode(), userId);
+            } catch (Exception e) {
+                throw new BadRequestException("Invalid promo code: " + e.getMessage());
+            }
+        }
 
         orderRepository.save(order);
 

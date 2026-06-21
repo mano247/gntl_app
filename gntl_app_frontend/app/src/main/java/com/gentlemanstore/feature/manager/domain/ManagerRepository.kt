@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.manager.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.manager.data.ManagerApiService
@@ -43,7 +44,7 @@ class ManagerRepository @Inject constructor(
     suspend fun deleteDiscount(id: Long): Resource<Unit> {
         return try {
             val response = managerApiService.deleteDiscount(id)
-            response.toResource()
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

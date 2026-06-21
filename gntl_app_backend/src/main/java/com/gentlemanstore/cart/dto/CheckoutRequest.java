@@ -11,4 +11,6 @@ import lombok.*;
 public class CheckoutRequest {
     @NotNull(message = "Address is required")
     private Long addressId;
+
+    private String promoCode;
 }

@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,7 +44,6 @@ fun EmployeeHomeScreen(
     LaunchedEffect(ticketsState.error) {
         ticketsState.error?.let { onShowError(it) }
     }
-
     LaunchedEffect(Unit) {
         viewModel.loadOrders()
         viewModel.loadTickets()
@@ -65,36 +65,18 @@ fun EmployeeHomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.width(48.dp))
-            Text(
-                text = "EMPLOYEE PANEL",
-                style = MaterialTheme.typography.titleLarge,
-                color = Gold500
-            )
+            Text(text = "EMPLOYEE PANEL", style = MaterialTheme.typography.titleLarge, color = Gold500)
             IconButton(onClick = onLogout) {
-                Icon(
-                    imageVector = Icons.Default.Logout,
-                    contentDescription = "Logout",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Icon(imageVector = Icons.Default.Logout, contentDescription = "Logout", tint = MaterialTheme.colorScheme.error)
             }
         }
 
-        TabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = Gold500
-        ) {
+        TabRow(selectedTabIndex = selectedTab, containerColor = MaterialTheme.colorScheme.surface, contentColor = Gold500) {
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
                     onClick = { selectedTab = index },
-                    text = {
-                        Text(
-                            text = title,
-                            color = if (selectedTab == index) Gold500
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    text = { Text(text = title, color = if (selectedTab == index) Gold500 else MaterialTheme.colorScheme.onSurfaceVariant) }
                 )
             }
         }
@@ -105,7 +87,8 @@ fun EmployeeHomeScreen(
                 filteredOrders = viewModel.filteredOrders,
                 onUpdateStatus = { orderId, status -> viewModel.updateOrderStatus(orderId, status) },
                 onRefresh = { viewModel.loadOrders() },
-                onStatusFilter = { viewModel.onOrderStatusFilter(it) }
+                onStatusFilter = { viewModel.onOrderStatusFilter(it) },
+                onLoadMore = { viewModel.loadMoreOrders() }
             )
             1 -> EmployeeTicketsTab(
                 state = ticketsState,
@@ -126,13 +109,10 @@ private fun EmployeeOrdersTab(
     filteredOrders: List<OrderResponse>,
     onUpdateStatus: (Long, String) -> Unit,
     onRefresh: () -> Unit,
-    onStatusFilter: (String?) -> Unit
+    onStatusFilter: (String?) -> Unit,
+    onLoadMore: () -> Unit
 ) {
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = state.isLoading,
-        onRefresh = onRefresh
-    )
-
+    val pullRefreshState = rememberPullRefreshState(refreshing = state.isLoading, onRefresh = onRefresh)
     val statuses = listOf("ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED")
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -160,11 +140,7 @@ private fun EmployeeOrdersTab(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pullRefresh(pullRefreshState)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
             when {
                 state.isLoading && state.orders.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -189,17 +165,20 @@ private fun EmployeeOrdersTab(
                                 onUpdateStatus = onUpdateStatus
                             )
                         }
+                        if (!state.isLastPage) {
+                            item {
+                                LaunchedEffect(Unit) { onLoadMore() }
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    if (state.isLoadingMore) {
+                                        CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            PullRefreshIndicator(
-                refreshing = state.isLoading,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                backgroundColor = MaterialTheme.colorScheme.surface,
-                contentColor = Gold500
-            )
+            PullRefreshIndicator(refreshing = state.isLoading, state = pullRefreshState, modifier = Modifier.align(Alignment.TopCenter), backgroundColor = MaterialTheme.colorScheme.surface, contentColor = Gold500)
         }
     }
 }
@@ -214,11 +193,7 @@ private fun EmployeeTicketsTab(
     onRefresh: () -> Unit,
     onStatusFilter: (String?) -> Unit
 ) {
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = state.isLoading,
-        onRefresh = onRefresh
-    )
-
+    val pullRefreshState = rememberPullRefreshState(refreshing = state.isLoading, onRefresh = onRefresh)
     val statuses = listOf("ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -246,11 +221,7 @@ private fun EmployeeTicketsTab(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pullRefresh(pullRefreshState)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
             when {
                 state.isLoading && state.tickets.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -279,14 +250,7 @@ private fun EmployeeTicketsTab(
                     }
                 }
             }
-
-            PullRefreshIndicator(
-                refreshing = state.isLoading,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                backgroundColor = MaterialTheme.colorScheme.surface,
-                contentColor = Gold500
-            )
+            PullRefreshIndicator(refreshing = state.isLoading, state = pullRefreshState, modifier = Modifier.align(Alignment.TopCenter), backgroundColor = MaterialTheme.colorScheme.surface, contentColor = Gold500)
         }
     }
 }
@@ -312,113 +276,68 @@ private fun EmployeeOrderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Order #${order.id}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Text(text = "Order #${order.id}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(getStatusColor(order.status).copy(alpha = 0.2f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = order.status,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = getStatusColor(order.status)
-                    )
+                    Text(text = order.status, style = MaterialTheme.typography.labelSmall, color = getStatusColor(order.status))
                 }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Ordered: ${order.createdAt.take(10)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${order.items.size} items · ${order.totalPrice} din",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = "Ordered: ${order.createdAt.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = "${order.items.size} items · ${order.finalPrice ?: order.totalPrice} din", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            // Expand/collapse dugme
-            TextButton(
-                onClick = { expanded = !expanded },
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(
-                    text = if (expanded) "Hide details ▲" else "Show details ▼",
-                    color = Gold500,
-                    style = MaterialTheme.typography.labelMedium
-                )
+            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(0.dp)) {
+                Text(text = if (expanded) "Hide details ▲" else "Show details ▼", color = Gold500, style = MaterialTheme.typography.labelMedium)
             }
 
-            // Detalji proizvoda
             if (expanded) {
                 Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 Spacer(modifier = Modifier.height(8.dp))
                 order.items.forEach { item ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.productName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Size: ${item.size ?: "N/A"} · Qty: ${item.quantity}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(text = item.productName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
+                            Text(text = "Size: ${item.size ?: "N/A"} · Qty: ${item.quantity}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text(
-                            text = "${item.price} din",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Gold500,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = "${item.price} din", style = MaterialTheme.typography.bodySmall, color = Gold500, fontWeight = FontWeight.Bold)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Total",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${order.totalPrice} din",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Gold500
-                    )
+
+                if (order.loyaltyDiscount != null && order.loyaltyDiscount > java.math.BigDecimal.ZERO) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Loyalty Discount", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                        Text(text = "- ${order.loyaltyDiscount} din", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                    }
+                }
+
+                if (order.promoDiscount != null && order.promoDiscount > java.math.BigDecimal.ZERO) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Promo Discount", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                        Text(text = "- ${order.promoDiscount} din", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(text = "Total", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text(text = "${order.finalPrice ?: order.totalPrice} din", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Gold500)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
             Box {
-                OutlinedButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    enabled = !isUpdating
-                ) {
+                OutlinedButton(onClick = { showMenu = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), enabled = !isUpdating) {
                     if (isUpdating) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Gold500)
                     } else {
@@ -426,13 +345,9 @@ private fun EmployeeOrderCard(
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Gold500)
                     }
                 }
-
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                     orderStatuses.forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(status) },
-                            onClick = { onUpdateStatus(order.id, status); showMenu = false }
-                        )
+                        DropdownMenuItem(text = { Text(status) }, onClick = { onUpdateStatus(order.id, status); showMenu = false })
                     }
                 }
             }
@@ -450,51 +365,26 @@ private fun EmployeeTicketCard(
     var showMenu by remember { mutableStateOf(false) }
     val ticketStatuses = listOf("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Ticket #${ticket.id}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Ticket #${ticket.id}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = ticket.status,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = getTicketStatusColor(ticket.status)
-                    )
+                    Text(text = ticket.status, style = MaterialTheme.typography.labelSmall, color = getTicketStatusColor(ticket.status))
                 }
             }
-
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = ticket.subject, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(text = ticket.userEmail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(modifier = Modifier.weight(1f)) {
-                    OutlinedButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        enabled = !isUpdating
-                    ) {
+                    OutlinedButton(onClick = { showMenu = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), enabled = !isUpdating) {
                         if (isUpdating) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Gold500)
                         } else {
@@ -502,17 +392,12 @@ private fun EmployeeTicketCard(
                             Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Gold500)
                         }
                     }
-
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         ticketStatuses.forEach { status ->
-                            DropdownMenuItem(
-                                text = { Text(status) },
-                                onClick = { onUpdateStatus(ticket.id, status); showMenu = false }
-                            )
+                            DropdownMenuItem(text = { Text(status) }, onClick = { onUpdateStatus(ticket.id, status); showMenu = false })
                         }
                     }
                 }
-
                 Button(
                     onClick = { ticket.sessionId?.let { sessionId -> onOpenChat(ticket.id, sessionId) } },
                     modifier = Modifier.weight(1f),

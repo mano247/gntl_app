@@ -6,6 +6,7 @@ import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
+import com.gentlemanstore.feature.manager.data.dto.DiscountResponse
 import com.gentlemanstore.feature.order.data.dto.CheckoutRequest
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import javax.inject.Inject
@@ -48,9 +49,18 @@ class CartRepository @Inject constructor(
         }
     }
 
-    suspend fun checkout(addressId: Long): Resource<OrderResponse> {
+    suspend fun checkout(addressId: Long, promoCode: String? = null): Resource<OrderResponse> {
         return try {
-            val response = cartApiService.checkout(CheckoutRequest(addressId))
+            val response = cartApiService.checkout(CheckoutRequest(addressId, promoCode))
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun validatePromoCode(code: String): Resource<DiscountResponse> {
+        return try {
+            val response = cartApiService.validatePromoCode(code)
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
