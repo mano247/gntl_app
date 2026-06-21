@@ -93,6 +93,72 @@ fun CheckoutScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                item {
+                    Text(
+                        text = "ORDER SUMMARY",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    cartState.cart?.items?.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            coil.compose.AsyncImage(
+                                model = item.imageUrl,
+                                contentDescription = item.productName,
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.productName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Size: ${item.size} · Qty: ${item.quantity}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                if (item.originalPrice != null && item.originalPrice != item.price) {
+                                    Text(
+                                        text = CurrencyFormatter.format(item.originalPrice.toDouble(), currency),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    )
+                                    Text(
+                                        text = CurrencyFormatter.format(item.price.toDouble(), currency),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = androidx.compose.ui.graphics.Color(0xFFE05252),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = CurrencyFormatter.format(item.price.toDouble(), currency),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Gold500,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                }
                 // Adresa sekcija
                 item {
                     Text(

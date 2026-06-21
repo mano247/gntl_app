@@ -2,6 +2,7 @@ package com.gentlemanstore.product.service;
 
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.product.dto.CategoryDTO;
 import com.gentlemanstore.product.dto.CreateProductRequest;
 import com.gentlemanstore.product.dto.ProductDTO;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,20 +28,31 @@ public class ProductService {
     private final ProductRepository repo;
     private final ProductMapper mapper;
     private final CategoryRepository categoryRepository;
-
-    @Transactional(readOnly = true)
-    public ProductDTO getProduct(Long id){
-        Product product = repo.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        return mapper.toDTO(product);
-    }
+    private final DiscountRepository discountRepository;
 
     @Transactional(readOnly = true)
     public Page<ProductDTO> getAllProducts(String category, String search, Pageable pageable) {
         Page<Long> ids = repo.findIdsByFilters(category, search, pageable);
         List<Product> products = repo.findAllByIdInWithDetails(ids.getContent());
-        List<ProductDTO> dtos = products.stream().map(mapper::toDTO).collect(Collectors.toList());
+        LocalDateTime now = LocalDateTime.now();
+        List<ProductDTO> dtos = products.stream().map(product -> {
+            ProductDTO dto = mapper.toDTO(product);
+            discountRepository.findActiveDiscountForProduct(product.getId(), product.getCategory().getId(), now)
+                    .ifPresent(discount -> dto.setDiscountPercentage(discount.getValue()));
+            return dto;
+        }).collect(Collectors.toList());
         return new PageImpl<>(dtos, pageable, ids.getTotalElements());
+    }
+
+    @Transactional(readOnly = true)
+    public ProductDTO getProduct(Long id){
+        Product product = repo.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        ProductDTO dto = mapper.toDTO(product);
+        LocalDateTime now = LocalDateTime.now();
+        discountRepository.findActiveDiscountForProduct(product.getId(), product.getCategory().getId(), now)
+                .ifPresent(discount -> dto.setDiscountPercentage(discount.getValue()));
+        return dto;
     }
 
     @Transactional()

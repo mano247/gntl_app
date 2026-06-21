@@ -15,7 +15,8 @@ data class ProductResponse(
     val categoryName: String,
     val sizes: List<ProductSizeResponse>,
     val imageUrls: List<String>,
-    val tags: List<String>
+    val tags: List<String>,
+    val discountPercentage: Double?
 )
 
 data class PagedProductResponse(

@@ -17,4 +17,5 @@ public class CartItemDTO {
     private String size;
     private Integer quantity;
     private BigDecimal price;
+    private BigDecimal originalPrice;
 }

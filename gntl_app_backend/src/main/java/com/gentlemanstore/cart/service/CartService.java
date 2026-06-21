@@ -10,6 +10,7 @@ import com.gentlemanstore.cart.repository.CartItemRepository;
 import com.gentlemanstore.cart.repository.CartRepository;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.mapper.OrderMapper;
@@ -53,6 +54,7 @@ public class CartService {
     private final AddressRepository addressRepository;
     private final ShipmentRepository shipmentRepository;
     private final LoyaltyService loyaltyService;
+    private final DiscountRepository discountRepository;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -77,7 +79,7 @@ public class CartService {
                 .collect(Collectors.toList()));
 
         BigDecimal totalPrice = activeItems.stream()
-                .map(item -> item.getProduct().getPrice()
+                .map(item -> (item.getUnitPrice() != null ? item.getUnitPrice() : item.getProduct().getPrice())
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         cartDTO.setTotalPrice(totalPrice);
@@ -103,11 +105,30 @@ public class CartService {
         ProductSize productSize = productSizeRepository.findByIdAndDeletedFalse(request.getProductSizeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product size not found"));
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        BigDecimal unitPrice = product.getPrice();
+        java.util.Optional<com.gentlemanstore.discount.model.Discount> activeDiscount =
+                discountRepository.findActiveDiscountForProduct(
+                        product.getId(), product.getCategory().getId(), now
+                );
+        if (activeDiscount.isPresent()) {
+            com.gentlemanstore.discount.model.Discount discount = activeDiscount.get();
+            if (discount.getDiscountType() == com.gentlemanstore.discount.model.DiscountType.PERCENTAGE) {
+                BigDecimal multiplier = BigDecimal.ONE.subtract(
+                        discount.getValue().divide(BigDecimal.valueOf(100))
+                );
+                unitPrice = product.getPrice().multiply(multiplier);
+            } else {
+                unitPrice = product.getPrice().subtract(discount.getValue());
+            }
+        }
+
         CartItem cartItem = CartItem.builder()
                 .cart(cart)
                 .product(product)
                 .productSize(productSize)
                 .quantity(request.getQuantity())
+                .unitPrice(unitPrice)
                 .deleted(false)
                 .build();
 
@@ -156,7 +177,7 @@ public class CartService {
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         for (CartItem cartItem : items) {
-            BigDecimal itemPrice = cartItem.getProduct().getPrice()
+            BigDecimal itemPrice = (cartItem.getUnitPrice() != null ? cartItem.getUnitPrice() : cartItem.getProduct().getPrice())
                     .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
             OrderItem orderItem = OrderItem.builder()

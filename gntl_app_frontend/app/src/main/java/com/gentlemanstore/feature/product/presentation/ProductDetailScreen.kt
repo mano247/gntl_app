@@ -162,11 +162,48 @@ fun ProductDetailScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Text(
-                            text = CurrencyFormatter.format(product.price, currency),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Gold500
-                        )
+                        val discountedPrice = product.discountPercentage?.let {
+                            product.price - (product.price * it / 100)
+                        }
+
+                        if (discountedPrice != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = CurrencyFormatter.format(product.price, currency),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textDecoration = TextDecoration.LineThrough
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(androidx.compose.ui.graphics.Color(0xFFE05252))
+                                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = "-${product.discountPercentage!!.toInt()}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = androidx.compose.ui.graphics.Color.White,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Text(
+                                text = CurrencyFormatter.format(discountedPrice, currency),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = androidx.compose.ui.graphics.Color(0xFFE05252),
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                text = CurrencyFormatter.format(product.price, currency),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Gold500
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 

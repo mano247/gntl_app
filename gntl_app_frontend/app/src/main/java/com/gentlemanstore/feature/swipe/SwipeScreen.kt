@@ -143,12 +143,49 @@ fun SwipeScreen(
                                 maxLines = 2
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = CurrencyFormatter.format(product.price, currency),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Gold500,
-                                fontWeight = FontWeight.Bold
-                            )
+                            val discountedPrice = product.discountPercentage?.let {
+                                product.price - (product.price * it / 100)
+                            }
+
+                            if (discountedPrice != null) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = CurrencyFormatter.format(product.price, currency),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.White.copy(alpha = 0.6f),
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(Color(0xFFE05252))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "-${product.discountPercentage!!.toInt()}%",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = CurrencyFormatter.format(discountedPrice, currency),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color(0xFFE05252),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Text(
+                                    text = CurrencyFormatter.format(product.price, currency),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Gold500,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
                         // Cart button only
@@ -251,12 +288,49 @@ fun SwipeScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = CurrencyFormatter.format(product.price, currency),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Gold500,
-                    fontWeight = FontWeight.Bold
-                )
+                val discountedPrice = product.discountPercentage?.let {
+                    product.price - (product.price * it / 100)
+                }
+
+                if (discountedPrice != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = CurrencyFormatter.format(product.price, currency),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(androidx.compose.ui.graphics.Color(0xFFE05252))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "-${product.discountPercentage!!.toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = androidx.compose.ui.graphics.Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    Text(
+                        text = CurrencyFormatter.format(discountedPrice, currency),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = androidx.compose.ui.graphics.Color(0xFFE05252),
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = CurrencyFormatter.format(product.price, currency),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Gold500,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 

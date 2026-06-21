@@ -20,4 +20,5 @@ public class ProductDTO {
     private List<ProductSizeDTO> sizes;
     private List<String> imageUrls;
     private List<String> tags;
+    private BigDecimal discountPercentage;
 }

@@ -5,6 +5,8 @@ import com.gentlemanstore.product.model.ProductSize;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "cart_items")
 @Getter
@@ -34,4 +36,7 @@ public class CartItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_size_id", nullable = false)
     private ProductSize productSize;
+
+    @Column
+    private BigDecimal unitPrice;
 }

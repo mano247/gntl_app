@@ -121,11 +121,28 @@ fun OrderConfirmationScreen(
                                     )
                                 }
                             }
-                            Text(
-                                text = CurrencyFormatter.format(item.price.toDouble(), currency),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Gold500
-                            )
+                            Column(horizontalAlignment = Alignment.End) {
+                                if (item.originalPrice != null && item.originalPrice != item.price) {
+                                    Text(
+                                        text = CurrencyFormatter.format(item.originalPrice.toDouble(), currency),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                    )
+                                    Text(
+                                        text = CurrencyFormatter.format(item.price.toDouble(), currency),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = androidx.compose.ui.graphics.Color(0xFFE05252),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = CurrencyFormatter.format(item.price.toDouble(), currency),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Gold500
+                                    )
+                                }
+                            }
                         }
                     }
                 }

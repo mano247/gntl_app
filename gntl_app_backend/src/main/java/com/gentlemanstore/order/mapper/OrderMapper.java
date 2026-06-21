@@ -16,6 +16,7 @@ public interface OrderMapper {
     @Mapping(source = "product.name", target = "productName")
     @Mapping(source = "totalPrice", target = "price")
     @Mapping(source = "productSize.size", target = "size")
+    @Mapping(source = "product.price", target = "originalPrice")
     @Mapping(target = "imageUrl", expression = "java(orderItem.getProduct().getImages().isEmpty() ? null : orderItem.getProduct().getImages().iterator().next().getImageUrl())")
     OrderItemDTO toItemDTO(OrderItem orderItem);
 }

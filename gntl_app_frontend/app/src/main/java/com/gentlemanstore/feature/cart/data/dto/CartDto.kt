@@ -9,7 +9,8 @@ data class CartItemResponse(
     val imageUrl: String?,
     val size: String,
     val quantity: Int,
-    val price: BigDecimal
+    val price: BigDecimal,
+    val originalPrice: BigDecimal?
 )
 
 data class CartResponse(
