@@ -1,12 +1,11 @@
 package com.gentlemanstore.notification.service;
 
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
-import com.gentlemanstore.notification.dto.CreateNotificationRequest;
 import com.gentlemanstore.notification.dto.NotificationDTO;
-import com.gentlemanstore.notification.mapper.NotificationMapper;
 import com.gentlemanstore.notification.model.Notification;
 import com.gentlemanstore.notification.model.NotificationType;
 import com.gentlemanstore.notification.repository.NotificationRepository;
+import com.gentlemanstore.user.model.RoleName;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,61 +15,92 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
-    private final NotificationRepository repo;
+    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final NotificationMapper mapper;
 
-    @Transactional(readOnly = true)
-    public Page<NotificationDTO> getUserNotifications(Long userId, Pageable pageable) {
-        return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
-                .map(mapper::toDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<NotificationDTO> getUnreadNotifications(Long userId, Pageable pageable) {
-        return repo.findAllByUserIdAndReadFalseAndDeletedFalse(userId, pageable)
-                .map(mapper::toDTO);
-    }
-
-    @Transactional()
-    public NotificationDTO createNotification(CreateNotificationRequest request){
-        User user = userRepository.findById(request.getUserId())
+    @Transactional
+    public void createNotification(Long userId, String title, String message, NotificationType type) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Notification notification = Notification.builder()
-                .title(request.getTitle())
-                .message(request.getMessage())
-                .notificationType(NotificationType.valueOf(request.getNotificationType()))
                 .user(user)
+                .title(title)
+                .message(message)
+                .type(type)
+                .isRead(false)
                 .deleted(false)
                 .build();
 
-        repo.save(notification);
-        return mapper.toDTO(notification);
+        notificationRepository.save(notification);
     }
 
-    @Transactional()
-    public NotificationDTO markAsRead(Long id){
-        Notification notification = repo.findById(id)
+    @Transactional
+    public void createNotificationForAllCustomers(String title, String message, NotificationType type) {
+        List<User> customers = userRepository.findAll().stream()
+                .filter(u -> !u.isDeleted() && u.getRoles().stream()
+                        .anyMatch(r -> r.getName() == RoleName.ROLE_CUSTOMER))
+                .toList();
+
+        List<Notification> notifications = customers.stream()
+                .map(user -> Notification.builder()
+                        .user(user)
+                        .title(title)
+                        .message(message)
+                        .type(type)
+                        .isRead(false)
+                        .deleted(false)
+                        .build())
+                .toList();
+
+        notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional
+    public void markAsRead(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findByIdAndDeletedFalse(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Notification not found");
+        }
 
         notification.setRead(true);
-        repo.save(notification);
-        return mapper.toDTO(notification);
+        notificationRepository.save(notification);
     }
 
-    @Transactional()
-    public void deleteNotification(Long id){
-        Notification notification = repo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        Page<Notification> notifications = notificationRepository
+                .findAllByUserIdAndDeletedFalse(userId, Pageable.unpaged());
+        notifications.forEach(n -> n.setRead(true));
+        notificationRepository.saveAll(notifications.getContent());
+    }
 
-        notification.setDeleted(true);
-        repo.save(notification);
+    @Transactional(readOnly = true)
+    public Page<NotificationDTO> getNotifications(Long userId, Pageable pageable) {
+        return notificationRepository.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public long getUnreadCount(Long userId) {
+        return notificationRepository.countByUserIdAndIsReadFalseAndDeletedFalse(userId);
+    }
+
+    private NotificationDTO toDTO(Notification n) {
+        return NotificationDTO.builder()
+                .id(n.getId())
+                .title(n.getTitle())
+                .message(n.getMessage())
+                .type(n.getType().name())
+                .isRead(n.isRead())
+                .createdAt(n.getCreatedAt())
+                .build();
     }
 }

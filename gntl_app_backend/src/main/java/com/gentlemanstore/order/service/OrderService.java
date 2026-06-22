@@ -5,6 +5,8 @@ import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.common.util.EmailService;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
+import com.gentlemanstore.notification.model.NotificationType;
+import com.gentlemanstore.notification.service.NotificationService;
 import com.gentlemanstore.order.dto.CreateOrderRequest;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.dto.OrderItemRequest;
@@ -41,6 +43,7 @@ public class OrderService {
     private final EmailService emailService;
     private final LoyaltyService loyaltyService;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public OrderDTO getOrder(Long id) {
@@ -129,6 +132,19 @@ public class OrderService {
         }
 
         Order savedOrder = repo.save(order);
+
+        try {
+            String cleanStatus = status.trim().replace("\"", "").toUpperCase();
+            notificationService.createNotification(
+                    order.getUser().getId(),
+                    "Order Status Update",
+                    String.format("Your order #%d status has been updated to %s.", order.getId(), cleanStatus),
+                    NotificationType.ORDER_STATUS
+            );
+        } catch (Exception e) {
+            log.warn("Order status notification failed: {}", e.getMessage());
+        }
+
         return mapper.toDTO(savedOrder);
     }
 

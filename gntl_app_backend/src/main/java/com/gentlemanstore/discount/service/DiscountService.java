@@ -12,6 +12,8 @@ import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.discount.repository.PromotionRepository;
 import com.gentlemanstore.discount.repository.UserDiscountRepository;
 import com.gentlemanstore.discount.repository.UserPromotionRepository;
+import com.gentlemanstore.notification.model.NotificationType;
+import com.gentlemanstore.notification.service.NotificationService;
 import com.gentlemanstore.product.model.Category;
 import com.gentlemanstore.product.model.Product;
 import com.gentlemanstore.product.repository.CategoryRepository;
@@ -38,6 +40,7 @@ public class DiscountService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final UserDiscountRepository userDiscountRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public DiscountDTO getDiscount(String code){
@@ -81,6 +84,16 @@ public class DiscountService {
                 .build();
 
         discountRepository.save(discount);
+
+        String title = "New Discount Available!";
+        String message = String.format("New promotion! Code: %s, %.0f%s off from %s to %s",
+                discount.getCode(),
+                discount.getValue(),
+                discount.getDiscountType() == DiscountType.PERCENTAGE ? "%" : " RSD",
+                discount.getValidFrom().toLocalDate(),
+                discount.getValidTo().toLocalDate());
+        notificationService.createNotificationForAllCustomers(title, message, NotificationType.DISCOUNT);
+
         return mapper.toDTO(discount);
     }
 

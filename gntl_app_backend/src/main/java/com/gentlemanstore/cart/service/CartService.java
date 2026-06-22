@@ -15,6 +15,8 @@ import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.discount.service.DiscountService;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
+import com.gentlemanstore.notification.model.NotificationType;
+import com.gentlemanstore.notification.service.NotificationService;
 import com.gentlemanstore.order.dto.OrderDTO;
 import com.gentlemanstore.order.mapper.OrderMapper;
 import com.gentlemanstore.order.model.Order;
@@ -60,6 +62,7 @@ public class CartService {
     private final DiscountRepository discountRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final DiscountService discountService;
+    private final NotificationService notificationService;
 
     @Transactional()
     public CartDTO getCart(Long userId) {
@@ -270,6 +273,21 @@ public class CartService {
             }
         } catch (Exception e) {
             log.warn("Loyalty points adding failed: {}", e.getMessage());
+        }
+
+        try {
+            loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+                notificationService.createNotification(
+                        userId,
+                        "Loyalty Points Updated",
+                        String.format("Your loyalty points are now %d. Your loyalty tier is %s.",
+                                account.getPoints(),
+                                account.getLoyaltyTier().getName()),
+                        NotificationType.LOYALTY
+                );
+            });
+        } catch (Exception e) {
+            log.warn("Loyalty notification failed: {}", e.getMessage());
         }
 
         String formattedAddress = formatAddress(address);

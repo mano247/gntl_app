@@ -1,11 +1,9 @@
 package com.gentlemanstore.notification.controller;
 
 import com.gentlemanstore.common.response.ApiResponse;
-import com.gentlemanstore.notification.dto.CreateNotificationRequest;
 import com.gentlemanstore.notification.dto.NotificationDTO;
 import com.gentlemanstore.notification.service.NotificationService;
 import com.gentlemanstore.user.model.User;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,8 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -23,49 +19,37 @@ public class NotificationController {
 
     private final NotificationService service;
 
-    @GetMapping("/my")
+    @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getMyNotifications(
+    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getNotifications(
             @AuthenticationPrincipal User currentUser,
-            Pageable pageable){
+            Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("Notifications retrieved successfully",
-                service.getUserNotifications(currentUser.getId(), pageable)));
+                service.getNotifications(currentUser.getId(), pageable)));
     }
 
-    @GetMapping("/my/unread")
+    @GetMapping("/unread-count")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getMyUnreadNotifications(
-            @AuthenticationPrincipal User currentUser,
-            Pageable pageable){
-        return ResponseEntity.ok(ApiResponse.success("Unread notifications retrieved successfully",
-                service.getUnreadNotifications(currentUser.getId(), pageable)));
+    public ResponseEntity<ApiResponse<Long>> getUnreadCount(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Unread count retrieved successfully",
+                service.getUnreadCount(currentUser.getId())));
     }
 
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<Page<NotificationDTO>>> getUserNotifications(
-            @PathVariable Long userId,
-            Pageable pageable){
-        return ResponseEntity.ok(ApiResponse.success("Notifications retrieved successfully",
-                service.getUserNotifications(userId, pageable)));
+    @PutMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        service.markAsRead(id, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Notification marked as read", null));
     }
 
-    @PostMapping()
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<NotificationDTO>> createNotification(@Valid @RequestBody CreateNotificationRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Notification created successfully", service.createNotification(request)));
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<NotificationDTO>> markAsRead(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Notification marked as read successfully", service.markAsRead(id)));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id){
-        service.deleteNotification(id);
-        return ResponseEntity.ok(ApiResponse.success("Notification deleted successfully", null));
+    @PutMapping("/read-all")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead(
+            @AuthenticationPrincipal User currentUser) {
+        service.markAllAsRead(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", null));
     }
 }

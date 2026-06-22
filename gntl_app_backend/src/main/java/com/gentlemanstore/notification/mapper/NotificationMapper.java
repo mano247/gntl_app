@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface NotificationMapper {
-    @Mapping(source = "notificationType", target = "notificationType")
+    @Mapping(source = "type", target = "type")
+    @Mapping(source = "read", target = "isRead")
     NotificationDTO toDTO(Notification notification);
 }
