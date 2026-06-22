@@ -40,6 +40,7 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
+        viewModel.loadUnreadCount()
     }
 
     Box(
@@ -123,11 +124,47 @@ fun ProfileScreen(
                             label = "Loyalty Program",
                             onClick = onNavigateToLoyalty
                         )
-                        ProfileMenuItem(
-                            icon = Icons.Default.Notifications,
-                            label = "Notifications",
-                            onClick = onNavigateToNotifications
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .clickable { onNavigateToNotifications() }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Gold500,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                if (uiState.unreadNotificationCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                                            .align(Alignment.TopEnd),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (uiState.unreadNotificationCount > 9) "9+" else uiState.unreadNotificationCount.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = androidx.compose.ui.graphics.Color.White,
+                                            fontSize = androidx.compose.ui.unit.TextUnit(8f, androidx.compose.ui.unit.TextUnitType.Sp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Notifications",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         ProfileMenuItem(
                             icon = Icons.Default.Support,
                             label = "Support",

@@ -15,10 +15,12 @@ import javax.inject.Inject
 data class NotificationUiState(
     val isLoading: Boolean = false,
     val notifications: List<NotificationResponse> = emptyList(),
+    val unreadCount: Int = 0,
     val error: String? = null,
     val currentPage: Int = 0,
     val isLastPage: Boolean = false,
-    val isLoadingMore: Boolean = false
+    val isLoadingMore: Boolean = false,
+    val selectedType: String? = null
 )
 
 @HiltViewModel
@@ -29,21 +31,33 @@ class NotificationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NotificationUiState())
     val uiState: StateFlow<NotificationUiState> = _uiState.asStateFlow()
 
+    val filteredNotifications: List<NotificationResponse>
+        get() {
+            val sorted = _uiState.value.notifications.sortedBy { it.isRead }
+            return if (_uiState.value.selectedType == null) sorted
+            else sorted.filter { it.type == _uiState.value.selectedType }
+        }
+
+
+    fun onTypeFilter(type: String?) {
+        _uiState.value = _uiState.value.copy(selectedType = type)
+    }
+
     init {
         loadNotifications()
+        loadUnreadCount()
     }
 
     fun loadNotifications() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-
-            when (val result = notificationRepository.getMyNotifications(page = 0)) {
+            when (val result = notificationRepository.getNotifications(page = 0)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         notifications = result.data.content,
                         currentPage = 0,
-                        isLastPage = result.data.last,
+                        isLastPage = result.data.totalPages <= 1,
                         error = null
                     )
                 }
@@ -58,21 +72,43 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
+    fun loadUnreadCount() {
+        viewModelScope.launch {
+            when (val result = notificationRepository.getUnreadCount()) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(unreadCount = result.data)
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun markAsRead(id: Long) {
+        viewModelScope.launch {
+            notificationRepository.markAsRead(id)
+            _uiState.value = _uiState.value.copy(
+                notifications = _uiState.value.notifications.map {
+                    if (it.id == id) it.copy(isRead = true) else it
+                },
+                unreadCount = maxOf(0, _uiState.value.unreadCount - 1)
+            )
+        }
+    }
+
     fun loadMoreNotifications() {
         val state = _uiState.value
-        if (state.isLastPage || state.isLoadingMore || state.notifications.isEmpty()) return
+        if (state.isLastPage || state.isLoadingMore) return
 
         viewModelScope.launch {
             _uiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
-
-            when (val result = notificationRepository.getMyNotifications(page = nextPage)) {
+            when (val result = notificationRepository.getNotifications(page = nextPage)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingMore = false,
                         notifications = state.notifications + result.data.content,
                         currentPage = nextPage,
-                        isLastPage = result.data.last
+                        isLastPage = result.data.totalPages <= nextPage + 1
                     )
                 }
                 is Resource.Error -> {
@@ -80,24 +116,6 @@ class NotificationViewModel @Inject constructor(
                         isLoadingMore = false,
                         error = result.message
                     )
-                }
-                is Resource.Loading -> Unit
-            }
-        }
-    }
-
-    fun markAsRead(id: Long) {
-        viewModelScope.launch {
-            when (val result = notificationRepository.markAsRead(id)) {
-                is Resource.Success -> {
-                    _uiState.value = _uiState.value.copy(
-                        notifications = _uiState.value.notifications.map {
-                            if (it.id == id) result.data else it
-                        }
-                    )
-                }
-                is Resource.Error -> {
-                    _uiState.value = _uiState.value.copy(error = result.message)
                 }
                 is Resource.Loading -> Unit
             }

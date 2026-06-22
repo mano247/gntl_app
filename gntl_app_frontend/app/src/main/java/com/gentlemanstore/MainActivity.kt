@@ -31,7 +31,7 @@ import com.gentlemanstore.feature.cart.presentation.CheckoutScreen
 import com.gentlemanstore.feature.employee.presentation.EmployeeHomeScreen
 import com.gentlemanstore.feature.loyalty.presentation.LoyaltyScreen
 import com.gentlemanstore.feature.manager.presentation.ManagerHomeScreen
-import com.gentlemanstore.feature.notification.presentation.NotificationsScreen
+import com.gentlemanstore.feature.notification.presentation.NotificationScreen
 import com.gentlemanstore.feature.order.presentation.MyOrdersScreen
 import com.gentlemanstore.feature.order.presentation.OrderConfirmationScreen
 import com.gentlemanstore.feature.order.presentation.OrderDetailScreen
@@ -62,10 +62,19 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-                val snackbarHostState = remember { SnackbarHostState() }
-                val scope = rememberCoroutineScope()
 
                 val cartViewModel: CartViewModel = hiltViewModel()
+                val notificationViewModel: com.gentlemanstore.feature.notification.presentation.NotificationViewModel = hiltViewModel()
+                val notificationState by notificationViewModel.uiState.collectAsStateWithLifecycle()
+
+                LaunchedEffect(currentRoute) {
+                    if (currentRoute == "profile" || currentRoute == "home_customer") {
+                        notificationViewModel.loadUnreadCount()
+                    }
+                }
+
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
 
                 val bottomNavRoutes = listOf(
                     BottomNavItem.Home.route,
@@ -86,7 +95,10 @@ class MainActivity : ComponentActivity() {
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = {
                         if (showBottomBar) {
-                            BottomNavBar(navController = navController)
+                            BottomNavBar(
+                                navController = navController,
+                                unreadNotificationCount = notificationState.unreadCount
+                            )
                         }
                     }
                 ) { innerPadding ->
@@ -268,9 +280,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("notifications") {
-                            NotificationsScreen(
-                                onNavigateBack = { navController.popBackStack() },
-                                onShowError = showSnackbar
+                            NotificationScreen(
+                                onNavigateBack = { navController.popBackStack() }
                             )
                         }
                         composable("home_employee") {

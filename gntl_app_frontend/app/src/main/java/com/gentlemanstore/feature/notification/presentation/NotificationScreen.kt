@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -19,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,22 +28,27 @@ import com.gentlemanstore.ui.theme.Gold500
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun NotificationsScreen(
+fun NotificationScreen(
     onNavigateBack: () -> Unit,
-    onShowError: (String) -> Unit = {},
     viewModel: NotificationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { onShowError(it) }
-    }
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isLoading,
-        onRefresh = { viewModel.loadNotifications() }
+        onRefresh = {
+            viewModel.loadNotifications()
+        }
     )
+
+    LaunchedEffect(Unit) {
+        viewModel.loadNotifications()
+    }
+
+//    LaunchedEffect(Unit) {
+//        kotlinx.coroutines.delay(500)
+//        viewModel.markAllAsRead()
+//    }
 
     Box(
         modifier = Modifier
@@ -74,6 +79,32 @@ fun NotificationsScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
+            val types = listOf("ALL", "DISCOUNT", "ORDER_STATUS", "LOYALTY")
+
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                items(count = types.size, key = { types[it] }) { index ->
+                    val type = types[index]
+                    val isSelected = when {
+                        type == "ALL" && uiState.selectedType == null -> true
+                        type == uiState.selectedType -> true
+                        else -> false
+                    }
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.onTypeFilter(if (type == "ALL") null else type) },
+                        label = { Text(type) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Gold500,
+                            selectedLabelColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -81,19 +112,13 @@ fun NotificationsScreen(
             ) {
                 when {
                     uiState.isLoading && uiState.notifications.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = Gold500)
                         }
                     }
 
                     uiState.notifications.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
                                     imageVector = Icons.Default.Notifications,
@@ -113,34 +138,24 @@ fun NotificationsScreen(
 
                     else -> {
                         LazyColumn(
-                            state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(uiState.notifications, key = { it.id }) { notification ->
+                            items(viewModel.filteredNotifications, key = { it.id }) { notification ->
                                 NotificationCard(
                                     notification = notification,
-                                    onClick = {
-                                        if (!notification.read) {
-                                            viewModel.markAsRead(notification.id)
-                                        }
-                                    }
+                                    onClick = { viewModel.markAsRead(notification.id) }
                                 )
                             }
 
-                            if (uiState.isLoadingMore) {
+                            if (!uiState.isLastPage) {
                                 item {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(
-                                            color = Gold500,
-                                            modifier = Modifier
-                                                .size(24.dp)
-                                                .padding(vertical = 8.dp)
-                                        )
+                                    LaunchedEffect(Unit) { viewModel.loadMoreNotifications() }
+                                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                        if (uiState.isLoadingMore) {
+                                            CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
+                                        }
                                     }
                                 }
                             }
@@ -165,41 +180,83 @@ private fun NotificationCard(
     notification: NotificationResponse,
     onClick: () -> Unit
 ) {
+    val typeColor = when (notification.type) {
+        "DISCOUNT" -> Color(0xFF4A90D9)
+        "ORDER_STATUS" -> Color(0xFF4CAF50)
+        "LOYALTY" -> Gold500
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    val typeLabel = when (notification.type) {
+        "DISCOUNT" -> "🏷 Discount"
+        "ORDER_STATUS" -> "📦 Order"
+        "LOYALTY" -> "⭐ Loyalty"
+        else -> notification.type
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (notification.read) MaterialTheme.colorScheme.surface
-                else Gold500.copy(alpha = 0.08f)
+                if (!notification.isRead)
+                    Gold500.copy(alpha = 0.08f)
+                else
+                    MaterialTheme.colorScheme.surface
             )
             .clickable { onClick() }
             .padding(14.dp),
         verticalAlignment = Alignment.Top
     ) {
-        if (!notification.read) {
+        // Unread indicator
+        if (!notification.isRead) {
             Box(
                 modifier = Modifier
-                    .padding(top = 6.dp, end = 10.dp)
                     .size(8.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Gold500)
+                    .background(Gold500, shape = RoundedCornerShape(50))
+                    .align(Alignment.CenterVertically)
             )
+            Spacer(modifier = Modifier.width(10.dp))
         } else {
             Spacer(modifier = Modifier.width(18.dp))
         }
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = notification.title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = if (notification.read) FontWeight.Normal else FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = notification.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (!notification.isRead) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (!notification.isRead) FontWeight.Bold else FontWeight.Normal
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(typeColor.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = typeLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = typeColor
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = notification.message,
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = notification.createdAt.take(10),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.data.datastore.TokenDataStore
+import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import com.gentlemanstore.feature.profile.data.dto.UserResponse
 import com.gentlemanstore.feature.profile.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,13 +18,15 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val user: UserResponse? = null,
     val error: String? = null,
-    val logoutComplete: Boolean = false
+    val logoutComplete: Boolean = false,
+    val unreadNotificationCount: Int = 0
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val tokenDataStore: TokenDataStore
+    private val tokenDataStore: TokenDataStore,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -31,6 +34,7 @@ class ProfileViewModel @Inject constructor(
 
     init {
         loadProfile()
+        loadUnreadCount()
     }
 
     fun loadProfile() {
@@ -52,6 +56,17 @@ class ProfileViewModel @Inject constructor(
                     )
                 }
                 is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun loadUnreadCount() {
+        viewModelScope.launch {
+            when (val result = notificationRepository.getUnreadCount()) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(unreadNotificationCount = result.data)
+                }
+                else -> Unit
             }
         }
     }

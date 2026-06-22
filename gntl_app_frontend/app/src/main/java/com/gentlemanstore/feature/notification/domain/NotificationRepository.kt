@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.notification.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.notification.data.NotificationApiService
@@ -13,20 +14,37 @@ import javax.inject.Singleton
 class NotificationRepository @Inject constructor(
     private val notificationApiService: NotificationApiService
 ) {
-
-    suspend fun getMyNotifications(page: Int, size: Int = 20): Resource<PagedNotificationResponse> {
+    suspend fun getNotifications(page: Int = 0): Resource<PagedNotificationResponse> {
         return try {
-            val response = notificationApiService.getMyNotifications(page, size)
+            val response = notificationApiService.getNotifications(page)
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }
     }
 
-    suspend fun markAsRead(id: Long): Resource<NotificationResponse> {
+    suspend fun getUnreadCount(): Resource<Int> {
+        return try {
+            val response = notificationApiService.getUnreadCount()
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun markAsRead(id: Long): Resource<Unit> {
         return try {
             val response = notificationApiService.markAsRead(id)
-            response.toResource()
+            response.toUnitResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun markAllAsRead(): Resource<Unit> {
+        return try {
+            val response = notificationApiService.markAllAsRead()
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }
