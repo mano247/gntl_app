@@ -46,10 +46,22 @@ public class OrderService {
     private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
-    public OrderDTO getOrder(Long id) {
+    public OrderDTO getOrder(Long id, User currentUser) {
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (!isStaff(currentUser) && !order.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Order not found");
+        }
+
         return mapper.toDTO(order);
+    }
+
+    private boolean isStaff(User user) {
+        return user.getAuthorities().stream().anyMatch(authority ->
+                authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_EMPLOYEE")
+                        || authority.getAuthority().equals("ROLE_MANAGER"));
     }
 
     @Transactional(readOnly = true)
@@ -162,9 +174,13 @@ public class OrderService {
 //    }
 
     @Transactional()
-    public void cancelOrder(Long id){
+    public void cancelOrder(Long id, User currentUser){
         Order order = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (!isStaff(currentUser) && !order.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Order not found");
+        }
 
         order.setStatus(OrderStatus.CANCELLED);
 

@@ -8,6 +8,8 @@ import com.gentlemanstore.loyalty.model.LoyaltyTier;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyTierRepository;
 import com.gentlemanstore.security.JwtService;
+import com.gentlemanstore.security.RefreshTokenService;
+import com.gentlemanstore.security.model.RefreshToken;
 import com.gentlemanstore.user.dto.AuthResponse;
 import com.gentlemanstore.user.dto.LoginRequest;
 import com.gentlemanstore.user.dto.RegisterRequest;
@@ -33,6 +35,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
     private final RoleRepository roleRepository;
     private final EmailService emailService;
@@ -73,9 +76,11 @@ public class AuthService {
         loyaltyAccountRepository.save(loyaltyAccount);
 
         String token = jwtService.generateToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user);
 
         AuthResponse response = AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -91,7 +96,7 @@ public class AuthService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(
@@ -105,9 +110,11 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String token = jwtService.generateToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user);
 
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -115,5 +122,26 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
+    public AuthResponse refresh(String rawRefreshToken) {
+        RefreshToken consumed = refreshTokenService.consumeRefreshToken(rawRefreshToken);
+        User user = consumed.getUser();
 
+        String newAccessToken = jwtService.generateToken(user);
+        String newRefreshToken = refreshTokenService.issueRefreshToken(user);
+
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRoles().iterator().next().getName().name())
+                .build();
+    }
+
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        refreshTokenService.revokeRefreshToken(rawRefreshToken);
+    }
 }

@@ -6,6 +6,7 @@ import com.gentlemanstore.loyalty.dto.LoyaltyAccountDTO;
 import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
 import com.gentlemanstore.loyalty.service.LoyaltyService;
 import com.gentlemanstore.user.model.User;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,7 +64,7 @@ public class LoyaltyController {
 
     @PutMapping("/points")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@AuthenticationPrincipal User currentUser, @RequestBody AddPointsRequest request){
+    public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@AuthenticationPrincipal User currentUser, @Valid @RequestBody AddPointsRequest request){
         return ResponseEntity.ok(ApiResponse.success("Loyalty points added successfully",
                 service.addPoints(currentUser.getId(), request.getPoints(), request.getDescription())));
     }

@@ -60,10 +60,22 @@ public class SupportService {
     }
 
     @Transactional(readOnly = true)
-    public SupportTicketDTO getTicket(Long id){
+    public SupportTicketDTO getTicket(Long id, User currentUser){
         SupportTicket supportTicket = supportTicketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));
+
+        if (!isStaff(currentUser) && !supportTicket.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Support ticket not found");
+        }
+
         return mapper.toDTO(supportTicket);
+    }
+
+    private boolean isStaff(User user) {
+        return user.getAuthorities().stream().anyMatch(authority ->
+                authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_MANAGER")
+                        || authority.getAuthority().equals("ROLE_EMPLOYEE"));
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +101,14 @@ public class SupportService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageDTO> getMessages(Long sessionId){
+    public List<ChatMessageDTO> getMessages(Long sessionId, User currentUser){
+        SupportTicket ticket = supportTicketRepository.findByChatSessionId(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
+
+        if (!isStaff(currentUser) && !ticket.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Chat session not found");
+        }
+
         return chatMessageRepository.findAllByChatSessionIdAndDeletedFalse(sessionId)
                 .stream()
                 .map(mapper::toMessageDTO)
@@ -97,7 +116,14 @@ public class SupportService {
     }
 
     @Transactional()
-    public ChatMessageDTO sendMessage(Long sessionId, String content, String sender){
+    public ChatMessageDTO sendMessage(Long sessionId, String content, String sender, User currentUser){
+        SupportTicket ticket = supportTicketRepository.findByChatSessionId(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
+
+        if (!isStaff(currentUser) && !ticket.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Chat session not found");
+        }
+
         ChatSession chatSession = chatSessionRepository.findByIdAndDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
 
@@ -120,9 +146,13 @@ public class SupportService {
     }
 
     @Transactional()
-    public BotResponseDTO saveBotResponse(Long ticketId, Long questionId, String response){
+    public BotResponseDTO saveBotResponse(Long ticketId, Long questionId, String response, User currentUser){
         SupportTicket supportTicket = supportTicketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));
+
+        if (!isStaff(currentUser) && !supportTicket.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Support ticket not found");
+        }
 
         BotQuestion botQuestion = botQuestionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bot question not found"));

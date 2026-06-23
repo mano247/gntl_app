@@ -8,7 +8,9 @@ import com.gentlemanstore.payment.dto.PaymentDTO;
 import com.gentlemanstore.payment.mapper.PaymentMapper;
 import com.gentlemanstore.payment.model.Payment;
 import com.gentlemanstore.payment.model.PaymentMethod;
+import com.gentlemanstore.payment.model.PaymentStatus;
 import com.gentlemanstore.payment.repository.PaymentRepository;
+import com.gentlemanstore.user.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,10 +29,22 @@ public class PaymentService {
     private final PaymentMapper mapper;
 
     @Transactional(readOnly = true)
-    public PaymentDTO getPayment(Long orderId){
+    public PaymentDTO getPayment(Long orderId, User currentUser){
         Payment payment = repo.findByOrderIdAndDeletedFalse(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+
+        if (!isStaff(currentUser) && !payment.getOrder().getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Payment not found");
+        }
+
         return mapper.toDTO(payment);
+    }
+
+    private boolean isStaff(User user) {
+        return user.getAuthorities().stream().anyMatch(authority ->
+                authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_EMPLOYEE")
+                        || authority.getAuthority().equals("ROLE_MANAGER"));
     }
 
     @Transactional(readOnly = true)
@@ -40,14 +54,18 @@ public class PaymentService {
     }
 
     @Transactional()
-    public PaymentDTO createPayment(CreatePaymentRequest request){
+    public PaymentDTO createPayment(CreatePaymentRequest request, User currentUser){
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (!isStaff(currentUser) && !order.getUser().getId().equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("Order not found");
+        }
 
         Payment payment = Payment.builder()
                 .amount(order.getTotalPrice())
                 .paymentMethod(PaymentMethod.valueOf(request.getPaymentMethod()))
-                .status("PENDING")
+                .status(PaymentStatus.PENDING)
                 .order(order)
                 .deleted(false)
                 .build();
@@ -57,7 +75,7 @@ public class PaymentService {
     }
 
     @Transactional()
-    public PaymentDTO updatePaymentStatus(Long id, String status){
+    public PaymentDTO updatePaymentStatus(Long id, PaymentStatus status){
         Payment payment = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 

@@ -134,7 +134,11 @@ public class DiscountService {
     }
 
     @Transactional()
-    public void applyPromotion(Long userId, Long promotionId){
+    public void applyPromotion(Long userId, Long promotionId, User currentUser){
+        if (!isStaff(currentUser) && !userId.equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         Promotion promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Promotion not found"));
 
@@ -149,6 +153,13 @@ public class DiscountService {
                 .build();
 
         userPromotionRepository.save(userPromotion);
+    }
+
+    private boolean isStaff(User user) {
+        return user.getAuthorities().stream().anyMatch(authority ->
+                authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_MANAGER")
+                        || authority.getAuthority().equals("ROLE_EMPLOYEE"));
     }
 
     @Transactional

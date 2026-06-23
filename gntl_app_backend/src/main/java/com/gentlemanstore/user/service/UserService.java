@@ -1,6 +1,7 @@
 package com.gentlemanstore.user.service;
 
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.security.RefreshTokenService;
 import com.gentlemanstore.user.dto.UpdateUserRequest;
 import com.gentlemanstore.user.dto.UserDTO;
 import com.gentlemanstore.user.mapper.UserMapper;
@@ -27,12 +28,23 @@ public class UserService{
     private final UserRepository repo;
     private final UserMapper mapper;
     private final RoleRepository roleRepository;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional(readOnly = true)
-    public UserDTO getProfile(Long id){
+    public UserDTO getProfile(Long id, User currentUser){
+        if (!isStaff(currentUser) && !id.equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapper.toDTO(user);
+    }
+
+    private boolean isStaff(User user) {
+        return user.getAuthorities().stream().anyMatch(authority ->
+                authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_MANAGER"));
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +67,11 @@ public class UserService{
     }
 
     @Transactional()
-    public UserDTO updateProfile(Long id, UpdateUserRequest request){
+    public UserDTO updateProfile(Long id, UpdateUserRequest request, User currentUser){
+        if (!isStaff(currentUser) && !id.equals(currentUser.getId())) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -76,26 +92,23 @@ public class UserService{
         user.setDeleted(true);
 
         repo.save(user);
+        refreshTokenService.revokeAllForUser(id);
     }
 
     @Transactional
-    public UserDTO changeRole(Long id, String roleName) {
+    public UserDTO changeRole(Long id, RoleName roleName) {
         User user = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String normalizedRole = roleName.trim().replace("\"", "");
-        if (!normalizedRole.startsWith("ROLE_")) {
-            normalizedRole = "ROLE_" + normalizedRole;
-        }
-
-        Role role = roleRepository.findByName(RoleName.valueOf(normalizedRole))
+        Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
 
         user.setRoles(new HashSet<>(Set.of(role)));
         repo.save(user);
+        refreshTokenService.revokeAllForUser(id);
 
         UserDTO dto = mapper.toDTO(user);
-        dto.setRole(normalizedRole.replace("ROLE_", ""));
+        dto.setRole(roleName.name().replace("ROLE_", ""));
         return dto;
     }
 

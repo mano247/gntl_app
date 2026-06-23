@@ -25,8 +25,8 @@ public class OrderController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<OrderDTO>> getOrder(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", service.getOrder(id)));
+    public ResponseEntity<ApiResponse<OrderDTO>> getOrder(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", service.getOrder(id, currentUser)));
     }
 
     @GetMapping("/my/paged")
@@ -46,6 +46,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'MANAGER')")
     public ResponseEntity<ApiResponse<OrderDTO>> updateStatus(
             @PathVariable Long id,
             @RequestBody String status) {
@@ -55,8 +56,8 @@ public class OrderController {
 
     @PutMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long id){
-        service.cancelOrder(id);
+    public ResponseEntity<ApiResponse<Void>> cancelOrder(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
+        service.cancelOrder(id, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", null));
     }
 

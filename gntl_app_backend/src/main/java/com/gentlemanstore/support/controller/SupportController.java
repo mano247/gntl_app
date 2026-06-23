@@ -30,8 +30,8 @@ public class SupportController {
 
     @GetMapping("/tickets/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<SupportTicketDTO>> getTicket(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("Support ticket retrieved successfully", service.getTicket(id)));
+    public ResponseEntity<ApiResponse<SupportTicketDTO>> getTicket(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Support ticket retrieved successfully", service.getTicket(id, currentUser)));
     }
 
     @GetMapping("/tickets")
@@ -66,14 +66,14 @@ public class SupportController {
 
     @GetMapping("/messages/{sessionId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<List<ChatMessageDTO>>> getMessages(@PathVariable Long sessionId){
-        return ResponseEntity.ok(ApiResponse.success("Messages retrieved successfully", service.getMessages(sessionId)));
+    public ResponseEntity<ApiResponse<List<ChatMessageDTO>>> getMessages(@PathVariable Long sessionId, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Messages retrieved successfully", service.getMessages(sessionId, currentUser)));
     }
 
     @PostMapping("/messages/{sessionId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(@PathVariable Long sessionId, @Valid @RequestBody SendMessageRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Message sent successfully", service.sendMessage(sessionId ,request.getContent(), request.getSender())));
+    public ResponseEntity<ApiResponse<ChatMessageDTO>> sendMessage(@PathVariable Long sessionId, @Valid @RequestBody SendMessageRequest request, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Message sent successfully", service.sendMessage(sessionId ,request.getContent(), request.getSender(), currentUser)));
     }
 
     @GetMapping("/bot")
@@ -84,8 +84,8 @@ public class SupportController {
 
     @PostMapping("/bot")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<BotResponseDTO>> saveBotResponse(@Valid @RequestBody SaveBotResponseRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Bot responses saved successfully", service.saveBotResponse(request.getTicketId(), request.getQuestionId(), request.getResponse())));
+    public ResponseEntity<ApiResponse<BotResponseDTO>> saveBotResponse(@Valid @RequestBody SaveBotResponseRequest request, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("Bot responses saved successfully", service.saveBotResponse(request.getTicketId(), request.getQuestionId(), request.getResponse(), currentUser)));
     }
 
     @DeleteMapping("/tickets/{id}")

@@ -22,6 +22,7 @@ import com.gentlemanstore.core.ui.BottomNavItem
 import com.gentlemanstore.core.util.Constants
 import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.admin.presentation.AdminHomeScreen
+import com.gentlemanstore.feature.auth.domain.AuthRepository
 import com.gentlemanstore.feature.auth.presentation.LoginScreen
 import com.gentlemanstore.feature.auth.presentation.RegisterScreen
 import com.gentlemanstore.feature.auth.presentation.SplashScreen
@@ -54,6 +55,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var tokenDataStore: TokenDataStore
+
+    @Inject
+    lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,7 +130,8 @@ class MainActivity : ComponentActivity() {
                                         popUpTo("splash") { inclusive = true }
                                     }
                                 },
-                                tokenDataStore = tokenDataStore
+                                tokenDataStore = tokenDataStore,
+                                authRepository = authRepository
                             )
                         }
                         composable("login") {

@@ -4,6 +4,7 @@ import com.gentlemanstore.common.response.ApiResponse;
 import com.gentlemanstore.user.dto.AddressDTO;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.service.AddressService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,7 +32,7 @@ public class AddressController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<AddressDTO>> createAddress(
             @AuthenticationPrincipal User currentUser,
-            @RequestBody AddressDTO request) {
+            @Valid @RequestBody AddressDTO request) {
         return ResponseEntity.ok(ApiResponse.success("Address created successfully",
                 addressService.createAddress(currentUser.getId(), request)));
     }
@@ -41,7 +42,7 @@ public class AddressController {
     public ResponseEntity<ApiResponse<AddressDTO>> updateAddress(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
-            @RequestBody AddressDTO request) {
+            @Valid @RequestBody AddressDTO request) {
         return ResponseEntity.ok(ApiResponse.success("Address updated successfully",
                 addressService.updateAddress(currentUser.getId(), id, request)));
     }

@@ -24,4 +24,5 @@
     <include file="db/changelog/migrations/V17__add_product_size_to_order_items.xml"/>
     <include file="db/changelog/migrations/V18__add_product_category_to_discounts.xml"/>
     <include file="db/changelog/migrations/V19__create_notifications.xml"/>
+    <include file="db/changelog/migrations/V20__create_refresh_tokens.xml"/>
 </databaseChangeLog>

@@ -13,6 +13,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.core.util.JwtUtils
 import com.gentlemanstore.data.datastore.TokenDataStore
+import com.gentlemanstore.feature.auth.domain.AuthRepository
 import com.gentlemanstore.ui.theme.Gold500
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -22,13 +23,20 @@ import javax.inject.Inject
 fun SplashScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: (String) -> Unit,
-    tokenDataStore: TokenDataStore
+    tokenDataStore: TokenDataStore,
+    authRepository: AuthRepository
 ){
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         scope.launch {
-            val token = tokenDataStore.token.first()
+            var token = tokenDataStore.token.first()
+
+            // Access token is short-lived; if it expired while the app was closed,
+            // try a silent refresh with the long-lived refresh token before forcing a re-login.
+            if (token != null && JwtUtils.isTokenExpired(token)) {
+                token = if (authRepository.tryRefreshToken()) tokenDataStore.token.first() else null
+            }
 
             if (token == null || JwtUtils.isTokenExpired(token)) {
                 onNavigateToLogin()

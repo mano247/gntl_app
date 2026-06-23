@@ -1,5 +1,6 @@
 package com.gentlemanstore.feature.employee.domain
 
+import com.gentlemanstore.BuildConfig
 import com.gentlemanstore.core.network.toResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
@@ -32,10 +33,14 @@ class EmployeeRepository @Inject constructor(
         return try {
             val body = status.toRequestBody("text/plain".toMediaType())
             val response = employeeApiService.updateOrderStatus(id, body)
-            android.util.Log.d("EmployeeRepo", "updateOrderStatus response: success=${response.success}, message=${response.message}, data=${response.data}")
+            if (BuildConfig.DEBUG) {
+                android.util.Log.d("EmployeeRepo", "updateOrderStatus response: success=${response.success}, message=${response.message}, data=${response.data}")
+            }
             response.toResource()
         } catch (e: Exception) {
-            android.util.Log.e("EmployeeRepo", "updateOrderStatus error: ${e.message}")
+            if (BuildConfig.DEBUG) {
+                android.util.Log.e("EmployeeRepo", "updateOrderStatus error: ${e.message}")
+            }
             Resource.Error(ErrorMapper.map(e.message))
         }
     }

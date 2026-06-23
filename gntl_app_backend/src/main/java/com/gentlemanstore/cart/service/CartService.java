@@ -167,6 +167,10 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findByIdAndDeletedFalse(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
 
+        if (!cartItem.getCart().getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Cart item not found");
+        }
+
         cartItem.setDeleted(true);
         cartItemRepository.save(cartItem);
         return getCart(userId);

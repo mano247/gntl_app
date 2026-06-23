@@ -1,5 +1,6 @@
 package com.gentlemanstore.loyalty.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.loyalty.dto.LoyaltyAccountDTO;
 import com.gentlemanstore.loyalty.dto.LoyaltyTransactionDTO;
@@ -71,7 +72,11 @@ public class LoyaltyService {
         LoyaltyAccount account = loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Loyalty account not found"));
 
-        account.setPoints(account.getPoints() + points);
+        int newBalance = account.getPoints() + points;
+        if (newBalance < 0) {
+            throw new BadRequestException("Resulting points balance cannot be negative");
+        }
+        account.setPoints(newBalance);
 
         loyaltyTierRepository.findTopByMinPointsLessThanEqualOrderByMinPointsDesc(account.getPoints())
                 .ifPresent(account::setLoyaltyTier);

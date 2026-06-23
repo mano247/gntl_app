@@ -18,37 +18,50 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 )
 
 class TokenDataStore @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val cryptoManager: CryptoManager
 ){
     private val TOKEN_KEY = stringPreferencesKey(Constants.KEY_JWT_TOKEN)
+    private val REFRESH_TOKEN_KEY = stringPreferencesKey(Constants.KEY_REFRESH_TOKEN)
     private val ROLE_KEY = stringPreferencesKey(Constants.KEY_USER_ROLE)
     private val USER_ID_KEY = stringPreferencesKey(Constants.KEY_USER_ID)
     private val LANGUAGE_KEY = stringPreferencesKey(Constants.KEY_LANGUAGE)
     private val CURRENCY_KEY = stringPreferencesKey(Constants.KEY_CURRENCY)
 
     val token: Flow<String?> = context.dataStore.data
-        .map { it[TOKEN_KEY] }
+        .map { it[TOKEN_KEY]?.let { encrypted -> cryptoManager.decrypt(encrypted) } }
 
     suspend fun saveToken(token: String) {
-        context.dataStore.edit { it[TOKEN_KEY] = token }
+        context.dataStore.edit { it[TOKEN_KEY] = cryptoManager.encrypt(token) }
     }
 
     suspend fun clearToken() {
         context.dataStore.edit { it.remove(TOKEN_KEY) }
     }
 
+    val refreshToken: Flow<String?> = context.dataStore.data
+        .map { it[REFRESH_TOKEN_KEY]?.let { encrypted -> cryptoManager.decrypt(encrypted) } }
+
+    suspend fun saveRefreshToken(refreshToken: String) {
+        context.dataStore.edit { it[REFRESH_TOKEN_KEY] = cryptoManager.encrypt(refreshToken) }
+    }
+
+    suspend fun clearRefreshToken() {
+        context.dataStore.edit { it.remove(REFRESH_TOKEN_KEY) }
+    }
+
     val userRole: Flow<String?> = context.dataStore.data
-        .map { it[ROLE_KEY] }
+        .map { it[ROLE_KEY]?.let { encrypted -> cryptoManager.decrypt(encrypted) } }
 
     suspend fun saveUserRole(role: String) {
-        context.dataStore.edit { it[ROLE_KEY] = role }
+        context.dataStore.edit { it[ROLE_KEY] = cryptoManager.encrypt(role) }
     }
 
     val userId: Flow<String?> = context.dataStore.data
-        .map { it[USER_ID_KEY] }
+        .map { it[USER_ID_KEY]?.let { encrypted -> cryptoManager.decrypt(encrypted) } }
 
     suspend fun saveUserId(id: String) {
-        context.dataStore.edit { it[USER_ID_KEY] = id }
+        context.dataStore.edit { it[USER_ID_KEY] = cryptoManager.encrypt(id) }
     }
 
     val language: Flow<String> = context.dataStore.data

@@ -62,8 +62,8 @@ public class DiscountController {
 
     @PostMapping("/promotions/{promotionId}/apply/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<Void>> applyPromotion(@PathVariable Long promotionId, @PathVariable Long userId){
-        service.applyPromotion(userId, promotionId);
+    public ResponseEntity<ApiResponse<Void>> applyPromotion(@PathVariable Long promotionId, @PathVariable Long userId, @AuthenticationPrincipal User currentUser){
+        service.applyPromotion(userId, promotionId, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Promotion applied successfully", null));
     }
 

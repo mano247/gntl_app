@@ -1,5 +1,6 @@
 package com.gentlemanstore.user.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gentlemanstore.loyalty.model.LoyaltyAccount;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,6 +27,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

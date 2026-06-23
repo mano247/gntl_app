@@ -1,7 +1,9 @@
 package com.gentlemanstore.core.di
 
 import java.util.concurrent.TimeUnit
+import com.gentlemanstore.BuildConfig
 import com.gentlemanstore.core.network.AuthInterceptor
+import com.gentlemanstore.core.network.TokenAuthenticator
 import com.gentlemanstore.core.util.Constants
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -22,7 +24,7 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor{
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
         }
     }
 
@@ -30,11 +32,13 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
+            .authenticator(tokenAuthenticator)
             .connectTimeout(Constants.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(Constants.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(Constants.TIMEOUT_SECONDS, TimeUnit.SECONDS)

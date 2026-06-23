@@ -1,6 +1,7 @@
 package com.gentlemanstore.user.controller;
 
 import com.gentlemanstore.common.response.ApiResponse;
+import com.gentlemanstore.user.dto.ChangeRoleRequest;
 import com.gentlemanstore.user.dto.UpdateUserRequest;
 import com.gentlemanstore.user.dto.UserDTO;
 import com.gentlemanstore.user.model.User;
@@ -34,14 +35,14 @@ public class UserController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<UserDTO>> getById(@PathVariable Long id){
-        return ResponseEntity.ok(ApiResponse.success("User retrieved successfully", service.getProfile(id)));
+    public ResponseEntity<ApiResponse<UserDTO>> getById(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("User retrieved successfully", service.getProfile(id, currentUser)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<UserDTO>> updateProfile (@PathVariable Long id,@Valid @RequestBody UpdateUserRequest request){
-        return ResponseEntity.ok(ApiResponse.success("User updated successfully", service.updateProfile(id, request)));
+    public ResponseEntity<ApiResponse<UserDTO>> updateProfile (@PathVariable Long id,@Valid @RequestBody UpdateUserRequest request, @AuthenticationPrincipal User currentUser){
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully", service.updateProfile(id, request, currentUser)));
     }
 
     @GetMapping("/my")
@@ -49,7 +50,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDTO>> getMyProfile(
             @AuthenticationPrincipal User currentUser){
         return ResponseEntity.ok(ApiResponse.success("Profile retrieved successfully",
-                service.getProfile(currentUser.getId())));
+                service.getProfile(currentUser.getId(), currentUser)));
     }
 
     @PutMapping("/my")
@@ -58,7 +59,7 @@ public class UserController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody UpdateUserRequest request){
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully",
-                service.updateProfile(currentUser.getId(), request)));
+                service.updateProfile(currentUser.getId(), request, currentUser)));
     }
 
     @DeleteMapping("/my")
@@ -78,8 +79,8 @@ public class UserController {
 
     @PutMapping("/{id}/role")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDTO>> changeRole(@PathVariable Long id, @RequestBody String roleName) {
-        return ResponseEntity.ok(ApiResponse.success("Role changed successfully", service.changeRole(id, roleName)));
+    public ResponseEntity<ApiResponse<UserDTO>> changeRole(@PathVariable Long id, @Valid @RequestBody ChangeRoleRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Role changed successfully", service.changeRole(id, request.getRole())));
     }
 
     @PutMapping("/{id}/reactivate")

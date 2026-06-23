@@ -3,7 +3,9 @@ package com.gentlemanstore.inventory.controller;
 import com.gentlemanstore.common.response.ApiResponse;
 import com.gentlemanstore.inventory.dto.InventoryDTO;
 import com.gentlemanstore.inventory.dto.StockAlertDTO;
+import com.gentlemanstore.inventory.dto.UpdateQuantityRequest;
 import com.gentlemanstore.inventory.service.InventoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,8 +41,8 @@ public class InventoryController {
 
     @PutMapping("/{id}/update_quantity")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<InventoryDTO>> updateQuantity(@PathVariable Long id, @RequestBody Integer newQuantity){
-        return ResponseEntity.ok(ApiResponse.success("Quantity updated successfully", service.updateQuantity(id, newQuantity)));
+    public ResponseEntity<ApiResponse<InventoryDTO>> updateQuantity(@PathVariable Long id, @Valid @RequestBody UpdateQuantityRequest request){
+        return ResponseEntity.ok(ApiResponse.success("Quantity updated successfully", service.updateQuantity(id, request.getQuantity())));
     }
 
     @DeleteMapping("/{id}")

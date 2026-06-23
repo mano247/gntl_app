@@ -1,13 +1,16 @@
 package com.gentlemanstore.core.util
 
+import com.gentlemanstore.BuildConfig
+
 object Constants {
     // Network
-    const val BASE_URL = "http://10.0.2.2:8080/api/"
+    val BASE_URL = BuildConfig.BASE_URL
     const val TIMEOUT_SECONDS = 30L
 
     // DataStore
     const val DATASTORE_NAME = "gentleman_store_prefs"
     const val KEY_JWT_TOKEN = "jwt_token"
+    const val KEY_REFRESH_TOKEN = "refresh_token"
     const val KEY_USER_ROLE = "user_role"
     const val KEY_USER_ID = "user_id"
     const val KEY_LANGUAGE = "language"

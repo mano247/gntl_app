@@ -3,6 +3,7 @@ package com.gentlemanstore.user.controller;
 import com.gentlemanstore.common.response.ApiResponse;
 import com.gentlemanstore.user.dto.AuthResponse;
 import com.gentlemanstore.user.dto.LoginRequest;
+import com.gentlemanstore.user.dto.RefreshTokenRequest;
 import com.gentlemanstore.user.dto.RegisterRequest;
 import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.service.AuthService;
@@ -28,5 +29,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request){
         return ResponseEntity.ok(ApiResponse.success("Login successful", authService.login(request)));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request){
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", authService.refresh(request.getRefreshToken())));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request){
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
     }
 }
