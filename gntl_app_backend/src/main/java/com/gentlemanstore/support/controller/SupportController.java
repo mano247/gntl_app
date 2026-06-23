@@ -96,4 +96,22 @@ public class SupportController {
         service.deleteTicket(id, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("Ticket deleted successfully", null));
     }
+
+    @GetMapping("/tickets/{ticketId}/unread-count")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Integer>> getUnreadCount(
+            @PathVariable Long ticketId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Unread count retrieved",
+                service.getUnreadCount(ticketId, currentUser.getId())));
+    }
+
+    @PutMapping("/messages/{sessionId}/read")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> markMessagesAsRead(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal User currentUser) {
+        service.markMessagesAsRead(sessionId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Messages marked as read", null));
+    }
 }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 
 data class SupportUiState(
     val isLoading: Boolean = false,
@@ -65,56 +66,87 @@ class SupportViewModel @Inject constructor(
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
     private var pollingJob: Job? = null
+    private var ticketPollingJob: Job? = null
 
     val currentRole = tokenDataStore.userRole
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "CUSTOMER")
 
+    init {
+        startTicketPolling()
+    }
 
-
-    // --- Tickets ---
-    fun loadMyTickets() {
-        viewModelScope.launch {
-            _supportUiState.value = _supportUiState.value.copy(isLoading = true)
-
-            when (val result = supportRepository.getMyTickets(page = 0)) {
-                is Resource.Success -> {
-                    _supportUiState.value = _supportUiState.value.copy(
-                        isLoading = false,
-                        tickets = result.data.content,
-                        currentPage = 0,
-                        isLastPage = result.data.last,
-                        error = null
-                    )
-                }
-                is Resource.Error -> {
-                    _supportUiState.value = _supportUiState.value.copy(
-                        isLoading = false,
-                        error = result.message
-                    )
-                }
-                is Resource.Loading -> Unit
+    fun startTicketPolling() {
+        ticketPollingJob?.cancel()
+        ticketPollingJob = viewModelScope.launch {
+            while (true) {
+                loadMyTicketsAndUnread()
+                delay(3000)
             }
         }
     }
 
-    // --- Bot Flow ---
+    fun stopTicketPolling() {
+        ticketPollingJob?.cancel()
+        ticketPollingJob = null
+    }
+
+    private suspend fun loadMyTicketsAndUnread() {
+        if (_supportUiState.value.tickets.isEmpty()) {
+            _supportUiState.value = _supportUiState.value.copy(isLoading = true)
+        }
+        when (val result = supportRepository.getMyTickets(page = 0)) {
+            is Resource.Success -> {
+                _supportUiState.value = _supportUiState.value.copy(
+                    isLoading = false,
+                    tickets = result.data.content,
+                    currentPage = 0,
+                    isLastPage = result.data.last,
+                    error = null
+                )
+                loadUnreadCountsSync()
+            }
+            is Resource.Error -> {
+                _supportUiState.value = _supportUiState.value.copy(
+                    isLoading = false,
+                    error = result.message
+                )
+            }
+            is Resource.Loading -> Unit
+        }
+    }
+
+    private suspend fun loadUnreadCountsSync() {
+        val tickets = _supportUiState.value.tickets
+        tickets.forEach { ticket ->
+            when (val result = supportRepository.getUnreadCount(ticket.id)) {
+                is Resource.Success -> {
+                    _supportUiState.value = _supportUiState.value.copy(
+                        tickets = _supportUiState.value.tickets.map {
+                            if (it.id == ticket.id) it.copy(unreadCount = result.data) else it
+                        }
+                    )
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun loadMyTickets() {
+        viewModelScope.launch {
+            loadMyTicketsAndUnread()
+        }
+    }
+
     fun startBotFlow() {
         viewModelScope.launch {
             _botFlowUiState.value = BotFlowUiState(isLoading = true)
-
             when (val result = supportRepository.getBotQuestions()) {
                 is Resource.Success -> {
                     val sortedQuestions = result.data.sortedBy { it.orderIndex }
-                    _botFlowUiState.value = BotFlowUiState(
-                        isLoading = false,
-                        questions = sortedQuestions
-                    )
+                    _botFlowUiState.value = BotFlowUiState(isLoading = false, questions = sortedQuestions)
                 }
                 is Resource.Error -> {
-                    _botFlowUiState.value = BotFlowUiState(
-                        isLoading = false,
-                        error = result.message
-                    )
+                    _botFlowUiState.value = BotFlowUiState(isLoading = false, error = result.message)
                 }
                 is Resource.Loading -> Unit
             }
@@ -135,11 +167,7 @@ class SupportViewModel @Inject constructor(
         val isLastQuestion = state.currentQuestionIndex >= state.questions.size - 1
 
         if (isLastQuestion) {
-            _botFlowUiState.value = state.copy(
-                answers = updatedAnswers,
-                currentAnswer = "",
-                isCreatingTicket = true
-            )
+            _botFlowUiState.value = state.copy(answers = updatedAnswers, currentAnswer = "", isCreatingTicket = true)
             createTicketAndSaveAnswers(updatedAnswers, state.questions)
         } else {
             _botFlowUiState.value = state.copy(
@@ -150,13 +178,9 @@ class SupportViewModel @Inject constructor(
         }
     }
 
-    private fun createTicketAndSaveAnswers(
-        answers: Map<Long, String>,
-        questions: List<BotQuestionResponse>
-    ) {
+    private fun createTicketAndSaveAnswers(answers: Map<Long, String>, questions: List<BotQuestionResponse>) {
         viewModelScope.launch {
             val subject = answers[questions.firstOrNull()?.id] ?: "Support Request"
-
             when (val ticketResult = supportRepository.createTicket(subject)) {
                 is Resource.Success -> {
                     val ticket = ticketResult.data
@@ -185,24 +209,19 @@ class SupportViewModel @Inject constructor(
         _botFlowUiState.value = BotFlowUiState()
     }
 
-    // --- Chat ---
     fun loadMessages(sessionId: Long) {
         viewModelScope.launch {
             _chatUiState.value = _chatUiState.value.copy(isLoading = true)
-
             when (val result = supportRepository.getMessages(sessionId)) {
                 is Resource.Success -> {
                     _chatUiState.value = _chatUiState.value.copy(
                         isLoading = false,
-                        messages = result.data,
+                        messages = result.data.sortedBy { it.sentAt },
                         error = null
                     )
                 }
                 is Resource.Error -> {
-                    _chatUiState.value = _chatUiState.value.copy(
-                        isLoading = false,
-                        error = result.message
-                    )
+                    _chatUiState.value = _chatUiState.value.copy(isLoading = false, error = result.message)
                 }
                 is Resource.Loading -> Unit
             }
@@ -217,7 +236,7 @@ class SupportViewModel @Inject constructor(
                 when (val result = supportRepository.getMessages(sessionId)) {
                     is Resource.Success -> {
                         _chatUiState.value = _chatUiState.value.copy(
-                            messages = result.data
+                            messages = result.data.sortedBy { it.sentAt }
                         )
                     }
                     else -> Unit
@@ -237,18 +256,20 @@ class SupportViewModel @Inject constructor(
 
     fun deleteTicket(ticketId: Long) {
         viewModelScope.launch {
+            _supportUiState.value = _supportUiState.value.copy(
+                tickets = _supportUiState.value.tickets.filter { it.id != ticketId }
+            )
             when (supportRepository.deleteTicket(ticketId)) {
                 is Resource.Success -> {
                     _supportUiState.value = _supportUiState.value.copy(
                         successMessage = "Ticket deleted successfully!"
                     )
-                    delay(300)
-                    loadMyTickets()
                 }
                 is Resource.Error -> {
                     _supportUiState.value = _supportUiState.value.copy(
                         error = "Failed to delete ticket"
                     )
+                    loadMyTickets()
                 }
                 is Resource.Loading -> Unit
             }
@@ -267,17 +288,15 @@ class SupportViewModel @Inject constructor(
             val role = tokenDataStore.userRole.first() ?: "ROLE_CUSTOMER"
             val sender = if (role.contains("CUSTOMER")) "USER" else "EMPLOYEE"
 
-            _chatUiState.value = _chatUiState.value.copy(
-                isSending = true,
-                currentMessage = ""
-            )
+            _chatUiState.value = _chatUiState.value.copy(isSending = true, currentMessage = "")
 
             when (val result = supportRepository.sendMessage(sessionId, message, sender)) {
                 is Resource.Success -> {
                     _chatUiState.value = _chatUiState.value.copy(
                         isSending = false,
-                        messages = _chatUiState.value.messages + result.data
+                        messages = (_chatUiState.value.messages + result.data).sortedBy { it.sentAt }
                     )
+                    markMessagesAsRead(sessionId)
                 }
                 is Resource.Error -> {
                     _chatUiState.value = _chatUiState.value.copy(
@@ -291,19 +310,32 @@ class SupportViewModel @Inject constructor(
         }
     }
 
-    val filteredTickets: List<SupportTicketResponse>
-        get() = if (_supportUiState.value.selectedStatus == null) {
-            _supportUiState.value.tickets
-        } else {
-            _supportUiState.value.tickets.filter { it.status == _supportUiState.value.selectedStatus }
+    val filteredTickets: StateFlow<List<SupportTicketResponse>> = _supportUiState
+        .map { state ->
+            if (state.selectedStatus == null) state.tickets
+            else state.tickets.filter { it.status == state.selectedStatus }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onStatusFilter(status: String?) {
         _supportUiState.value = _supportUiState.value.copy(selectedStatus = status)
     }
 
+    fun loadUnreadCounts() {
+        viewModelScope.launch {
+            loadUnreadCountsSync()
+        }
+    }
+
+    fun markMessagesAsRead(sessionId: Long) {
+        viewModelScope.launch {
+            supportRepository.markMessagesAsRead(sessionId)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         stopPolling()
+        stopTicketPolling()
     }
 }

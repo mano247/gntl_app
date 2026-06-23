@@ -94,4 +94,22 @@ class SupportRepository @Inject constructor(
             Resource.Error(ErrorMapper.map(e.message))
         }
     }
+
+    suspend fun getUnreadCount(ticketId: Long): Resource<Int> {
+        return try {
+            val response = supportApiService.getUnreadCount(ticketId)
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun markMessagesAsRead(sessionId: Long): Resource<Unit> {
+        return try {
+            val response = supportApiService.markMessagesAsRead(sessionId)
+            response.toUnitResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
 }

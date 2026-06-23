@@ -369,13 +369,31 @@ private fun EmployeeTicketCard(
         Column(modifier = Modifier.padding(14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "Ticket #${ticket.id}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(text = ticket.status, style = MaterialTheme.typography.labelSmall, color = getTicketStatusColor(ticket.status))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (ticket.unreadCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .background(MaterialTheme.colorScheme.error, androidx.compose.foundation.shape.CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (ticket.unreadCount > 9) "9+" else ticket.unreadCount.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = androidx.compose.ui.graphics.Color.White,
+                                fontSize = androidx.compose.ui.unit.TextUnit(9f, androidx.compose.ui.unit.TextUnitType.Sp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(text = ticket.status, style = MaterialTheme.typography.labelSmall, color = getTicketStatusColor(ticket.status))
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))

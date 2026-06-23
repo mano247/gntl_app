@@ -6,6 +6,7 @@ import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.employee.domain.EmployeeRepository
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.feature.support.data.dto.SupportTicketResponse
+import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +37,8 @@ data class EmployeeTicketsUiState(
 
 @HiltViewModel
 class EmployeeViewModel @Inject constructor(
-    private val employeeRepository: EmployeeRepository
+    private val employeeRepository: EmployeeRepository,
+    private val supportRepository: SupportRepository
 ) : ViewModel() {
 
     private val _ordersUiState = MutableStateFlow(EmployeeOrdersUiState())
@@ -138,6 +140,7 @@ class EmployeeViewModel @Inject constructor(
                         isLastPage = result.data.last,
                         error = null
                     )
+                    loadUnreadCounts()
                 }
                 is Resource.Error -> {
                     _ticketsUiState.value = _ticketsUiState.value.copy(
@@ -199,5 +202,23 @@ class EmployeeViewModel @Inject constructor(
 
     fun onOrderStatusFilter(status: String?) {
         _ordersUiState.value = _ordersUiState.value.copy(selectedStatus = status)
+    }
+
+    fun loadUnreadCounts() {
+        viewModelScope.launch {
+            val tickets = _ticketsUiState.value.tickets
+            tickets.forEach { ticket ->
+                when (val result = supportRepository.getUnreadCount(ticket.id)) {
+                    is Resource.Success -> {
+                        _ticketsUiState.value = _ticketsUiState.value.copy(
+                            tickets = _ticketsUiState.value.tickets.map {
+                                if (it.id == ticket.id) it.copy(unreadCount = result.data) else it
+                            }
+                        )
+                    }
+                    else -> Unit
+                }
+            }
+        }
     }
 }

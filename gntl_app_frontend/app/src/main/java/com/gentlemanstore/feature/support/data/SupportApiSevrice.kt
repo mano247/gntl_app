@@ -45,4 +45,14 @@ interface SupportApiService {
     suspend fun deleteTicket(
         @Path("id") id: Long
     ): ApiResponse<Unit>
+
+    @GET("support/tickets/{ticketId}/unread-count")
+    suspend fun getUnreadCount(
+        @Path("ticketId") ticketId: Long
+    ): ApiResponse<Int>
+
+    @PUT("support/messages/{sessionId}/read")
+    suspend fun markMessagesAsRead(
+        @Path("sessionId") sessionId: Long
+    ): ApiResponse<Unit>
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -48,24 +49,24 @@ fun SupportScreen(
     viewModel: SupportViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.supportUiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val filteredTickets by viewModel.filteredTickets.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isLoading,
         onRefresh = { viewModel.loadMyTickets() }
     )
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        viewModel.startTicketPolling()
+    }
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
             scope.launch { snackbarHostState.showSnackbar(it) }
             viewModel.clearMessages()
         }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.loadMyTickets()
     }
 
     Box(
@@ -75,34 +76,21 @@ fun SupportScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "SUPPORT",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Gold500
-                )
+                Text(text = "SUPPORT", style = MaterialTheme.typography.titleLarge, color = Gold500)
                 Spacer(modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
             Button(
                 onClick = onStartBotFlow,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -112,7 +100,6 @@ fun SupportScreen(
             }
 
             val ticketStatuses = listOf("ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
-
             androidx.compose.foundation.lazy.LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -139,58 +126,36 @@ fun SupportScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pullRefresh(pullRefreshState)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
                 when {
                     uiState.isLoading && uiState.tickets.isEmpty() -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = Gold500)
                         }
                     }
-
                     uiState.tickets.isEmpty() -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.Chat,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(64.dp)
-                                )
+                                Icon(imageVector = Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(64.dp))
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "No support tickets yet",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Text(text = "No support tickets yet", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
-
                     else -> {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            Text(
-                                text = "MY TICKETS",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
+                            Text(text = "MY TICKETS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
                             Spacer(modifier = Modifier.height(8.dp))
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                items(viewModel.filteredTickets, key = { it.id }) { ticket ->
+                                items(filteredTickets, key = { it.id }) { ticket ->
                                     TicketCard(
                                         ticket = ticket,
                                         onClick = {
-                                            ticket.sessionId?.let { sessionId ->
-                                                onOpenChat(ticket.id, sessionId)
-                                            }
+                                            ticket.sessionId?.let { sessionId -> onOpenChat(ticket.id, sessionId) }
                                         },
                                         onDelete = { viewModel.deleteTicket(ticket.id) }
                                     )
@@ -199,20 +164,10 @@ fun SupportScreen(
                         }
                     }
                 }
-
-                PullRefreshIndicator(
-                    refreshing = uiState.isLoading,
-                    state = pullRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    backgroundColor = MaterialTheme.colorScheme.surface,
-                    contentColor = Gold500
-                )
+                PullRefreshIndicator(refreshing = uiState.isLoading, state = pullRefreshState, modifier = Modifier.align(Alignment.TopCenter), backgroundColor = MaterialTheme.colorScheme.surface, contentColor = Gold500)
             }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
@@ -230,71 +185,38 @@ private fun TicketCard(
             title = { Text("Delete Ticket") },
             text = { Text("Are you sure you want to delete this support ticket?") },
             confirmButton = {
-                Button(
-                    onClick = { onDelete(); showDeleteDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Delete") }
+                Button(onClick = { onDelete(); showDeleteDialog = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") }
             },
-            dismissButton = {
-                OutlinedButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
-            }
+            dismissButton = { OutlinedButton(onClick = { showDeleteDialog = false }) { Text("Cancel") } }
         )
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable { onClick() }
-            .padding(14.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface).clickable { onClick() }.padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = ticket.subject,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Medium
-            )
+            Text(text = ticket.subject, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, fontWeight = if (ticket.unreadCount > 0) FontWeight.Bold else FontWeight.Normal)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Ticket #${ticket.id}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Created: ${ticket.createdAt.take(10)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = "Ticket #${ticket.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = "Created: ${ticket.createdAt.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f))
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = ticket.status,
-                style = MaterialTheme.typography.labelSmall,
-                color = getTicketStatusColor(ticket.status)
-            )
+        if (ticket.unreadCount > 0) {
+            Box(modifier = Modifier.size(22.dp).background(MaterialTheme.colorScheme.error, CircleShape), contentAlignment = Alignment.Center) {
+                Text(text = if (ticket.unreadCount > 9) "9+" else ticket.unreadCount.toString(), style = MaterialTheme.typography.labelSmall, color = Color.White, fontSize = androidx.compose.ui.unit.TextUnit(9f, androidx.compose.ui.unit.TextUnitType.Sp))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Box(modifier = Modifier.clip(RoundedCornerShape(50)).background(getTicketStatusColor(ticket.status).copy(alpha = 0.2f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+            Text(text = ticket.status, style = MaterialTheme.typography.labelSmall, color = getTicketStatusColor(ticket.status))
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(
-            onClick = { showDeleteDialog = true },
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete ticket",
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(18.dp)
-            )
+        IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
+            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete ticket", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
         }
     }
 }

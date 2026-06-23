@@ -16,4 +16,5 @@ public class SupportTicketDTO {
     private LocalDateTime createdAt;
     private String userEmail;
     private Long sessionId;
+    private Integer unreadCount = 0;
 }

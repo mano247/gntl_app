@@ -149,4 +149,36 @@ public class SupportService {
         ticket.setDeleted(true);
         supportTicketRepository.save(ticket);
     }
+
+    @Transactional(readOnly = true)
+    public int getUnreadCount(Long ticketId, Long userId) {
+        SupportTicket ticket = supportTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        ChatSession session = ticket.getChatSession();
+        if (session == null) return 0;
+
+        String role = ticket.getUser().getId().equals(userId) ? "USER" : "EMPLOYEE";
+        String senderToCount = role.equals("USER") ? "EMPLOYEE" : "USER";
+
+        return chatMessageRepository.countByChatSessionIdAndSenderAndIsReadFalse(
+                session.getId(), MessageSender.valueOf(senderToCount));
+    }
+
+    @Transactional
+    public void markMessagesAsRead(Long sessionId, Long userId) {
+        SupportTicket ticket = supportTicketRepository.findByChatSessionId(sessionId)
+                .orElse(null);
+        if (ticket == null) return;
+
+        MessageSender senderToMark = ticket.getUser().getId().equals(userId)
+                ? MessageSender.EMPLOYEE
+                : MessageSender.USER;
+
+        List<ChatMessage> messages = chatMessageRepository.findAllByChatSessionIdAndDeletedFalse(sessionId);
+        messages.stream()
+                .filter(msg -> msg.getSender() == senderToMark)
+                .forEach(msg -> msg.setRead(true));
+        chatMessageRepository.saveAll(messages);
+    }
 }

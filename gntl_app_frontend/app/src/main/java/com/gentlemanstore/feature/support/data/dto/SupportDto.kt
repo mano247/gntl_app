@@ -6,7 +6,8 @@ data class SupportTicketResponse(
     val status: String,
     val createdAt: String,
     val userEmail: String,
-    val sessionId: Long?
+    val sessionId: Long?,
+    val unreadCount: Int = 0
 )
 
 data class PagedTicketResponse(
