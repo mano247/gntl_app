@@ -114,4 +114,12 @@ public class SupportController {
         service.markMessagesAsRead(sessionId, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("Messages marked as read", null));
     }
+
+    @GetMapping("/tickets/unread-total")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Integer>> getTotalUnreadCount(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Total unread count retrieved",
+                service.getTotalUnreadCount(currentUser.getId())));
+    }
 }

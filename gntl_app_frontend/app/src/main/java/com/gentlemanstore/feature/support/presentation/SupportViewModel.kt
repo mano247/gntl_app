@@ -26,7 +26,7 @@ data class SupportUiState(
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
     val successMessage: String? = null,
-    val selectedStatus: String? = null
+    val selectedStatus: String? = "OPEN"
 )
 
 data class BotFlowUiState(

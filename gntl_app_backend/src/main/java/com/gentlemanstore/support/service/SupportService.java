@@ -181,4 +181,14 @@ public class SupportService {
                 .forEach(msg -> msg.setRead(true));
         chatMessageRepository.saveAll(messages);
     }
+
+    @Transactional(readOnly = true)
+    public int getTotalUnreadCount(Long userId) {
+        List<SupportTicket> tickets = supportTicketRepository.findAllByUserIdAndDeletedFalse(userId);
+        return tickets.stream()
+                .filter(ticket -> ticket.getChatSession() != null)
+                .mapToInt(ticket -> chatMessageRepository.countByChatSessionIdAndSenderAndIsReadFalse(
+                        ticket.getChatSession().getId(), MessageSender.EMPLOYEE))
+                .sum();
+    }
 }

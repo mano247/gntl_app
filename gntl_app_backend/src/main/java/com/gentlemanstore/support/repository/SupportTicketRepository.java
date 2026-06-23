@@ -16,4 +16,5 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, Lo
     Page<SupportTicket> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
     List<SupportTicket> findAllByStatusAndDeletedFalse(TicketStatus status);
     Optional<SupportTicket> findByChatSessionId(Long sessionId);
+    List<SupportTicket> findAllByUserIdAndDeletedFalse(Long userId);
 }

@@ -42,6 +42,7 @@ import com.gentlemanstore.feature.settings.presentation.SettingsScreen
 import com.gentlemanstore.feature.support.presentation.BotFlowScreen
 import com.gentlemanstore.feature.support.presentation.ChatScreen
 import com.gentlemanstore.feature.support.presentation.SupportScreen
+import com.gentlemanstore.feature.support.presentation.SupportViewModel
 import com.gentlemanstore.feature.swipe.SwipeScreen
 import com.gentlemanstore.ui.theme.GentlemanStoreTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -67,9 +68,13 @@ class MainActivity : ComponentActivity() {
                 val notificationViewModel: com.gentlemanstore.feature.notification.presentation.NotificationViewModel = hiltViewModel()
                 val notificationState by notificationViewModel.uiState.collectAsStateWithLifecycle()
 
+                val supportViewModel: SupportViewModel = hiltViewModel()
+                val supportState by supportViewModel.supportUiState.collectAsStateWithLifecycle()
+
                 LaunchedEffect(currentRoute) {
                     if (currentRoute == "profile" || currentRoute == "home_customer") {
                         notificationViewModel.loadUnreadCount()
+                        supportViewModel.loadMyTickets()
                     }
                 }
 
@@ -97,7 +102,8 @@ class MainActivity : ComponentActivity() {
                         if (showBottomBar) {
                             BottomNavBar(
                                 navController = navController,
-                                unreadNotificationCount = notificationState.unreadCount
+                                unreadNotificationCount = notificationState.unreadCount,
+                                unreadSupportCount = supportState.tickets.sumOf { it.unreadCount }
                             )
                         }
                     }

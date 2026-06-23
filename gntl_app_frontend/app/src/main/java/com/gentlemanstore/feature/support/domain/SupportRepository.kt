@@ -112,4 +112,13 @@ class SupportRepository @Inject constructor(
             Resource.Error(ErrorMapper.map(e.message))
         }
     }
+
+    suspend fun getTotalUnreadCount(): Resource<Int> {
+        return try {
+            val response = supportApiService.getTotalUnreadCount()
+            response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
 }

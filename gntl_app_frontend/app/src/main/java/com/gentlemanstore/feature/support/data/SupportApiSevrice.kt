@@ -55,4 +55,7 @@ interface SupportApiService {
     suspend fun markMessagesAsRead(
         @Path("sessionId") sessionId: Long
     ): ApiResponse<Unit>
+
+    @GET("support/tickets/unread-total")
+    suspend fun getTotalUnreadCount(): ApiResponse<Int>
 }

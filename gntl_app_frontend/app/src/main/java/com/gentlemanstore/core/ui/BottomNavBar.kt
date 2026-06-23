@@ -37,7 +37,8 @@ sealed class BottomNavItem(
 @Composable
 fun BottomNavBar(
     navController: NavController,
-    unreadNotificationCount: Int = 0
+    unreadNotificationCount: Int = 0,
+    unreadSupportCount: Int = 0
 ) {
     val items = listOf(
         BottomNavItem.Home,
@@ -69,20 +70,23 @@ fun BottomNavBar(
                 icon = {
                     Box {
                         Icon(imageVector = item.icon, contentDescription = item.label)
-                        if (item is BottomNavItem.Profile && unreadNotificationCount > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .background(Color.Red, CircleShape)
-                                    .align(Alignment.TopEnd),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (unreadNotificationCount > 9) "9+" else unreadNotificationCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White,
-                                    fontSize = TextUnit(8f, TextUnitType.Sp)
-                                )
+                        if (item is BottomNavItem.Profile) {
+                            val totalCount = unreadNotificationCount + unreadSupportCount
+                            if (totalCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .background(Color.Red, CircleShape)
+                                        .align(Alignment.TopEnd),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (totalCount > 9) "9+" else totalCount.toString(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontSize = TextUnit(8f, TextUnitType.Sp)
+                                    )
+                                }
                             }
                         }
                     }

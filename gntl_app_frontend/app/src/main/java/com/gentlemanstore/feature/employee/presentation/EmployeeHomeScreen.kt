@@ -37,6 +37,7 @@ fun EmployeeHomeScreen(
 ) {
     val ordersState by viewModel.ordersUiState.collectAsStateWithLifecycle()
     val ticketsState by viewModel.ticketsUiState.collectAsStateWithLifecycle()
+    val filteredTickets by viewModel.filteredTickets.collectAsStateWithLifecycle()
 
     LaunchedEffect(ordersState.error) {
         ordersState.error?.let { onShowError(it) }
@@ -92,7 +93,7 @@ fun EmployeeHomeScreen(
             )
             1 -> EmployeeTicketsTab(
                 state = ticketsState,
-                filteredTickets = viewModel.filteredTickets,
+                filteredTickets = filteredTickets,
                 onUpdateStatus = { ticketId, status -> viewModel.updateTicketStatus(ticketId, status) },
                 onOpenChat = onOpenChat,
                 onRefresh = { viewModel.loadTickets() },

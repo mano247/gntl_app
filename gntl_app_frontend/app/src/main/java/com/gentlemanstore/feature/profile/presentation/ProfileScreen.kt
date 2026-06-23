@@ -12,13 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gentlemanstore.ui.theme.Gold500
-import androidx.compose.ui.draw.clip
 
 @Composable
 fun ProfileScreen(
@@ -29,7 +29,7 @@ fun ProfileScreen(
     onNavigateToSupport: () -> Unit,
     onLoggedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
-){
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.logoutComplete) {
@@ -41,6 +41,7 @@ fun ProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
         viewModel.loadUnreadCount()
+        viewModel.loadUnreadSupportCount()
     }
 
     Box(
@@ -80,7 +81,6 @@ fun ProfileScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                     ) {
-                        // Avatar + Ime
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -113,7 +113,6 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Meni stavke
                         ProfileMenuItem(
                             icon = Icons.Default.ShoppingBag,
                             label = "My Orders",
@@ -124,6 +123,7 @@ fun ProfileScreen(
                             label = "Loyalty Program",
                             onClick = onNavigateToLoyalty
                         )
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -165,11 +165,49 @@ fun ProfileScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        ProfileMenuItem(
-                            icon = Icons.Default.Support,
-                            label = "Support",
-                            onClick = onNavigateToSupport
-                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .clickable { onNavigateToSupport() }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box {
+                                Icon(
+                                    imageVector = Icons.Default.Support,
+                                    contentDescription = "Support",
+                                    tint = Gold500,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                if (uiState.unreadSupportCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                                            .align(Alignment.TopEnd),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (uiState.unreadSupportCount > 9) "9+" else uiState.unreadSupportCount.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = androidx.compose.ui.graphics.Color.White,
+                                            fontSize = androidx.compose.ui.unit.TextUnit(8f, androidx.compose.ui.unit.TextUnitType.Sp)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Support",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         ProfileMenuItem(
                             icon = Icons.Default.Settings,
                             label = "Settings",

@@ -19,7 +19,7 @@ data class MyOrdersUiState(
     val currentPage: Int = 0,
     val isLastPage: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val selectedStatus: String? = null
+    val selectedStatus: String? = "PENDING"
 )
 
 @HiltViewModel

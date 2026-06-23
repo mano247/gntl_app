@@ -7,6 +7,7 @@ import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import com.gentlemanstore.feature.profile.data.dto.UserResponse
 import com.gentlemanstore.feature.profile.domain.UserRepository
+import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,14 +20,16 @@ data class ProfileUiState(
     val user: UserResponse? = null,
     val error: String? = null,
     val logoutComplete: Boolean = false,
-    val unreadNotificationCount: Int = 0
+    val unreadNotificationCount: Int = 0,
+    val unreadSupportCount: Int = 0
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tokenDataStore: TokenDataStore,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val supportRepository: SupportRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -35,6 +38,7 @@ class ProfileViewModel @Inject constructor(
     init {
         loadProfile()
         loadUnreadCount()
+        loadUnreadSupportCount()
     }
 
     fun loadProfile() {
@@ -65,6 +69,17 @@ class ProfileViewModel @Inject constructor(
             when (val result = notificationRepository.getUnreadCount()) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(unreadNotificationCount = result.data)
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun loadUnreadSupportCount() {
+        viewModelScope.launch {
+            when (val result = supportRepository.getTotalUnreadCount()) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(unreadSupportCount = result.data)
                 }
                 else -> Unit
             }
