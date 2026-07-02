@@ -18,10 +18,14 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
     @Query("SELECT d FROM Discount d WHERE d.deleted = false " +
             "AND d.validFrom <= :now AND d.validTo >= :now " +
             "AND (d.product.id = :productId OR d.category.id = :categoryId) " +
-            "ORDER BY d.product.id DESC")
-    Optional<Discount> findActiveDiscountForProduct(
+            "ORDER BY CASE WHEN d.product.id IS NOT NULL THEN 0 ELSE 1 END, d.id DESC")
+    List<Discount> findActiveDiscountsForProduct(
             @Param("productId") Long productId,
             @Param("categoryId") Long categoryId,
             @Param("now") LocalDateTime now
     );
+
+    default Optional<Discount> findActiveDiscountForProduct(Long productId, Long categoryId, LocalDateTime now) {
+        return findActiveDiscountsForProduct(productId, categoryId, now).stream().findFirst();
+    }
 }

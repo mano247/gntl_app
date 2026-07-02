@@ -28,5 +28,6 @@ public class Category {
     private boolean deleted = false;
 
     @OneToMany(mappedBy = "category")
+    @Builder.Default
     private List<Product> products = new ArrayList<>();
 }

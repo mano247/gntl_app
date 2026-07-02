@@ -1,5 +1,6 @@
 package com.gentlemanstore.support.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.support.dto.*;
 import com.gentlemanstore.support.mapper.SupportMapper;
@@ -95,7 +96,11 @@ public class SupportService {
         SupportTicket supportTicket = supportTicketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket not found"));
 
-        supportTicket.setStatus(TicketStatus.valueOf(status));
+        try {
+            supportTicket.setStatus(TicketStatus.valueOf(status.trim().replace("\"", "").toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid ticket status: " + status);
+        }
         supportTicketRepository.save(supportTicket);
         return mapper.toDTO(supportTicket);
     }
@@ -127,9 +132,16 @@ public class SupportService {
         ChatSession chatSession = chatSessionRepository.findByIdAndDeletedFalse(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Chat session not found"));
 
+        MessageSender messageSender;
+        try {
+            messageSender = MessageSender.valueOf(sender);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new BadRequestException("Invalid message sender: " + sender);
+        }
+
         ChatMessage chatMessage = ChatMessage.builder()
                 .content(content)
-                .sender(MessageSender.valueOf(sender))
+                .sender(messageSender)
                 .chatSession(chatSession)
                 .build();
 

@@ -32,6 +32,10 @@ fun CartScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currency = rememberCurrentCurrency()
 
+    LaunchedEffect(Unit) {
+        viewModel.loadCart()
+    }
+
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             onShowError(it)

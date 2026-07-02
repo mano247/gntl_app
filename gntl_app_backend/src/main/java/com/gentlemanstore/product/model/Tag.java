@@ -25,5 +25,6 @@ public class Tag {
     private boolean deleted = false;
 
     @ManyToMany(mappedBy = "tags")
+    @Builder.Default
     private List<Product> products = new ArrayList<>();
 }

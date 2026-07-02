@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +26,8 @@ public class SupportController {
     @PostMapping("/tickets")
     @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<SupportTicketDTO>> createTicket(@Valid @RequestBody CreateTicketRequest request, @AuthenticationPrincipal User currentUser){
-        return ResponseEntity.ok(ApiResponse.success("Support ticket created successfully", service.createTicket(currentUser.getId(), request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Support ticket created successfully", service.createTicket(currentUser.getId(), request)));
     }
 
     @GetMapping("/tickets/{id}")

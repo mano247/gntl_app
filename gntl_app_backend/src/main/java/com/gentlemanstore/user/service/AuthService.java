@@ -42,7 +42,7 @@ public class AuthService {
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTierRepository loyaltyTierRepository;
 
-    @Transactional(noRollbackFor = Exception.class)
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("Email already exists");
@@ -85,6 +85,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(role.getName().name())
+                .userId(user.getId())
                 .build();
 
         try {
@@ -119,6 +120,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRoles().iterator().next().getName().name())
+                .userId(user.getId())
                 .build();
     }
 
@@ -137,6 +139,7 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRoles().iterator().next().getName().name())
+                .userId(user.getId())
                 .build();
     }
 

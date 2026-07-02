@@ -72,9 +72,16 @@ public class DiscountService {
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         }
 
+        DiscountType discountType;
+        try {
+            discountType = DiscountType.valueOf(request.getDiscountType());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid discount type: " + request.getDiscountType());
+        }
+
         Discount discount = Discount.builder()
                 .code(request.getCode())
-                .discountType(DiscountType.valueOf(request.getDiscountType()))
+                .discountType(discountType)
                 .value(request.getValue())
                 .validFrom(request.getValidFrom())
                 .validTo(request.getValidTo())

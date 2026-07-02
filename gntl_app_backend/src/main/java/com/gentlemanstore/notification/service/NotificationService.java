@@ -42,10 +42,7 @@ public class NotificationService {
 
     @Transactional
     public void createNotificationForAllCustomers(String title, String message, NotificationType type) {
-        List<User> customers = userRepository.findAll().stream()
-                .filter(u -> !u.isDeleted() && u.getRoles().stream()
-                        .anyMatch(r -> r.getName() == RoleName.ROLE_CUSTOMER))
-                .toList();
+        List<User> customers = userRepository.findAllActiveByRoleName(RoleName.ROLE_CUSTOMER);
 
         List<Notification> notifications = customers.stream()
                 .map(user -> Notification.builder()

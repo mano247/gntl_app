@@ -84,6 +84,9 @@ class NotificationViewModel @Inject constructor(
     }
 
     fun markAsRead(id: Long) {
+        val wasUnread = _uiState.value.notifications.any { it.id == id && !it.isRead }
+        if (!wasUnread) return
+
         viewModelScope.launch {
             notificationRepository.markAsRead(id)
             _uiState.value = _uiState.value.copy(

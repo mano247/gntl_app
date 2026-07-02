@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- Order entity has finalPrice/loyaltyDiscount/promoDiscount fields with no backing columns -->
+    <changeSet id="54" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="orders" columnName="final_price"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="orders">
+            <column name="final_price" type="DECIMAL(10,2)"/>
+            <column name="loyalty_discount" type="DECIMAL(10,2)"/>
+            <column name="promo_discount" type="DECIMAL(10,2)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- CartItem entity has unitPrice field with no backing column -->
+    <changeSet id="55" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="cart_items" columnName="unit_price"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="cart_items">
+            <column name="unit_price" type="DECIMAL(10,2)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- ChatMessage entity has isRead field with no backing column -->
+    <changeSet id="56" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="chat_messages" columnName="is_read"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="chat_messages">
+            <column name="is_read" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- UserDiscount entity (used by promo-code redemption in checkout) has no backing table -->
+    <changeSet id="57" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="user_discounts"/>
+            </not>
+        </preConditions>
+        <createTable tableName="user_discounts">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="used_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="discount_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="user_discounts"
+                baseColumnNames="user_id"
+                constraintName="fk_user_discounts_user"
+                referencedTableName="users"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="user_discounts"
+                baseColumnNames="discount_id"
+                constraintName="fk_user_discounts_discount"
+                referencedTableName="discounts"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>

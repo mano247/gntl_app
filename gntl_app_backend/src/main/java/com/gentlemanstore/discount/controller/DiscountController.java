@@ -9,6 +9,7 @@ import com.gentlemanstore.discount.service.DiscountService;
 import com.gentlemanstore.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,7 +39,8 @@ public class DiscountController {
     @PostMapping()
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<DiscountDTO>> createDiscount(@Valid @RequestBody CreateDiscountRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Discount created successfully", service.createDiscount(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Discount created successfully", service.createDiscount(request)));
     }
 
     @DeleteMapping("/{id}")
@@ -57,7 +59,8 @@ public class DiscountController {
     @PostMapping("/promotions")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<PromotionDTO>> createPromotion(@Valid @RequestBody CreatePromotionRequest request){
-        return ResponseEntity.ok(ApiResponse.success("Promotion created successfully", service.createPromotion(request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Promotion created successfully", service.createPromotion(request)));
     }
 
     @PostMapping("/promotions/{promotionId}/apply/{userId}")

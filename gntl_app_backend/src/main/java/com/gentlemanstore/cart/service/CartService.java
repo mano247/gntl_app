@@ -93,7 +93,7 @@ public class CartService {
         cartDTO.setTotalPrice(totalPrice);
         // Loyalty popust
         try {
-            loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+            loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresentOrElse(account -> {
                 BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
                 if (discountPct != null && discountPct.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal discount = totalPrice.multiply(discountPct).divide(BigDecimal.valueOf(100));
@@ -103,6 +103,9 @@ public class CartService {
                     cartDTO.setLoyaltyDiscount(BigDecimal.ZERO);
                     cartDTO.setFinalPrice(totalPrice);
                 }
+            }, () -> {
+                cartDTO.setLoyaltyDiscount(BigDecimal.ZERO);
+                cartDTO.setFinalPrice(totalPrice);
             });
         } catch (Exception e) {
             cartDTO.setLoyaltyDiscount(BigDecimal.ZERO);
@@ -145,7 +148,7 @@ public class CartService {
                 );
                 unitPrice = product.getPrice().multiply(multiplier);
             } else {
-                unitPrice = product.getPrice().subtract(discount.getValue());
+                unitPrice = product.getPrice().subtract(discount.getValue()).max(BigDecimal.ZERO);
             }
         }
 
@@ -228,7 +231,7 @@ public class CartService {
 
         // Loyalty popust
         final BigDecimal finalTotalPrice = totalPrice;
-        loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresent(account -> {
+        loyaltyAccountRepository.findByUserIdAndDeletedFalse(userId).ifPresentOrElse(account -> {
             BigDecimal discountPct = account.getLoyaltyTier().getDiscountPercentage();
             if (discountPct != null && discountPct.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal discount = finalTotalPrice.multiply(discountPct).divide(BigDecimal.valueOf(100));
@@ -238,6 +241,9 @@ public class CartService {
                 order.setLoyaltyDiscount(BigDecimal.ZERO);
                 order.setFinalPrice(finalTotalPrice);
             }
+        }, () -> {
+            order.setLoyaltyDiscount(BigDecimal.ZERO);
+            order.setFinalPrice(finalTotalPrice);
         });
 
         // Promo kod popust
@@ -258,6 +264,7 @@ public class CartService {
                     promoDiscountAmount = promoDiscount.getValue();
                 }
 
+                promoDiscountAmount = promoDiscountAmount.min(basePrice);
                 order.setPromoDiscount(promoDiscountAmount);
                 order.setFinalPrice(basePrice.subtract(promoDiscountAmount));
 

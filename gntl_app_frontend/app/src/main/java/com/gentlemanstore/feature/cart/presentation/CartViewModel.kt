@@ -146,7 +146,10 @@ class CartViewModel @Inject constructor(
                         isCheckingOut = false,
                         checkoutSuccess = true,
                         completedOrder = result.data,
-                        cart = null
+                        cart = null,
+                        promoCode = "",
+                        promoDiscount = null,
+                        promoError = null
                     )
                 }
                 is Resource.Error -> {

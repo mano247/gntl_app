@@ -1,5 +1,6 @@
 package com.gentlemanstore.payment.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
 import com.gentlemanstore.order.model.Order;
 import com.gentlemanstore.order.repository.OrderRepository;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,9 +64,22 @@ public class PaymentService {
             throw new ResourceNotFoundException("Order not found");
         }
 
+        if (repo.findByOrderIdAndDeletedFalse(order.getId()).isPresent()) {
+            throw new BadRequestException("Payment already exists for this order");
+        }
+
+        PaymentMethod paymentMethod;
+        try {
+            paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid payment method: " + request.getPaymentMethod());
+        }
+
+        BigDecimal amount = order.getFinalPrice() != null ? order.getFinalPrice() : order.getTotalPrice();
+
         Payment payment = Payment.builder()
-                .amount(order.getTotalPrice())
-                .paymentMethod(PaymentMethod.valueOf(request.getPaymentMethod()))
+                .amount(amount)
+                .paymentMethod(paymentMethod)
                 .status(PaymentStatus.PENDING)
                 .order(order)
                 .deleted(false)

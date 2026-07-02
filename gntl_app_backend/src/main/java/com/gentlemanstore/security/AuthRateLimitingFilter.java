@@ -20,6 +20,10 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
 
     private static final int CAPACITY = 5;
     private static final Duration REFILL_PERIOD = Duration.ofMinutes(1);
+    // Upper bound on tracked client buckets; prevents unbounded memory growth if an
+    // attacker rotates source IPs. Once full, all buckets are refilled within a minute
+    // anyway, so resetting the map is safe.
+    private static final int MAX_TRACKED_BUCKETS = 10_000;
 
     private final ConcurrentMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -31,6 +35,9 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
 
         if (isRateLimited) {
             String key = request.getRemoteAddr() + ":" + path;
+            if (buckets.size() >= MAX_TRACKED_BUCKETS && !buckets.containsKey(key)) {
+                buckets.clear();
+            }
             Bucket bucket = buckets.computeIfAbsent(key, k -> Bucket.builder()
                     .addLimit(Bandwidth.classic(CAPACITY, Refill.greedy(CAPACITY, REFILL_PERIOD)))
                     .build());

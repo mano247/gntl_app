@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.data.datastore.TokenDataStore
+import com.gentlemanstore.feature.auth.domain.AuthRepository
 import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import com.gentlemanstore.feature.profile.data.dto.UserResponse
 import com.gentlemanstore.feature.profile.domain.UserRepository
@@ -29,7 +30,8 @@ class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tokenDataStore: TokenDataStore,
     private val notificationRepository: NotificationRepository,
-    private val supportRepository: SupportRepository
+    private val supportRepository: SupportRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -88,7 +90,8 @@ class ProfileViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
-            tokenDataStore.clearAll()
+            // Revokes the refresh token server-side and clears local storage.
+            authRepository.logout()
             _uiState.value = _uiState.value.copy(logoutComplete = true)
         }
     }

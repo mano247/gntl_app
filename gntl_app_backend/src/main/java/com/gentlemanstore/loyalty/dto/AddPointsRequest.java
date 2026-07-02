@@ -16,4 +16,6 @@ public class AddPointsRequest {
     private Integer points;
     @NotBlank
     private String description;
+    // Target user whose loyalty account receives the points; falls back to the caller when null.
+    private Long userId;
 }

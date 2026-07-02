@@ -55,6 +55,7 @@ fun CheckoutScreen(
     LaunchedEffect(cartState.checkoutSuccess) {
         if (cartState.checkoutSuccess && cartState.completedOrder != null) {
             onOrderPlaced(cartState.completedOrder!!)
+            cartViewModel.resetCheckoutState()
         }
     }
 

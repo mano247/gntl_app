@@ -74,5 +74,6 @@ data class LoyaltyAccountResponse(
 
 data class AddPointsRequest(
     val points: Int,
-    val description: String
+    val description: String,
+    val userId: Long? = null
 )

@@ -225,9 +225,14 @@ class ManagerViewModel @Inject constructor(
     }
 
     fun addPointsToUser(points: Int, description: String) {
+        // Points must go to the user the manager looked up, not to the manager's own account.
+        val targetUserId = _uiState.value.loyaltyUserId.toLongOrNull() ?: run {
+            _uiState.value = _uiState.value.copy(loyaltyError = "Invalid user ID")
+            return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isAddingPoints = true, loyaltyError = null, loyaltySuccess = null)
-            when (val result = managerRepository.addPoints(points, description)) {
+            when (val result = managerRepository.addPoints(points, description, targetUserId)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isAddingPoints = false,

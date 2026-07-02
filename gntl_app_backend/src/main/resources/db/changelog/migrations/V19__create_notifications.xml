@@ -5,7 +5,25 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
 
+    <!-- V10 (changeset 34) created a legacy "notifications" table with a different shape
+         (notification_type/read columns) that no entity maps to. On a fresh database the
+         createTable below would fail because the table already exists, so the legacy table
+         is dropped first. The precondition ensures this only runs against the legacy shape
+         and is skipped on databases that already have the current table. -->
+    <changeSet id="51-drop-legacy-notifications" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="notifications"/>
+            <columnExists tableName="notifications" columnName="notification_type"/>
+        </preConditions>
+        <dropTable tableName="notifications"/>
+    </changeSet>
+
     <changeSet id="52" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="notifications"/>
+            </not>
+        </preConditions>
         <createTable tableName="notifications">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>

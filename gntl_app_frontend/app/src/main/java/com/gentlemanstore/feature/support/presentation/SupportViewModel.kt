@@ -79,7 +79,12 @@ class SupportViewModel @Inject constructor(
         ticketPollingJob?.cancel()
         ticketPollingJob = viewModelScope.launch {
             while (true) {
-                loadMyTicketsAndUnread()
+                // This ViewModel is created at app start (activity scope, for the badge),
+                // so skip polling while there is no logged-in session — otherwise the loop
+                // hammers the API with unauthorized requests on the splash/login screens.
+                if (tokenDataStore.token.first() != null) {
+                    loadMyTicketsAndUnread()
+                }
                 delay(3000)
             }
         }

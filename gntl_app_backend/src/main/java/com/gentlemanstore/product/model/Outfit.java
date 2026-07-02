@@ -28,5 +28,6 @@ public class Outfit {
     private boolean deleted = false;
 
     @OneToMany(mappedBy = "outfit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<OutfitItem> outfitItems = new ArrayList<>();
 }

@@ -41,6 +41,8 @@ class ProductViewModel @Inject constructor(
     private val _listUiState = MutableStateFlow(ProductListUiState())
     val listUiState: StateFlow<ProductListUiState> = _listUiState.asStateFlow()
 
+    private var loadProductsJob: kotlinx.coroutines.Job? = null
+
     private val _detailUiState = MutableStateFlow(ProductDetailUiState())
     val detailUiState: StateFlow<ProductDetailUiState> = _detailUiState.asStateFlow()
 
@@ -61,7 +63,10 @@ class ProductViewModel @Inject constructor(
             )
         }
 
-        viewModelScope.launch {
+        // Cancel any in-flight request so a slower, older response (e.g. from a
+        // previous search keystroke) can't overwrite newer results.
+        loadProductsJob?.cancel()
+        loadProductsJob = viewModelScope.launch {
             _listUiState.value = _listUiState.value.copy(isLoading = true)
 
             when (val result = productRepository.getProducts(

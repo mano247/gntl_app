@@ -152,7 +152,9 @@ class MainActivity : ComponentActivity() {
                                 onRegisterSuccess = { role ->
                                     val destination = getRoleDestination(role)
                                     navController.navigate(destination) {
-                                        popUpTo("register") { inclusive = true }
+                                        // Clear both "login" and "register" so back from home
+                                        // doesn't land on an auth screen while logged in.
+                                        popUpTo("login") { inclusive = true }
                                     }
                                 },
                                 onNavigateToLogin = {
@@ -302,7 +304,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onLogout = {
                                     lifecycleScope.launch {
-                                        tokenDataStore.clearAll()
+                                        authRepository.logout()
                                         navController.navigate("login") {
                                             popUpTo(0) { inclusive = true }
                                         }
@@ -315,7 +317,7 @@ class MainActivity : ComponentActivity() {
                             ManagerHomeScreen(
                                 onLogout = {
                                     lifecycleScope.launch {
-                                        tokenDataStore.clearAll()
+                                        authRepository.logout()
                                         navController.navigate("login") {
                                             popUpTo(0) { inclusive = true }
                                         }
@@ -328,7 +330,7 @@ class MainActivity : ComponentActivity() {
                             AdminHomeScreen(
                                 onLogout = {
                                     lifecycleScope.launch {
-                                        tokenDataStore.clearAll()
+                                        authRepository.logout()
                                         navController.navigate("login") {
                                             popUpTo(0) { inclusive = true }
                                         }

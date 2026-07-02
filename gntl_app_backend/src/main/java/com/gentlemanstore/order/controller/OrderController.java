@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -64,7 +65,8 @@ public class OrderController {
     @PostMapping()
     @PreAuthorize("hasAnyRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@Valid @RequestBody CreateOrderRequest request, @AuthenticationPrincipal User currentUser){
-        return ResponseEntity.ok(ApiResponse.success("Order created successfully", service.createOrder(request, currentUser.getId())));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Order created successfully", service.createOrder(request, currentUser.getId())));
     }
 
     @DeleteMapping("/{id}")

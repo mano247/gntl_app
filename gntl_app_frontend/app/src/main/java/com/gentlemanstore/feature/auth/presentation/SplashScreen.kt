@@ -41,7 +41,9 @@ fun SplashScreen(
             if (token == null || JwtUtils.isTokenExpired(token)) {
                 onNavigateToLogin()
             } else {
-                val role = JwtUtils.decodeRole(token) ?: run {
+                // The backend JWT carries only the subject (email) — no role claim —
+                // so the role saved to DataStore at login is the source of truth here.
+                val role = tokenDataStore.userRole.first() ?: run {
                     onNavigateToLogin()
                     return@launch
                 }

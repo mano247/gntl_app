@@ -6,6 +6,7 @@ import com.gentlemanstore.user.model.User;
 import com.gentlemanstore.user.service.AddressService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,8 +34,9 @@ public class AddressController {
     public ResponseEntity<ApiResponse<AddressDTO>> createAddress(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody AddressDTO request) {
-        return ResponseEntity.ok(ApiResponse.success("Address created successfully",
-                addressService.createAddress(currentUser.getId(), request)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Address created successfully",
+                        addressService.createAddress(currentUser.getId(), request)));
     }
 
     @PutMapping("/{id}")

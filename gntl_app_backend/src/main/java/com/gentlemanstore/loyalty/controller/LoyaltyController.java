@@ -65,8 +65,9 @@ public class LoyaltyController {
     @PutMapping("/points")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@AuthenticationPrincipal User currentUser, @Valid @RequestBody AddPointsRequest request){
+        Long targetUserId = request.getUserId() != null ? request.getUserId() : currentUser.getId();
         return ResponseEntity.ok(ApiResponse.success("Loyalty points added successfully",
-                service.addPoints(currentUser.getId(), request.getPoints(), request.getDescription())));
+                service.addPoints(targetUserId, request.getPoints(), request.getDescription())));
     }
 
 }

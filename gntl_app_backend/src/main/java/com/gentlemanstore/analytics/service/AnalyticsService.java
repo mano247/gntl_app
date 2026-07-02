@@ -28,6 +28,9 @@ public class AnalyticsService {
         Integer totalOrders = orderRepository.countTotalOrders();
 
         BigDecimal averageOrderValue = orderRepository.getAverageOrderValue();
+        if (averageOrderValue == null) {
+            averageOrderValue = BigDecimal.ZERO;
+        }
 
         Integer newUsers = userRepository.countNewUsersThisMonth();
 

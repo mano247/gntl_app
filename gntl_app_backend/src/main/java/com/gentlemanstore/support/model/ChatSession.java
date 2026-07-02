@@ -29,6 +29,7 @@ public class ChatSession {
     private boolean deleted = false;
 
     @OneToMany(mappedBy = "chatSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ChatMessage> messages = new ArrayList<>();
 
     @PrePersist

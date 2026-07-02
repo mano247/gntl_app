@@ -40,7 +40,14 @@ class TokenAuthenticator @Inject constructor(
             }
 
             val refreshToken = runBlocking { tokenDataStore.refreshToken.first() } ?: return null
-            val refreshed = performRefresh(refreshToken) ?: return null
+            val result = performRefresh(refreshToken)
+            if (result is RefreshResult.Rejected) {
+                // The server definitively rejected the refresh token (revoked/expired) —
+                // keeping the dead tokens would leave the app in a broken "logged in" state.
+                runBlocking { tokenDataStore.clearAll() }
+                return null
+            }
+            val refreshed = (result as? RefreshResult.Success)?.data ?: return null
 
             runBlocking {
                 tokenDataStore.saveToken(refreshed.token)
@@ -53,7 +60,15 @@ class TokenAuthenticator @Inject constructor(
         }
     }
 
-    private fun performRefresh(refreshToken: String): RefreshAuthData? {
+    private sealed interface RefreshResult {
+        data class Success(val data: RefreshAuthData) : RefreshResult
+        // Server explicitly rejected the token (401/403) — it will never work again.
+        object Rejected : RefreshResult
+        // Transient failure (network error, 5xx) — the token may still be valid.
+        object Failed : RefreshResult
+    }
+
+    private fun performRefresh(refreshToken: String): RefreshResult {
         return try {
             val json = gson.toJson(mapOf("refreshToken" to refreshToken))
             val body = json.toRequestBody("application/json".toMediaType())
@@ -63,13 +78,15 @@ class TokenAuthenticator @Inject constructor(
                 .build()
 
             refreshClient.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) return null
-                val bodyString = resp.body?.string() ?: return null
+                if (resp.code == 401 || resp.code == 403) return RefreshResult.Rejected
+                if (!resp.isSuccessful) return RefreshResult.Failed
+                val bodyString = resp.body?.string() ?: return RefreshResult.Failed
                 val parsed = gson.fromJson(bodyString, RefreshApiResponse::class.java)
-                if (parsed.success) parsed.data else null
+                val data = if (parsed.success) parsed.data else null
+                if (data != null) RefreshResult.Success(data) else RefreshResult.Failed
             }
         } catch (e: Exception) {
-            null
+            RefreshResult.Failed
         }
     }
 
