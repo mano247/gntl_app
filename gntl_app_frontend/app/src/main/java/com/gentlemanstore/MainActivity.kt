@@ -80,6 +80,9 @@ class MainActivity : ComponentActivity() {
                         notificationViewModel.loadUnreadCount()
                         supportViewModel.loadMyTickets()
                     }
+                    if (currentRoute == "notifications") {
+                        notificationViewModel.loadNotifications()
+                    }
                 }
 
                 val snackbarHostState = remember { SnackbarHostState() }
@@ -294,7 +297,8 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("notifications") {
                             NotificationScreen(
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                viewModel = notificationViewModel
                             )
                         }
                         composable("home_employee") {

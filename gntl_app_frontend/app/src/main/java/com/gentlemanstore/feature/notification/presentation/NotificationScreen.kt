@@ -33,6 +33,7 @@ fun NotificationScreen(
     viewModel: NotificationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredNotifications by viewModel.filteredNotifications.collectAsStateWithLifecycle()
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = uiState.isLoading,
@@ -45,10 +46,11 @@ fun NotificationScreen(
         viewModel.loadNotifications()
     }
 
-//    LaunchedEffect(Unit) {
-//        kotlinx.coroutines.delay(500)
-//        viewModel.markAllAsRead()
-//    }
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.markAllAsRead()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -142,7 +144,7 @@ fun NotificationScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(viewModel.filteredNotifications, key = { it.id }) { notification ->
+                            items(filteredNotifications, key = { it.id }) { notification ->
                                 NotificationCard(
                                     notification = notification,
                                     onClick = { viewModel.markAsRead(notification.id) }
@@ -152,9 +154,17 @@ fun NotificationScreen(
                             if (!uiState.isLastPage) {
                                 item {
                                     LaunchedEffect(Unit) { viewModel.loadMoreNotifications() }
-                                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
                                         if (uiState.isLoadingMore) {
-                                            CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
+                                            CircularProgressIndicator(
+                                                color = Gold500,
+                                                modifier = Modifier.size(24.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -208,7 +218,6 @@ private fun NotificationCard(
             .padding(14.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // Unread indicator
         if (!notification.isRead) {
             Box(
                 modifier = Modifier

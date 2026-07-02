@@ -12,7 +12,8 @@ interface NotificationApiService {
     @GET("notifications")
     suspend fun getNotifications(
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
+        @Query("size") size: Int = 100,
+        @Query("sort") sort: String = "createdAt,desc"
     ): ApiResponse<PagedNotificationResponse>
 
     @GET("notifications/unread-count")

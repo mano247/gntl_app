@@ -7,8 +7,11 @@ import com.gentlemanstore.feature.notification.data.dto.NotificationResponse
 import com.gentlemanstore.feature.notification.domain.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,13 +34,17 @@ class NotificationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NotificationUiState())
     val uiState: StateFlow<NotificationUiState> = _uiState.asStateFlow()
 
-    val filteredNotifications: List<NotificationResponse>
-        get() {
-            val sorted = _uiState.value.notifications.sortedBy { it.isRead }
-            return if (_uiState.value.selectedType == null) sorted
-            else sorted.filter { it.type == _uiState.value.selectedType }
+    val filteredNotifications: StateFlow<List<NotificationResponse>> = _uiState
+        .map { state ->
+            val sorted = state.notifications
+                .sortedWith(
+                    compareByDescending<NotificationResponse> { !it.isRead }
+                        .thenByDescending { it.createdAt }
+                )
+            if (state.selectedType == null) sorted
+            else sorted.filter { it.type == state.selectedType }
         }
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onTypeFilter(type: String?) {
         _uiState.value = _uiState.value.copy(selectedType = type)
@@ -51,7 +58,7 @@ class NotificationViewModel @Inject constructor(
     fun loadNotifications() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            when (val result = notificationRepository.getNotifications(page = 0)) {
+            when (val result = notificationRepository.getNotifications(page = 0, size = 100)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -98,6 +105,16 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
+    fun markAllAsRead() {
+        viewModelScope.launch {
+            notificationRepository.markAllAsRead()
+            _uiState.value = _uiState.value.copy(
+                notifications = _uiState.value.notifications.map { it.copy(isRead = true) },
+                unreadCount = 0
+            )
+        }
+    }
+
     fun loadMoreNotifications() {
         val state = _uiState.value
         if (state.isLastPage || state.isLoadingMore) return
@@ -105,7 +122,7 @@ class NotificationViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
-            when (val result = notificationRepository.getNotifications(page = nextPage)) {
+            when (val result = notificationRepository.getNotifications(page = nextPage, size = 100)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingMore = false,

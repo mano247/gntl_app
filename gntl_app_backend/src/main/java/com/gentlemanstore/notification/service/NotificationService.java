@@ -74,20 +74,20 @@ public class NotificationService {
     @Transactional
     public void markAllAsRead(Long userId) {
         Page<Notification> notifications = notificationRepository
-                .findAllByUserIdAndDeletedFalse(userId, Pageable.unpaged());
+                .findAllByUser_IdAndDeletedFalse(userId, Pageable.unpaged());
         notifications.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(notifications.getContent());
     }
 
     @Transactional(readOnly = true)
     public Page<NotificationDTO> getNotifications(Long userId, Pageable pageable) {
-        return notificationRepository.findAllByUserIdAndDeletedFalse(userId, pageable)
+        return notificationRepository.findAllByUser_IdAndDeletedFalse(userId, pageable)
                 .map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
     public long getUnreadCount(Long userId) {
-        return notificationRepository.countByUserIdAndIsReadFalseAndDeletedFalse(userId);
+        return notificationRepository.countByUser_IdAndIsReadFalseAndDeletedFalse(userId);
     }
 
     private NotificationDTO toDTO(Notification n) {

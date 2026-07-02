@@ -14,9 +14,9 @@ import javax.inject.Singleton
 class NotificationRepository @Inject constructor(
     private val notificationApiService: NotificationApiService
 ) {
-    suspend fun getNotifications(page: Int = 0): Resource<PagedNotificationResponse> {
+    suspend fun getNotifications(page: Int = 0, size: Int = 100): Resource<PagedNotificationResponse> {
         return try {
-            val response = notificationApiService.getNotifications(page)
+            val response = notificationApiService.getNotifications(page, size, "createdAt,desc")
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))

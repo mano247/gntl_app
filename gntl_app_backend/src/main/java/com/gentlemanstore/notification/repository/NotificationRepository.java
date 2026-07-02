@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    Page<Notification> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
-    long countByUserIdAndIsReadFalseAndDeletedFalse(Long userId);
+    Page<Notification> findAllByUser_IdAndDeletedFalse(Long userId, Pageable pageable);
+    long countByUser_IdAndIsReadFalseAndDeletedFalse(Long userId);
     Optional<Notification> findByIdAndDeletedFalse(Long id);
 }
