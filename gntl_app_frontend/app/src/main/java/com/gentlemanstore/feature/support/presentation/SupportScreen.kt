@@ -58,8 +58,10 @@ fun SupportScreen(
         onRefresh = { viewModel.loadMyTickets() }
     )
 
+    // Jednokratno osvežavanje pri ulasku na ekran (i pri povratku iz chata) —
+    // realtime izmene stižu kroz WebSocket badge subscription u ViewModelu.
     LaunchedEffect(Unit) {
-        viewModel.startTicketPolling()
+        viewModel.loadMyTickets()
     }
 
     LaunchedEffect(uiState.successMessage) {

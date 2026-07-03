@@ -68,21 +68,4 @@ class ManagerRepository @Inject constructor(
         }
     }
 
-    suspend fun getUserLoyaltyAccount(userId: Long): Resource<LoyaltyAccountResponse> {
-        return try {
-            val response = managerApiService.getUserLoyaltyAccount(userId)
-            response.toResource()
-        } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
-        }
-    }
-
-    suspend fun addPoints(points: Int, description: String, userId: Long? = null): Resource<LoyaltyAccountResponse> {
-        return try {
-            val response = managerApiService.addPoints(AddPointsRequest(points, description, userId))
-            response.toResource()
-        } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
-        }
-    }
 }

@@ -2,20 +2,21 @@ package com.gentlemanstore.feature.employee.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gentlemanstore.core.network.BadgeWebSocketManager
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.employee.domain.EmployeeRepository
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.feature.support.data.dto.SupportTicketResponse
+import com.gentlemanstore.feature.support.data.dto.UnreadUpdateEvent
 import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,7 +44,8 @@ data class EmployeeTicketsUiState(
 @HiltViewModel
 class EmployeeViewModel @Inject constructor(
     private val employeeRepository: EmployeeRepository,
-    private val supportRepository: SupportRepository
+    private val supportRepository: SupportRepository,
+    private val badgeWebSocketManager: BadgeWebSocketManager
 ) : ViewModel() {
 
     private val _ordersUiState = MutableStateFlow(EmployeeOrdersUiState())
@@ -52,26 +54,39 @@ class EmployeeViewModel @Inject constructor(
     private val _ticketsUiState = MutableStateFlow(EmployeeTicketsUiState())
     val ticketsUiState: StateFlow<EmployeeTicketsUiState> = _ticketsUiState.asStateFlow()
 
-    private var ticketPollingJob: Job? = null
-
     init {
         loadOrders()
-        startTicketPolling()
+        loadTickets()
+        subscribeToBadgeUpdates()
     }
 
-    fun startTicketPolling() {
-        ticketPollingJob?.cancel()
-        ticketPollingJob = viewModelScope.launch {
-            while (true) {
-                loadTicketsAndUnread()
-                delay(3000)
+    // Realtime badge eventi umesto pollinga: server pushuje unread promene i
+    // nove tikete na zajedničke employee topice.
+    private fun subscribeToBadgeUpdates() {
+        badgeWebSocketManager.subscribe(
+            topic = EMPLOYEE_UNREAD_TOPIC,
+            type = UnreadUpdateEvent::class.java,
+            onEvent = { event ->
+                _ticketsUiState.update { state ->
+                    state.copy(tickets = state.tickets.map {
+                        if (it.id == event.ticketId) it.copy(unreadCount = event.unreadCount) else it
+                    })
+                }
+            },
+            onResync = {
+                // Prekid ili reconnect WebSocket-a — jednokratna REST sinhronizacija.
+                loadTickets()
             }
-        }
-    }
-
-    fun stopTicketPolling() {
-        ticketPollingJob?.cancel()
-        ticketPollingJob = null
+        )
+        badgeWebSocketManager.subscribe(
+            topic = EMPLOYEE_NEW_TICKET_TOPIC,
+            type = SupportTicketResponse::class.java,
+            onEvent = {
+                // Reload umesto lokalnog ubacivanja — čuva redosled sa servera
+                // i odmah povlači unread brojače za novi tiket.
+                loadTickets()
+            }
+        )
     }
 
     private suspend fun loadTicketsAndUnread() {
@@ -237,12 +252,12 @@ class EmployeeViewModel @Inject constructor(
         _ticketsUiState.value = _ticketsUiState.value.copy(selectedStatus = status)
     }
 
-    val filteredOrders: List<OrderResponse>
-        get() = if (_ordersUiState.value.selectedStatus == null) {
-            _ordersUiState.value.orders
-        } else {
-            _ordersUiState.value.orders.filter { it.status == _ordersUiState.value.selectedStatus }
+    val filteredOrders: StateFlow<List<OrderResponse>> = _ordersUiState
+        .map { state ->
+            if (state.selectedStatus == null) state.orders
+            else state.orders.filter { it.status == state.selectedStatus }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onOrderStatusFilter(status: String?) {
         _ordersUiState.value = _ordersUiState.value.copy(selectedStatus = status)
@@ -256,6 +271,12 @@ class EmployeeViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        stopTicketPolling()
+        badgeWebSocketManager.unsubscribe(EMPLOYEE_UNREAD_TOPIC)
+        badgeWebSocketManager.unsubscribe(EMPLOYEE_NEW_TICKET_TOPIC)
+    }
+
+    private companion object {
+        const val EMPLOYEE_UNREAD_TOPIC = "/topic/employee/unread"
+        const val EMPLOYEE_NEW_TICKET_TOPIC = "/topic/employee/new-ticket"
     }
 }

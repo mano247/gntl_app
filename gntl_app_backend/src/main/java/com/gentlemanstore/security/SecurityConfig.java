@@ -81,6 +81,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // WebSocket handshake nosi JWT u query parametru, ne u Authorization
+                        // headeru — autentifikaciju sprovodi WebSocketAuthInterceptor (odbija
+                        // konekciju bez validnog tokena), pa je ovde permitAll.
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

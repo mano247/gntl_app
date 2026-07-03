@@ -11,6 +11,7 @@ import com.gentlemanstore.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class SupportService {
     private final SupportTicketRepository supportTicketRepository;
     private final UserRepository userRepository;
     private final SupportMapper mapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public SupportTicketDTO createTicket(Long userId, CreateTicketRequest request) {
@@ -57,7 +59,13 @@ public class SupportService {
                 .build();
         chatMessageRepository.save(welcomeMessage);
 
-        return mapper.toDTO(ticket);
+        SupportTicketDTO dto = mapper.toDTO(ticket);
+
+        // Realtime signal svim employee klijentima da je stigao nov tiket —
+        // zamena za polling liste tiketa na employee panelu.
+        messagingTemplate.convertAndSend("/topic/employee/new-ticket", dto);
+
+        return dto;
     }
 
     @Transactional(readOnly = true)
@@ -146,7 +154,43 @@ public class SupportService {
                 .build();
 
         chatMessageRepository.save(chatMessage);
-        return mapper.toMessageDTO(chatMessage);
+        ChatMessageDTO dto = mapper.toMessageDTO(chatMessage);
+
+        // Realtime broadcast svim pretplaćenim klijentima (customer + employee).
+        // Broadcast je ovde, a ne u WS kontroleru, da bi i poruke poslate kroz
+        // REST endpoint stizale realtime pretplaćenim klijentima.
+        messagingTemplate.convertAndSend("/topic/chat/" + sessionId, dto);
+
+        // Badge event za drugu stranu: employee poruka → customer topic,
+        // customer poruka → zajednički employee topic. Zamena za REST polling
+        // unread brojača.
+        broadcastUnreadUpdate(ticket, sessionId, messageSender);
+
+        return dto;
+    }
+
+    /**
+     * Broadcast trenutnog unread brojača za tiket ka strani koja poruke PRIMA.
+     * unreadCount se računa iz baze (broj nepročitanih poruka datog pošiljaoca
+     * u sesiji), pa je event idempotentan — klijent samo prepiše vrednost.
+     */
+    private void broadcastUnreadUpdate(SupportTicket ticket, Long sessionId, MessageSender sender) {
+        if (sender == MessageSender.BOT) {
+            return;
+        }
+        int unreadCount = chatMessageRepository.countByChatSessionIdAndSenderAndIsReadFalse(sessionId, sender);
+        UnreadUpdateDTO update = UnreadUpdateDTO.builder()
+                .ticketId(ticket.getId())
+                .sessionId(sessionId)
+                .unreadCount(unreadCount)
+                .build();
+
+        if (sender == MessageSender.EMPLOYEE) {
+            messagingTemplate.convertAndSend(
+                    "/topic/user/" + ticket.getUser().getId() + "/unread", update);
+        } else {
+            messagingTemplate.convertAndSend("/topic/employee/unread", update);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -222,6 +266,21 @@ public class SupportService {
                 .filter(msg -> msg.getSender() == senderToMark)
                 .forEach(msg -> msg.setRead(true));
         chatMessageRepository.saveAll(messages);
+
+        // Badge event ka strani koja je upravo pročitala poruke — bez ovoga bi
+        // (posle uklanjanja pollinga) njen unread brojač ostao zamrznut na
+        // staroj vrednosti dok ručno ne osveži listu. Kod employee čitanja
+        // event ujedno sinhronizuje i ostale employee klijente.
+        UnreadUpdateDTO update = UnreadUpdateDTO.builder()
+                .ticketId(ticket.getId())
+                .sessionId(sessionId)
+                .unreadCount(0)
+                .build();
+        if (senderToMark == MessageSender.EMPLOYEE) {
+            messagingTemplate.convertAndSend("/topic/user/" + userId + "/unread", update);
+        } else {
+            messagingTemplate.convertAndSend("/topic/employee/unread", update);
+        }
     }
 
     @Transactional(readOnly = true)

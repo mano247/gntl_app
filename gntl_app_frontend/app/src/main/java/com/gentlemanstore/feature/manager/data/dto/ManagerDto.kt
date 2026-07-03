@@ -64,16 +64,3 @@ data class CreatePromotionRequest(
     val validTo: String,
     val discountId: Long
 )
-
-data class LoyaltyAccountResponse(
-    val id: Long,
-    val points: Int,
-    val tierName: String,
-    val discountPercentage: Double
-)
-
-data class AddPointsRequest(
-    val points: Int,
-    val description: String,
-    val userId: Long? = null
-)

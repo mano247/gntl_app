@@ -52,4 +52,21 @@ public class NotificationController {
         service.markAllAsRead(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", null));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        service.deleteNotification(id, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Notification deleted successfully", null));
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteAllNotifications(
+            @AuthenticationPrincipal User currentUser) {
+        service.deleteAllNotifications(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("All notifications deleted successfully", null));
+    }
 }

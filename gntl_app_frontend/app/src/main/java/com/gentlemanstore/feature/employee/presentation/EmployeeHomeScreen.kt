@@ -38,6 +38,7 @@ fun EmployeeHomeScreen(
     val ordersState by viewModel.ordersUiState.collectAsStateWithLifecycle()
     val ticketsState by viewModel.ticketsUiState.collectAsStateWithLifecycle()
     val filteredTickets by viewModel.filteredTickets.collectAsStateWithLifecycle()
+    val filteredOrders by viewModel.filteredOrders.collectAsStateWithLifecycle()
 
     LaunchedEffect(ordersState.error) {
         ordersState.error?.let { onShowError(it) }
@@ -85,7 +86,7 @@ fun EmployeeHomeScreen(
         when (selectedTab) {
             0 -> EmployeeOrdersTab(
                 state = ordersState,
-                filteredOrders = viewModel.filteredOrders,
+                filteredOrders = filteredOrders,
                 onUpdateStatus = { orderId, status -> viewModel.updateOrderStatus(orderId, status) },
                 onRefresh = { viewModel.loadOrders() },
                 onStatusFilter = { viewModel.onOrderStatusFilter(it) },

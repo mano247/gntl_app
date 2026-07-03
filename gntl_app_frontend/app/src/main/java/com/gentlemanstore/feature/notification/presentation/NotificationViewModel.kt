@@ -115,6 +115,50 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
+    fun deleteNotification(id: Long) {
+        val target = _uiState.value.notifications.find { it.id == id } ?: return
+
+        // Optimistic update — odmah ukloni iz liste, rollback (reload) ako backend odbije
+        _uiState.value = _uiState.value.copy(
+            notifications = _uiState.value.notifications.filter { it.id != id },
+            unreadCount = if (!target.isRead) maxOf(0, _uiState.value.unreadCount - 1)
+            else _uiState.value.unreadCount
+        )
+
+        viewModelScope.launch {
+            when (val result = notificationRepository.deleteNotification(id)) {
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(error = result.message)
+                    loadNotifications()
+                    loadUnreadCount()
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun deleteAllNotifications() {
+        if (_uiState.value.notifications.isEmpty()) return
+
+        // Optimistic update — odmah očisti listu, rollback (reload) ako backend odbije
+        _uiState.value = _uiState.value.copy(
+            notifications = emptyList(),
+            unreadCount = 0,
+            isLastPage = true
+        )
+
+        viewModelScope.launch {
+            when (val result = notificationRepository.deleteAllNotifications()) {
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(error = result.message)
+                    loadNotifications()
+                    loadUnreadCount()
+                }
+                else -> Unit
+            }
+        }
+    }
+
     fun loadMoreNotifications() {
         val state = _uiState.value
         if (state.isLastPage || state.isLoadingMore) return

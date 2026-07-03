@@ -79,6 +79,28 @@ public class NotificationService {
         notificationRepository.saveAll(notifications.getContent());
     }
 
+    @Transactional
+    public void deleteNotification(Long notificationId, Long userId) {
+        Notification notification = notificationRepository.findByIdAndDeletedFalse(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
+        // Ownership provera — 404 umesto 403 da se ne otkriva postojanje resursa
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Notification not found");
+        }
+
+        notification.setDeleted(true);
+        notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void deleteAllNotifications(Long userId) {
+        Page<Notification> notifications = notificationRepository
+                .findAllByUser_IdAndDeletedFalse(userId, Pageable.unpaged());
+        notifications.forEach(n -> n.setDeleted(true));
+        notificationRepository.saveAll(notifications.getContent());
+    }
+
     @Transactional(readOnly = true)
     public Page<NotificationDTO> getNotifications(Long userId, Pageable pageable) {
         return notificationRepository.findAllByUser_IdAndDeletedFalse(userId, pageable)

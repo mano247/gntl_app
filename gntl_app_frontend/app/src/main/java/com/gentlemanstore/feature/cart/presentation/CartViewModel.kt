@@ -35,9 +35,10 @@ class CartViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CartUiState())
     val uiState: StateFlow<CartUiState> = _uiState.asStateFlow()
 
-    init {
-        loadCart()
-    }
+    // Namerno nema init { loadCart() }: ViewModel se kreira u MainActivity pre logina,
+    // pa bi poziv bez tokena završio sa 403 i taj stale error bi se prikazao korisniku
+    // tek pri prvom ulasku u korpu. CartScreen učitava korpu u LaunchedEffect,
+    // a addToCart vraća kompletno stanje korpe.
 
     fun loadCart() {
         viewModelScope.launch {

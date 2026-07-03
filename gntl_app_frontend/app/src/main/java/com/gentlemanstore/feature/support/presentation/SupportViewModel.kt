@@ -2,22 +2,24 @@ package com.gentlemanstore.feature.support.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gentlemanstore.core.network.BadgeWebSocketManager
+import com.gentlemanstore.core.network.ChatWebSocketManager
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.data.datastore.TokenDataStore
 import com.gentlemanstore.feature.support.data.dto.*
 import com.gentlemanstore.feature.support.domain.SupportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 
 data class SupportUiState(
     val isLoading: Boolean = false,
@@ -53,7 +55,9 @@ data class ChatUiState(
 @HiltViewModel
 class SupportViewModel @Inject constructor(
     private val supportRepository: SupportRepository,
-    private val tokenDataStore: TokenDataStore
+    private val tokenDataStore: TokenDataStore,
+    private val chatWebSocketManager: ChatWebSocketManager,
+    private val badgeWebSocketManager: BadgeWebSocketManager
 ) : ViewModel() {
 
     private val _supportUiState = MutableStateFlow(SupportUiState())
@@ -65,34 +69,57 @@ class SupportViewModel @Inject constructor(
     private val _chatUiState = MutableStateFlow(ChatUiState())
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
-    private var pollingJob: Job? = null
-    private var ticketPollingJob: Job? = null
+    private var unreadTopic: String? = null
 
     val currentRole = tokenDataStore.userRole
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "CUSTOMER")
 
     init {
-        startTicketPolling()
-    }
-
-    fun startTicketPolling() {
-        ticketPollingJob?.cancel()
-        ticketPollingJob = viewModelScope.launch {
-            while (true) {
-                // This ViewModel is created at app start (activity scope, for the badge),
-                // so skip polling while there is no logged-in session — otherwise the loop
-                // hammers the API with unauthorized requests on the splash/login screens.
-                if (tokenDataStore.token.first() != null) {
-                    loadMyTicketsAndUnread()
+        // Ovaj ViewModel se kreira pri startu aplikacije (activity scope, zbog
+        // badge-a u bottom bar-u), tj. pre logina. Zato se inicijalno učitavanje
+        // i badge subscription vezuju za pojavu tokena: na login se jednom
+        // učita lista pa se otvori WebSocket subscription; na logout se odjavi.
+        viewModelScope.launch {
+            tokenDataStore.token
+                .map { it != null }
+                .distinctUntilChanged()
+                .collect { loggedIn ->
+                    if (loggedIn) {
+                        loadMyTicketsAndUnread()
+                        tokenDataStore.userId.first()?.toLongOrNull()
+                            ?.let { subscribeToUnreadUpdates(it) }
+                    } else {
+                        unsubscribeFromUnreadUpdates()
+                    }
                 }
-                delay(3000)
-            }
         }
     }
 
-    fun stopTicketPolling() {
-        ticketPollingJob?.cancel()
-        ticketPollingJob = null
+    fun subscribeToUnreadUpdates(userId: Long) {
+        val topic = "/topic/user/$userId/unread"
+        unreadTopic = topic
+        badgeWebSocketManager.subscribe(
+            topic = topic,
+            type = UnreadUpdateEvent::class.java,
+            onEvent = { event ->
+                // Server pushuje novi unreadCount — samo prepiši lokalni state,
+                // bez REST poziva.
+                _supportUiState.update { state ->
+                    state.copy(tickets = state.tickets.map {
+                        if (it.id == event.ticketId) it.copy(unreadCount = event.unreadCount) else it
+                    })
+                }
+            },
+            onResync = {
+                // Prekid ili reconnect WebSocket-a — jednokratna REST sinhronizacija.
+                loadMyTickets()
+            }
+        )
+    }
+
+    fun unsubscribeFromUnreadUpdates() {
+        unreadTopic?.let { badgeWebSocketManager.unsubscribe(it) }
+        unreadTopic = null
     }
 
     private suspend fun loadMyTicketsAndUnread() {
@@ -233,26 +260,24 @@ class SupportViewModel @Inject constructor(
         }
     }
 
-    fun startPolling(sessionId: Long) {
-        pollingJob?.cancel()
-        pollingJob = viewModelScope.launch {
-            while (true) {
-                delay(5000)
-                when (val result = supportRepository.getMessages(sessionId)) {
-                    is Resource.Success -> {
-                        _chatUiState.value = _chatUiState.value.copy(
-                            messages = result.data.sortedBy { it.sentAt }
-                        )
-                    }
-                    else -> Unit
+    fun connectWebSocket(sessionId: Long) {
+        chatWebSocketManager.connect(
+            sessionId = sessionId,
+            onMessage = { message ->
+                // Sopstvene poruke se takođe vraćaju kroz broadcast — dedup po id-u.
+                _chatUiState.update { state ->
+                    if (state.messages.any { it.id == message.id }) state
+                    else state.copy(messages = (state.messages + message).sortedBy { it.sentAt })
                 }
+            },
+            onError = { error ->
+                _chatUiState.update { it.copy(error = error) }
             }
-        }
+        )
     }
 
-    fun stopPolling() {
-        pollingJob?.cancel()
-        pollingJob = null
+    fun disconnectWebSocket() {
+        chatWebSocketManager.disconnect()
     }
 
     fun onMessageChange(message: String) {
@@ -293,14 +318,25 @@ class SupportViewModel @Inject constructor(
             val role = tokenDataStore.userRole.first() ?: "ROLE_CUSTOMER"
             val sender = if (role.contains("CUSTOMER")) "USER" else "EMPLOYEE"
 
-            _chatUiState.value = _chatUiState.value.copy(isSending = true, currentMessage = "")
+            _chatUiState.value = _chatUiState.value.copy(currentMessage = "")
 
+            // Primarno slanje kroz WebSocket — poruka se vraća kroz broadcast
+            // na /topic/chat/{sessionId} i tada ulazi u listu.
+            if (chatWebSocketManager.sendMessage(message, sender)) {
+                markMessagesAsRead(sessionId)
+                return@launch
+            }
+
+            // Fallback na REST ako WebSocket konekcija nije aktivna
+            _chatUiState.value = _chatUiState.value.copy(isSending = true)
             when (val result = supportRepository.sendMessage(sessionId, message, sender)) {
                 is Resource.Success -> {
-                    _chatUiState.value = _chatUiState.value.copy(
-                        isSending = false,
-                        messages = (_chatUiState.value.messages + result.data).sortedBy { it.sentAt }
-                    )
+                    _chatUiState.update { state ->
+                        val messages =
+                            if (state.messages.any { it.id == result.data.id }) state.messages
+                            else (state.messages + result.data).sortedBy { it.sentAt }
+                        state.copy(isSending = false, messages = messages)
+                    }
                     markMessagesAsRead(sessionId)
                 }
                 is Resource.Error -> {
@@ -340,7 +376,7 @@ class SupportViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        stopPolling()
-        stopTicketPolling()
+        disconnectWebSocket()
+        unsubscribeFromUnreadUpdates()
     }
 }

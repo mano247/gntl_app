@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.admin.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.admin.data.AdminApiService
@@ -37,7 +38,10 @@ class AdminRepository @Inject constructor(
     suspend fun deleteUser(id: Long): Resource<Unit> {
         return try {
             val response = adminApiService.deleteUser(id)
-            response.toResource()
+            // Backend na DELETE vraća data = null, pa toResource() (koji zahteva
+            // data != null) uvek završi kao Error i lista se nikad ne osveži —
+            // za Void odgovore mora toUnitResource() koji gleda samo success flag.
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.order.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.order.data.OrderApiService
@@ -34,7 +35,8 @@ class OrderRepository @Inject constructor(
     suspend fun cancelOrder(id: Long): Resource<Unit> {
         return try {
             val response = orderApiService.cancelOrder(id)
-            response.toResource()
+            // Void odgovor (data = null) — toResource() bi ga pogrešno tretirao kao grešku
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

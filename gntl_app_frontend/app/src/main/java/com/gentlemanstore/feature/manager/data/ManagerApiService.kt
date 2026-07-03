@@ -29,14 +29,4 @@ interface ManagerApiService {
     suspend fun createPromotion(
         @Body request: CreatePromotionRequest
     ): ApiResponse<PromotionResponse>
-
-    @GET("loyalty/user/{userId}")
-    suspend fun getUserLoyaltyAccount(
-        @Path("userId") userId: Long
-    ): ApiResponse<LoyaltyAccountResponse>
-
-    @PUT("loyalty/points")
-    suspend fun addPoints(
-        @Body request: AddPointsRequest
-    ): ApiResponse<LoyaltyAccountResponse>
 }

@@ -1,6 +1,7 @@
 package com.gentlemanstore.feature.address.domain
 
 import com.gentlemanstore.core.network.toResource
+import com.gentlemanstore.core.network.toUnitResource
 import com.gentlemanstore.core.util.ErrorMapper
 import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.address.data.AddressApiService
@@ -44,7 +45,8 @@ class AddressRepository @Inject constructor(
     suspend fun deleteAddress(id: Long): Resource<Unit> {
         return try {
             val response = addressApiService.deleteAddress(id)
-            response.toResource()
+            // Void odgovor (data = null) — toResource() bi ga pogrešno tretirao kao grešku
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

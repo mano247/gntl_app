@@ -37,6 +37,13 @@ data class SendMessageRequest(
     val sender: String
 )
 
+// Realtime badge event sa /topic/user/{userId}/unread ili /topic/employee/unread
+data class UnreadUpdateEvent(
+    val ticketId: Long,
+    val sessionId: Long,
+    val unreadCount: Int
+)
+
 data class BotQuestionResponse(
     val id: Long,
     val question: String,

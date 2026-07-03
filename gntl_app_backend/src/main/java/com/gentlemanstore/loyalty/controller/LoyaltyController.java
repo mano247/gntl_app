@@ -63,7 +63,8 @@ public class LoyaltyController {
     }
 
     @PutMapping("/points")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    // MANAGER namerno uklonjen — dodela loyalty poena je dozvoljena samo ADMIN i EMPLOYEE rolama
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<LoyaltyAccountDTO>> addPoints(@AuthenticationPrincipal User currentUser, @Valid @RequestBody AddPointsRequest request){
         Long targetUserId = request.getUserId() != null ? request.getUserId() : currentUser.getId();
         return ResponseEntity.ok(ApiResponse.success("Loyalty points added successfully",

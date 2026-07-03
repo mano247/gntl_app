@@ -49,4 +49,22 @@ class NotificationRepository @Inject constructor(
             Resource.Error(ErrorMapper.map(e.message))
         }
     }
+
+    suspend fun deleteNotification(id: Long): Resource<Unit> {
+        return try {
+            val response = notificationApiService.deleteNotification(id)
+            response.toUnitResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun deleteAllNotifications(): Resource<Unit> {
+        return try {
+            val response = notificationApiService.deleteAllNotifications()
+            response.toUnitResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
 }

@@ -34,14 +34,14 @@ fun ChatScreen(
 
     LaunchedEffect(sessionId) {
         viewModel.loadMessages(sessionId)
-        viewModel.startPolling(sessionId)
+        viewModel.connectWebSocket(sessionId)
         delay(1500)
         viewModel.markMessagesAsRead(sessionId)
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.stopPolling()
+            viewModel.disconnectWebSocket()
         }
     }
 
@@ -55,7 +55,7 @@ fun ChatScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
-                    viewModel.stopPolling()
+                    viewModel.disconnectWebSocket()
                     onNavigateBack()
                 }) {
                     Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)

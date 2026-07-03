@@ -78,7 +78,17 @@ fun NotificationScreen(
                     color = Gold500
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(48.dp))
+                TextButton(
+                    onClick = { viewModel.deleteAllNotifications() },
+                    enabled = uiState.notifications.isNotEmpty()
+                ) {
+                    Text(
+                        text = "Clear All",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (uiState.notifications.isNotEmpty()) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             val types = listOf("ALL", "DISCOUNT", "ORDER_STATUS", "LOYALTY")
@@ -210,7 +220,7 @@ private fun NotificationCard(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (!notification.isRead)
-                    Gold500.copy(alpha = 0.08f)
+                    Color(0xFF1A2744)
                 else
                     MaterialTheme.colorScheme.surface
             )
@@ -221,11 +231,13 @@ private fun NotificationCard(
         if (!notification.isRead) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(6.dp)
                     .background(Gold500, shape = RoundedCornerShape(50))
                     .align(Alignment.CenterVertically)
             )
-            Spacer(modifier = Modifier.width(10.dp))
+            // 6dp tačka + 12dp razmak = 18dp, isto kao spacer pročitanih —
+            // naslovi ostaju poravnati između kartica.
+            Spacer(modifier = Modifier.width(12.dp))
         } else {
             Spacer(modifier = Modifier.width(18.dp))
         }
