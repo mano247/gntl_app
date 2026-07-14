@@ -25,7 +25,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.getAllOrders(page = page, status = status)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -41,7 +41,7 @@ class EmployeeRepository @Inject constructor(
             if (BuildConfig.DEBUG) {
                 android.util.Log.e("EmployeeRepo", "updateOrderStatus error: ${e.message}")
             }
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -50,7 +50,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.getAllTickets(page)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -60,7 +60,7 @@ class EmployeeRepository @Inject constructor(
             val response = employeeApiService.updateTicketStatus(id, body)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

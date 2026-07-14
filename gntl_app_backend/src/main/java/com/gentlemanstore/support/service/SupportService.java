@@ -15,7 +15,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,7 +91,9 @@ public class SupportService {
 
     @Transactional(readOnly = true)
     public Page<SupportTicketDTO> getAllTickets(Pageable pageable) {
-        return supportTicketRepository.findAllByDeletedFalse(pageable)
+        // Staff lista ne prikazuje tikete koje je staff arhivirao (uklonio iz liste);
+        // vlasnik tiketa ih i dalje vidi kroz getUserTickets.
+        return supportTicketRepository.findAllByDeletedFalseAndArchivedByStaffFalse(pageable)
                 .map(mapper::toDTO);
     }
 
@@ -154,6 +158,15 @@ public class SupportService {
                 .build();
 
         chatMessageRepository.save(chatMessage);
+
+        // Ako je staff ranije arhivirao tiket, nova poruka korisnika ga vraca u
+        // staff listu - u suprotnom bi poruka ostala trajno nevidljiva za staff.
+        if (messageSender == MessageSender.USER && ticket.isArchivedByStaff()) {
+            ticket.setArchivedByStaff(false);
+            supportTicketRepository.save(ticket);
+            messagingTemplate.convertAndSend("/topic/employee/new-ticket", mapper.toDTO(ticket));
+        }
+
         ChatMessageDTO dto = mapper.toMessageDTO(chatMessage);
 
         // Realtime broadcast svim pretplaćenim klijentima (customer + employee).
@@ -281,6 +294,51 @@ public class SupportService {
         } else {
             messagingTemplate.convertAndSend("/topic/employee/unread", update);
         }
+    }
+
+    /**
+     * Staff uklanja tiket iz staff liste (arhiviranje, ne brisanje) - vlasnik
+     * tiketa i dalje vidi sopstvenu istoriju. Nova poruka vlasnika automatski
+     * vraca tiket u staff listu (vidi sendMessage).
+     */
+    @Transactional
+    public void archiveTicket(Long ticketId) {
+        SupportTicket ticket = supportTicketRepository.findById(ticketId)
+                .filter(t -> !t.isDeleted())
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        ticket.setArchivedByStaff(true);
+        supportTicketRepository.save(ticket);
+    }
+
+    /**
+     * Unread brojaci grupisani po statusu tiketa, za badge na status filter
+     * chipovima. Za vlasnika (customer pregled "moji tiketi") broje se
+     * neprocitane EMPLOYEE poruke; za staff pregled svih tiketa broje se
+     * neprocitane USER poruke (isti princip kao getUnreadCount). Racuna se
+     * nad svim tiketima u bazi, ne nad jednom paginiranom stranicom.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getMyUnreadSummary(Long userId) {
+        return toSummaryMap(supportTicketRepository
+                .countUnreadMessagesByStatusForUser(userId, MessageSender.EMPLOYEE));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getStaffUnreadSummary() {
+        return toSummaryMap(supportTicketRepository
+                .countUnreadMessagesByStatusForStaff(MessageSender.USER));
+    }
+
+    private Map<String, Integer> toSummaryMap(List<Object[]> rows) {
+        Map<String, Integer> summary = new LinkedHashMap<>();
+        for (TicketStatus status : TicketStatus.values()) {
+            summary.put(status.name(), 0);
+        }
+        for (Object[] row : rows) {
+            summary.put(((TicketStatus) row[0]).name(), ((Long) row[1]).intValue());
+        }
+        return summary;
     }
 
     @Transactional(readOnly = true)

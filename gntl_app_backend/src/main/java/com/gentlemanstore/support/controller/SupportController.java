@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/support")
@@ -123,5 +124,27 @@ public class SupportController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Total unread count retrieved",
                 service.getTotalUnreadCount(currentUser.getId())));
+    }
+
+    @GetMapping("/tickets/my/unread-summary")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getMyUnreadSummary(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Unread summary retrieved",
+                service.getMyUnreadSummary(currentUser.getId())));
+    }
+
+    @GetMapping("/tickets/unread-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getStaffUnreadSummary() {
+        return ResponseEntity.ok(ApiResponse.success("Unread summary retrieved",
+                service.getStaffUnreadSummary()));
+    }
+
+    @PutMapping("/tickets/{id}/archive")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<Void>> archiveTicket(@PathVariable Long id) {
+        service.archiveTicket(id);
+        return ResponseEntity.ok(ApiResponse.success("Ticket removed from support list", null));
     }
 }

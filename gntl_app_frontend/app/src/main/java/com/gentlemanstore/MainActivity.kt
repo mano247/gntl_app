@@ -110,7 +110,9 @@ class MainActivity : ComponentActivity() {
                             BottomNavBar(
                                 navController = navController,
                                 unreadNotificationCount = notificationState.unreadCount,
-                                unreadSupportCount = supportState.tickets.sumOf { it.unreadCount }
+                                // Zbir iz backend summary-ja (svi tiketi), ne samo
+                                // trenutno ucitana stranica liste
+                                unreadSupportCount = supportState.unreadByStatus.values.sum()
                             )
                         }
                     }

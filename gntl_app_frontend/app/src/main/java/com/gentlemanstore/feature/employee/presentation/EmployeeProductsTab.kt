@@ -1,5 +1,6 @@
 package com.gentlemanstore.feature.employee.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,10 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -79,6 +82,8 @@ fun EmployeeProductsTab(
                 initial = editingProduct,
                 categories = listState.categoryOptions,
                 isSaving = mutationState.isSaving,
+                fieldErrors = mutationState.fieldErrors,
+                onFieldEdited = { viewModel.clearMutationFieldError(it) },
                 onSubmit = { request ->
                     val target = editingProduct
                     if (target == null) viewModel.createProduct(request)
@@ -86,39 +91,100 @@ fun EmployeeProductsTab(
                 }
             )
         } else {
+            // ACTIVE / DELETED / ALL - server-side filter (isti dizajn chipova
+            // kao ostali filteri u aplikaciji)
+            val statusFilters = listOf("ACTIVE", "DELETED", "ALL")
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                items(count = statusFilters.size, key = { statusFilters[it] }) { index ->
+                    val status = statusFilters[index]
+                    FilterChip(
+                        selected = listState.statusFilter == status,
+                        onClick = { viewModel.onStatusFilterChange(status) },
+                        label = { Text(status) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Gold500,
+                            selectedLabelColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+            }
+
             ProductCatalogSection(
                 viewModel = viewModel,
                 onProductClick = onProductClick,
                 productActions = { product ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { editingProduct = product; showForm = true },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp)
+                    if (product.deleted) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Gold500, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Edit", color = Gold500, style = MaterialTheme.typography.labelMedium)
+                            // Jasna oznaka obrisanog proizvoda (isti pill stil kao status bedzevi)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "DELETED",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.restoreProduct(product.id) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(vertical = 4.dp),
+                                enabled = mutationState.restoringId != product.id
+                            ) {
+                                if (mutationState.restoringId == product.id) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Gold500)
+                                } else {
+                                    Icon(Icons.Default.Restore, contentDescription = "Restore", tint = Gold500, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Restore", color = Gold500, style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
                         }
-                        OutlinedButton(
-                            onClick = { deleteTarget = product },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(vertical = 4.dp),
-                            enabled = mutationState.deletingId != product.id
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            if (mutationState.deletingId == product.id) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.error)
-                            } else {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                            OutlinedButton(
+                                onClick = { editingProduct = product; showForm = true },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Gold500, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                                Text("Edit", color = Gold500, style = MaterialTheme.typography.labelMedium)
+                            }
+                            OutlinedButton(
+                                onClick = { deleteTarget = product },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(vertical = 4.dp),
+                                enabled = mutationState.deletingId != product.id
+                            ) {
+                                if (mutationState.deletingId == product.id) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.error)
+                                } else {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                                }
                             }
                         }
                     }
@@ -154,7 +220,9 @@ private fun EmployeeProductForm(
     initial: ProductResponse?,
     categories: List<CategoryResponse>,
     isSaving: Boolean,
-    onSubmit: (CreateProductRequest) -> Unit
+    onSubmit: (CreateProductRequest) -> Unit,
+    fieldErrors: Map<String, String> = emptyMap(),
+    onFieldEdited: (String) -> Unit = {}
 ) {
     val isEdit = initial != null
 
@@ -205,28 +273,61 @@ private fun EmployeeProductForm(
 
                     OutlinedTextField(
                         value = sku,
-                        onValueChange = { sku = it },
+                        onValueChange = { sku = it; onFieldEdited("sku") },
                         label = { Text("SKU") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isEdit,
-                        supportingText = if (isEdit) {
-                            { Text("SKU cannot be changed") }
-                        } else null
+                        isError = fieldErrors.containsKey("sku"),
+                        supportingText = when {
+                            fieldErrors.containsKey("sku") -> {
+                                { Text(text = fieldErrors.getValue("sku"), color = MaterialTheme.colorScheme.error) }
+                            }
+                            isEdit -> {
+                                { Text("SKU cannot be changed") }
+                            }
+                            else -> null
+                        }
                     )
-                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), maxLines = 4)
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it; onFieldEdited("name") },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = fieldErrors.containsKey("name"),
+                        supportingText = fieldErrors["name"]?.let { msg ->
+                            { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                        }
+                    )
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it; onFieldEdited("description") },
+                        label = { Text("Description") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 4,
+                        isError = fieldErrors.containsKey("description"),
+                        supportingText = fieldErrors["description"]?.let { msg ->
+                            { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                        }
+                    )
                     OutlinedTextField(
                         value = price,
-                        onValueChange = { price = it },
+                        onValueChange = { price = it; onFieldEdited("price") },
                         label = { Text("Price (RSD)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        isError = priceError,
-                        supportingText = if (priceError) {
-                            { Text("Enter a price greater than 0") }
-                        } else null
+                        isError = priceError || fieldErrors.containsKey("price"),
+                        supportingText = when {
+                            priceError -> {
+                                { Text("Enter a price greater than 0") }
+                            }
+                            fieldErrors.containsKey("price") -> {
+                                { Text(text = fieldErrors.getValue("price"), color = MaterialTheme.colorScheme.error) }
+                            }
+                            else -> null
+                        }
                     )
 
                     Box {

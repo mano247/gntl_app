@@ -17,7 +17,7 @@ class LoyaltyRepository @Inject constructor(
             val response = loyaltyApiService.getLoyaltyAccount()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

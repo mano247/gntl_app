@@ -16,7 +16,9 @@ data class ProductResponse(
     val sizes: List<ProductSizeResponse>,
     val imageUrls: List<String>,
     val tags: List<String>,
-    val discountPercentage: Double?
+    val discountPercentage: Double?,
+    // Staff DELETED/ALL prikaz - obrisan proizvod se oznacava i dobija Restore
+    val deleted: Boolean = false
 )
 
 data class PagedProductResponse(

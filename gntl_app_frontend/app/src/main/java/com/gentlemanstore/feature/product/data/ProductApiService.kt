@@ -19,7 +19,9 @@ interface ProductApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20,
         @Query("category") category: String? = null,
-        @Query("search") search: String? = null
+        @Query("search") search: String? = null,
+        // ACTIVE (default, null) / DELETED / ALL - DELETED i ALL su staff-only
+        @Query("status") status: String? = null
     ): ApiResponse<PagedProductResponse>
 
     @GET("products/{id}")
@@ -46,4 +48,10 @@ interface ProductApiService {
     suspend fun deleteProduct(
         @Path("id") id: Long
     ): ApiResponse<Unit>
+
+    // Vraca soft-obrisan proizvod u katalog (isti entitet, sve relacije ostaju)
+    @PUT("products/{id}/restore")
+    suspend fun restoreProduct(
+        @Path("id") id: Long
+    ): ApiResponse<ProductResponse>
 }

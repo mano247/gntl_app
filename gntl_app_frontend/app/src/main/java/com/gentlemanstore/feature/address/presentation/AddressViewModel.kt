@@ -18,6 +18,7 @@ data class AddressUiState(
     val addresses: List<AddressResponse> = emptyList(),
     val selectedAddressId: Long? = null,
     val error: String? = null,
+    val fieldErrors: Map<String, String> = emptyMap(),
     val isCreating: Boolean = false,
     val showCreateForm: Boolean = false
 )
@@ -78,8 +79,10 @@ class AddressViewModel @Inject constructor(
         country: String,
         isDefault: Boolean
     ) {
+        // Sprecava dupli submit dok je prethodni zahtev u toku
+        if (_uiState.value.isCreating) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCreating = true)
+            _uiState.value = _uiState.value.copy(isCreating = true, fieldErrors = emptyMap(), error = null)
 
             val request = AddressRequest(
                 street = street,
@@ -100,14 +103,21 @@ class AddressViewModel @Inject constructor(
                     )
                 }
                 is Resource.Error -> {
+                    // Validacione greske idu ispod polja forme; forma ostaje
+                    // otvorena i unos ostaje sacuvan (state je u ekranu).
                     _uiState.value = _uiState.value.copy(
                         isCreating = false,
-                        error = result.message
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    fun clearFieldError(field: String) {
+        _uiState.value = _uiState.value.copy(fieldErrors = _uiState.value.fieldErrors - field)
     }
 
     fun clearError() {

@@ -16,7 +16,7 @@ interface AdminApiService {
     @PUT("users/{id}/role")
     suspend fun changeUserRole(
         @Path("id") id: Long,
-        @Body role: okhttp3.RequestBody
+        @Body request: ChangeRoleRequest
     ): ApiResponse<UserListResponse>
 
     @DELETE("users/{id}")

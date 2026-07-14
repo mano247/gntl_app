@@ -20,13 +20,14 @@ class ProductRepository @Inject constructor(
         page: Int = 0,
         size: Int = 20,
         category: String? = null,
-        search: String? = null
+        search: String? = null,
+        status: String? = null
     ): Resource<PagedProductResponse> {
         return try {
-            val response = productApiService.getProducts(page, size, category, search)
+            val response = productApiService.getProducts(page, size, category, search, status)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -35,7 +36,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.getProductById(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -44,7 +45,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.getCategories()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -53,7 +54,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.createProduct(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -62,7 +63,7 @@ class ProductRepository @Inject constructor(
             val response = productApiService.updateProduct(id, request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -71,7 +72,16 @@ class ProductRepository @Inject constructor(
             val response = productApiService.deleteProduct(id)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
+        }
+    }
+
+    suspend fun restoreProduct(id: Long): Resource<ProductResponse> {
+        return try {
+            val response = productApiService.restoreProduct(id)
+            response.toResource()
+        } catch (e: Exception) {
+            ErrorMapper.map(e)
         }
     }
 }

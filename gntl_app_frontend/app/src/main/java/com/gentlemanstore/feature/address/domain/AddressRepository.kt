@@ -20,7 +20,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.getAddresses()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -29,7 +29,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.createAddress(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -38,7 +38,7 @@ class AddressRepository @Inject constructor(
             val response = addressApiService.updateAddress(id, request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -48,7 +48,7 @@ class AddressRepository @Inject constructor(
             // Void odgovor (data = null) — toResource() bi ga pogrešno tretirao kao grešku
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

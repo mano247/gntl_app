@@ -113,21 +113,33 @@ fun SettingsScreen(
                             onValueChange = { viewModel.onFirstNameChange(it) },
                             label = { Text("First Name") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            isError = profileState.fieldErrors.containsKey("firstName"),
+                            supportingText = profileState.fieldErrors["firstName"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
                         )
                         OutlinedTextField(
                             value = profileState.lastName,
                             onValueChange = { viewModel.onLastNameChange(it) },
                             label = { Text("Last Name") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            isError = profileState.fieldErrors.containsKey("lastName"),
+                            supportingText = profileState.fieldErrors["lastName"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
                         )
                         OutlinedTextField(
                             value = profileState.phoneNumber,
                             onValueChange = { viewModel.onPhoneNumberChange(it) },
                             label = { Text("Phone (optional)") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            isError = profileState.fieldErrors.containsKey("phoneNumber"),
+                            supportingText = profileState.fieldErrors["phoneNumber"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
                         )
 
                         profileState.error?.let {

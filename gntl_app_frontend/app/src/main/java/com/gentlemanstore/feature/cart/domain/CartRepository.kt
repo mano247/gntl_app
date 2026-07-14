@@ -21,7 +21,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.getCart()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -36,7 +36,7 @@ class CartRepository @Inject constructor(
             )
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -45,7 +45,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.removeFromCart(cartItemId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -54,7 +54,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.checkout(CheckoutRequest(addressId, promoCode))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -63,7 +63,7 @@ class CartRepository @Inject constructor(
             val response = cartApiService.validatePromoCode(code)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

@@ -26,7 +26,10 @@ data class ProductListUiState(
     val currentPage: Int = 0,
     val isLastPage: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val sortOption: String = "DEFAULT"
+    val sortOption: String = "DEFAULT",
+    // ACTIVE / DELETED / ALL - server-side filter (staff prikaz obrisanih);
+    // customer ekrani ostaju na default ACTIVE
+    val statusFilter: String = "ACTIVE"
 )
 
 data class ProductDetailUiState(
@@ -40,7 +43,10 @@ data class ProductDetailUiState(
 data class ProductMutationUiState(
     val isSaving: Boolean = false,
     val deletingId: Long? = null,
+    val restoringId: Long? = null,
     val error: String? = null,
+    // Backend validacione greske po polju za create/edit formu
+    val fieldErrors: Map<String, String> = emptyMap(),
     val saveSuccess: Boolean = false
 )
 
@@ -86,7 +92,9 @@ class ProductViewModel @Inject constructor(
             when (val result = productRepository.getProducts(
                 page = 0,
                 category = _listUiState.value.selectedCategory,
-                search = _listUiState.value.searchQuery.ifBlank { null }
+                search = _listUiState.value.searchQuery.ifBlank { null },
+                // ACTIVE je backend default - ne salje se, pa customer zahtevi ostaju isti
+                status = _listUiState.value.statusFilter.takeIf { it != "ACTIVE" }
             )) {
                 is Resource.Success -> {
                     _listUiState.value = _listUiState.value.copy(
@@ -110,16 +118,19 @@ class ProductViewModel @Inject constructor(
 
     fun loadMoreProducts() {
         val state = _listUiState.value
-        if (state.isLastPage || state.isLoadingMore) return
+        if (state.isLastPage || state.isLoadingMore || state.isLoading) return
 
-        viewModelScope.launch {
+        // Deli isti Job sa loadProducts - promena filtera/pretrage otkazuje i
+        // load-more u letu, da stranica starog filtera ne bi usla u novu listu.
+        loadProductsJob = viewModelScope.launch {
             _listUiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
             when (val result = productRepository.getProducts(
                 page = nextPage,
                 category = state.selectedCategory,
-                search = state.searchQuery.ifBlank { null }
+                search = state.searchQuery.ifBlank { null },
+                status = state.statusFilter.takeIf { it != "ACTIVE" }
             )) {
                 is Resource.Success -> {
                     _listUiState.value = _listUiState.value.copy(
@@ -149,6 +160,15 @@ class ProductViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String){
         _listUiState.value = _listUiState.value.copy(searchQuery = query)
+        loadProducts(refresh = true)
+    }
+
+    // ACTIVE / DELETED / ALL (employee prikaz) - server-side filter, radi zajedno
+    // sa pretragom, kategorijom, sortom i paginacijom. Promena resetuje stranicu
+    // i cisti stare rezultate; loadProducts otkazuje zahtev u letu (bez race-a).
+    fun onStatusFilterChange(status: String) {
+        if (_listUiState.value.statusFilter == status) return
+        _listUiState.value = _listUiState.value.copy(statusFilter = status)
         loadProducts(refresh = true)
     }
 
@@ -194,15 +214,22 @@ class ProductViewModel @Inject constructor(
     // ---------- Employee CRUD ----------
 
     fun createProduct(request: CreateProductRequest) {
+        // Sprecava dupli submit dok je prethodni zahtev u toku
+        if (_mutationUiState.value.isSaving) return
         viewModelScope.launch {
-            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null)
+            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null, fieldErrors = emptyMap())
             when (val result = productRepository.createProduct(request)) {
                 is Resource.Success -> {
                     _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, saveSuccess = true)
                     loadProducts(refresh = true)
                 }
                 is Resource.Error -> {
-                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, error = result.message)
+                    // Validacione greske ispod polja forme; unos ostaje sacuvan
+                    _mutationUiState.value = _mutationUiState.value.copy(
+                        isSaving = false,
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
+                    )
                 }
                 is Resource.Loading -> Unit
             }
@@ -210,15 +237,48 @@ class ProductViewModel @Inject constructor(
     }
 
     fun updateProduct(id: Long, request: CreateProductRequest) {
+        if (_mutationUiState.value.isSaving) return
         viewModelScope.launch {
-            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null)
+            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null, fieldErrors = emptyMap())
             when (val result = productRepository.updateProduct(id, request)) {
                 is Resource.Success -> {
                     _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, saveSuccess = true)
                     loadProducts(refresh = true)
                 }
                 is Resource.Error -> {
-                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, error = result.message)
+                    _mutationUiState.value = _mutationUiState.value.copy(
+                        isSaving = false,
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    /**
+     * Vraca soft-obrisan proizvod u katalog (backend restore - isti entitet,
+     * SKU/slike/tagovi/velicine/relacije ostaju). U DELETED prikazu proizvod
+     * nestaje iz liste; u ALL prikazu se osvezava kao aktivan.
+     */
+    fun restoreProduct(id: Long) {
+        if (_mutationUiState.value.restoringId != null) return
+        viewModelScope.launch {
+            _mutationUiState.value = _mutationUiState.value.copy(restoringId = id, error = null)
+            when (val result = productRepository.restoreProduct(id)) {
+                is Resource.Success -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(restoringId = null)
+                    _listUiState.value = _listUiState.value.copy(
+                        products = if (_listUiState.value.statusFilter == "DELETED") {
+                            _listUiState.value.products.filter { it.id != id }
+                        } else {
+                            _listUiState.value.products.map { if (it.id == id) result.data else it }
+                        }
+                    )
+                }
+                is Resource.Error -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(restoringId = null, error = result.message)
                 }
                 is Resource.Loading -> Unit
             }
@@ -246,6 +306,12 @@ class ProductViewModel @Inject constructor(
 
     fun clearMutationError() {
         _mutationUiState.value = _mutationUiState.value.copy(error = null)
+    }
+
+    fun clearMutationFieldError(field: String) {
+        _mutationUiState.value = _mutationUiState.value.copy(
+            fieldErrors = _mutationUiState.value.fieldErrors - field
+        )
     }
 
     fun resetSaveSuccess() {

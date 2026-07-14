@@ -23,7 +23,14 @@ data class ManagerUiState(
     val isCreatingDiscount: Boolean = false,
     val isCreatingPromotion: Boolean = false,
     val deletingDiscountId: Long? = null,
-    val deletingPromotionId: Long? = null
+    val deletingPromotionId: Long? = null,
+    // Backend validacione greske po polju za create forme
+    val discountFieldErrors: Map<String, String> = emptyMap(),
+    val promotionFieldErrors: Map<String, String> = emptyMap(),
+    // One-shot signali uspeha - forma se zatvara/resetuje tek na uspeh,
+    // na gresku unos ostaje sacuvan (isti obrazac kao ProductViewModel.saveSuccess)
+    val discountCreated: Boolean = false,
+    val promotionCreated: Boolean = false
 )
 
 @HiltViewModel
@@ -105,8 +112,10 @@ class ManagerViewModel @Inject constructor(
         scope: String,
         categoryId: Long? = null
     ) {
+        // Sprecava dupli submit dok je prethodni zahtev u toku
+        if (_uiState.value.isCreatingDiscount) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCreatingDiscount = true)
+            _uiState.value = _uiState.value.copy(isCreatingDiscount = true, discountFieldErrors = emptyMap(), error = null)
             val request = CreateDiscountRequest(
                 discountType = discountType,
                 value = value,
@@ -119,13 +128,16 @@ class ManagerViewModel @Inject constructor(
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isCreatingDiscount = false,
-                        discounts = _uiState.value.discounts + result.data
+                        discounts = _uiState.value.discounts + result.data,
+                        discountCreated = true
                     )
                 }
                 is Resource.Error -> {
+                    // Validacione greske ispod polja forme, ostalo kao opsta poruka
                     _uiState.value = _uiState.value.copy(
                         isCreatingDiscount = false,
-                        error = result.message
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        discountFieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit
@@ -164,8 +176,10 @@ class ManagerViewModel @Inject constructor(
         validFrom: String,
         validTo: String
     ) {
+        // Sprecava dupli submit dok je prethodni zahtev u toku
+        if (_uiState.value.isCreatingPromotion) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCreatingPromotion = true)
+            _uiState.value = _uiState.value.copy(isCreatingPromotion = true, promotionFieldErrors = emptyMap(), error = null)
             val request = CreatePromotionRequest(
                 name = name,
                 description = description,
@@ -179,13 +193,15 @@ class ManagerViewModel @Inject constructor(
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isCreatingPromotion = false,
-                        promotions = _uiState.value.promotions + result.data
+                        promotions = _uiState.value.promotions + result.data,
+                        promotionCreated = true
                     )
                 }
                 is Resource.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isCreatingPromotion = false,
-                        error = result.message
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        promotionFieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit
@@ -217,5 +233,13 @@ class ManagerViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun consumeDiscountCreated() {
+        _uiState.value = _uiState.value.copy(discountCreated = false)
+    }
+
+    fun consumePromotionCreated() {
+        _uiState.value = _uiState.value.copy(promotionCreated = false)
     }
 }

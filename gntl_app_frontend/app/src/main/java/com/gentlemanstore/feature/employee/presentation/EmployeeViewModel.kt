@@ -39,7 +39,13 @@ data class EmployeeTicketsUiState(
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
     val updatingTicketId: Long? = null,
-    val selectedStatus: String? = "OPEN"
+    val selectedStatus: String? = "OPEN",
+    // Unread brojaci po statusu tiketa (backend summary nad svim tiketima,
+    // ne nad trenutnom stranicom) - badge na status filter chipovima
+    val unreadByStatus: Map<String, Int> = emptyMap(),
+    // Uklanjanje tiketa iz staff liste (soft archive na backendu)
+    val archivingTicketId: Long? = null,
+    val successMessage: String? = null
 )
 
 @HiltViewModel
@@ -73,6 +79,9 @@ class EmployeeViewModel @Inject constructor(
                         if (it.id == event.ticketId) it.copy(unreadCount = event.unreadCount) else it
                     })
                 }
+                // Badge po kategorijama se preracunava na backendu (tiket na koji
+                // se event odnosi ne mora biti u trenutno ucitanoj stranici).
+                loadUnreadSummary()
             },
             onResync = {
                 // Prekid ili reconnect WebSocket-a — jednokratna REST sinhronizacija.
@@ -104,6 +113,7 @@ class EmployeeViewModel @Inject constructor(
                     error = null
                 )
                 loadUnreadCountsSync()
+                loadUnreadSummarySync()
             }
             is Resource.Error -> {
                 _ticketsUiState.value = _ticketsUiState.value.copy(
@@ -112,6 +122,21 @@ class EmployeeViewModel @Inject constructor(
                 )
             }
             is Resource.Loading -> Unit
+        }
+    }
+
+    private suspend fun loadUnreadSummarySync() {
+        when (val result = supportRepository.getStaffUnreadSummary()) {
+            is Resource.Success -> {
+                _ticketsUiState.update { it.copy(unreadByStatus = result.data) }
+            }
+            else -> Unit
+        }
+    }
+
+    fun loadUnreadSummary() {
+        viewModelScope.launch {
+            loadUnreadSummarySync()
         }
     }
 
@@ -236,6 +261,8 @@ class EmployeeViewModel @Inject constructor(
                         tickets = updatedTickets,
                         updatingTicketId = null
                     )
+                    // Promena statusa premesta unread poruke tiketa u drugu kategoriju
+                    loadUnreadSummary()
                 }
                 is Resource.Error -> {
                     _ticketsUiState.value = _ticketsUiState.value.copy(
@@ -246,6 +273,42 @@ class EmployeeViewModel @Inject constructor(
                 is Resource.Loading -> Unit
             }
         }
+    }
+
+    /**
+     * Uklanja tiket iz staff liste (backend soft archive - customer i dalje
+     * vidi sopstvenu istoriju tiketa). Nakon uspeha tiket odmah nestaje iz
+     * liste, a unread brojaci (kartica/kategorije/globalni) se preracunavaju.
+     */
+    fun archiveTicket(ticketId: Long) {
+        if (_ticketsUiState.value.archivingTicketId != null) return
+        viewModelScope.launch {
+            _ticketsUiState.value = _ticketsUiState.value.copy(archivingTicketId = ticketId)
+            when (val result = supportRepository.archiveTicket(ticketId)) {
+                is Resource.Success -> {
+                    _ticketsUiState.value = _ticketsUiState.value.copy(
+                        tickets = _ticketsUiState.value.tickets.filter { it.id != ticketId },
+                        archivingTicketId = null,
+                        successMessage = "Ticket removed from list"
+                    )
+                    loadUnreadSummary()
+                }
+                is Resource.Error -> {
+                    // Lista nije optimisticki menjana, pa je reload nepotreban -
+                    // samo konkretna backend poruka (reload bi je obrisao pre
+                    // nego sto je UI prikaze).
+                    _ticketsUiState.value = _ticketsUiState.value.copy(
+                        archivingTicketId = null,
+                        error = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun clearTicketMessages() {
+        _ticketsUiState.value = _ticketsUiState.value.copy(error = null, successMessage = null)
     }
 
     val filteredTickets: StateFlow<List<SupportTicketResponse>> = _ticketsUiState

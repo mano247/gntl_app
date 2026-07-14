@@ -19,7 +19,7 @@ class UserRepository @Inject constructor(
             val response = userApiService.getMyProfile()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -28,7 +28,7 @@ class UserRepository @Inject constructor(
             val response = userApiService.updateMyProfile(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

@@ -23,6 +23,7 @@ data class EditProfileUiState(
     val phoneNumber: String = "",
     val isUpdating: Boolean = false,
     val error: String? = null,
+    val fieldErrors: Map<String, String> = emptyMap(),
     val successMessage: String? = null
 )
 
@@ -67,20 +68,22 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onFirstNameChange(value: String) {
-        _profileState.value = _profileState.value.copy(firstName = value)
+        _profileState.value = _profileState.value.copy(firstName = value, fieldErrors = _profileState.value.fieldErrors - "firstName")
     }
 
     fun onLastNameChange(value: String) {
-        _profileState.value = _profileState.value.copy(lastName = value)
+        _profileState.value = _profileState.value.copy(lastName = value, fieldErrors = _profileState.value.fieldErrors - "lastName")
     }
 
     fun onPhoneNumberChange(value: String) {
-        _profileState.value = _profileState.value.copy(phoneNumber = value)
+        _profileState.value = _profileState.value.copy(phoneNumber = value, fieldErrors = _profileState.value.fieldErrors - "phoneNumber")
     }
 
     fun updateProfile() {
+        // Sprecava dupli submit dok je prethodni zahtev u toku
+        if (_profileState.value.isUpdating) return
         viewModelScope.launch {
-            _profileState.value = _profileState.value.copy(isUpdating = true, error = null)
+            _profileState.value = _profileState.value.copy(isUpdating = true, error = null, fieldErrors = emptyMap())
             when (val result = userRepository.updateMyProfile(
                 UpdateUserRequest(
                     firstName = _profileState.value.firstName,
@@ -95,9 +98,12 @@ class SettingsViewModel @Inject constructor(
                     )
                 }
                 is Resource.Error -> {
+                    // Validacione greske idu ispod polja, ostale kao opsta poruka;
+                    // unete vrednosti ostaju netaknute u state-u.
                     _profileState.value = _profileState.value.copy(
                         isUpdating = false,
-                        error = result.message
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit

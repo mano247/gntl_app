@@ -12,6 +12,12 @@ data class UserListResponse(
     val deleted: Boolean? = false
 )
 
+// Telo za PUT /users/{id}/role - backend ocekuje JSON {"role": "ROLE_ADMIN"}
+// (ChangeRoleRequest sa RoleName enumom), NE plain-text string.
+data class ChangeRoleRequest(
+    val role: String
+)
+
 data class PagedUserResponse(
     val content: List<UserListResponse>,
     val totalPages: Int,

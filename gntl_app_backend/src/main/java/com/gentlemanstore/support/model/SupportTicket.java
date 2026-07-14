@@ -34,6 +34,12 @@ public class SupportTicket {
     @Column(nullable = false)
     private boolean deleted = false;
 
+    // Staff (employee/admin) je uklonio tiket iz staff liste - tiket nije obrisan,
+    // vlasnik (customer) i dalje vidi sopstvenu istoriju.
+    @Builder.Default
+    @Column(name = "archived_by_staff", nullable = false)
+    private boolean archivedByStaff = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

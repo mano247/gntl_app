@@ -28,7 +28,10 @@ data class SupportUiState(
     val isLastPage: Boolean = false,
     val currentPage: Int = 0,
     val successMessage: String? = null,
-    val selectedStatus: String? = "OPEN"
+    val selectedStatus: String? = "OPEN",
+    // Unread brojaci po statusu tiketa (backend summary nad svim tiketima,
+    // ne nad trenutnom stranicom) - badge na status filter chipovima
+    val unreadByStatus: Map<String, Int> = emptyMap()
 )
 
 data class BotFlowUiState(
@@ -103,12 +106,15 @@ class SupportViewModel @Inject constructor(
             type = UnreadUpdateEvent::class.java,
             onEvent = { event ->
                 // Server pushuje novi unreadCount — samo prepiši lokalni state,
-                // bez REST poziva.
+                // bez REST poziva za samu listu.
                 _supportUiState.update { state ->
                     state.copy(tickets = state.tickets.map {
                         if (it.id == event.ticketId) it.copy(unreadCount = event.unreadCount) else it
                     })
                 }
+                // Badge po kategorijama se preracunava na backendu (tiket na koji
+                // se event odnosi ne mora biti u trenutno ucitanoj stranici).
+                loadUnreadSummary()
             },
             onResync = {
                 // Prekid ili reconnect WebSocket-a — jednokratna REST sinhronizacija.
@@ -136,6 +142,7 @@ class SupportViewModel @Inject constructor(
                     error = null
                 )
                 loadUnreadCountsSync()
+                loadUnreadSummarySync()
             }
             is Resource.Error -> {
                 _supportUiState.value = _supportUiState.value.copy(
@@ -144,6 +151,21 @@ class SupportViewModel @Inject constructor(
                 )
             }
             is Resource.Loading -> Unit
+        }
+    }
+
+    private suspend fun loadUnreadSummarySync() {
+        when (val result = supportRepository.getMyUnreadSummary()) {
+            is Resource.Success -> {
+                _supportUiState.update { it.copy(unreadByStatus = result.data) }
+            }
+            else -> Unit
+        }
+    }
+
+    fun loadUnreadSummary() {
+        viewModelScope.launch {
+            loadUnreadSummarySync()
         }
     }
 
@@ -289,17 +311,22 @@ class SupportViewModel @Inject constructor(
             _supportUiState.value = _supportUiState.value.copy(
                 tickets = _supportUiState.value.tickets.filter { it.id != ticketId }
             )
-            when (supportRepository.deleteTicket(ticketId)) {
+            when (val result = supportRepository.deleteTicket(ticketId)) {
                 is Resource.Success -> {
                     _supportUiState.value = _supportUiState.value.copy(
                         successMessage = "Ticket deleted successfully!"
                     )
+                    // Obrisan tiket vise ne ulazi u unread brojace kategorija
+                    loadUnreadSummary()
                 }
                 is Resource.Error -> {
+                    // Rollback optimistickog uklanjanja (reload sa servera),
+                    // pa tek onda konkretna backend poruka - obrnut redosled bi
+                    // obrisao poruku pre nego sto je UI prikaze.
+                    loadMyTicketsAndUnread()
                     _supportUiState.value = _supportUiState.value.copy(
-                        error = "Failed to delete ticket"
+                        error = result.message
                     )
-                    loadMyTickets()
                 }
                 is Resource.Loading -> Unit
             }

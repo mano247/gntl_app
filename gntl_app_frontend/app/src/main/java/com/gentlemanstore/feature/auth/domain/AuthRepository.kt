@@ -30,7 +30,7 @@ class AuthRepository @Inject constructor(
             }
             resource
         } catch (e: Exception){
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -51,7 +51,7 @@ class AuthRepository @Inject constructor(
             }
             resource
         }catch (e: Exception){
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 

@@ -82,6 +82,9 @@ fun ManagerHomeScreen(
                 categories = uiState.categories,
                 isCreating = uiState.isCreatingDiscount,
                 deletingId = uiState.deletingDiscountId,
+                fieldErrors = uiState.discountFieldErrors,
+                created = uiState.discountCreated,
+                onCreatedConsumed = { viewModel.consumeDiscountCreated() },
                 onCreate = { type, value, from, to, scope, categoryId ->
                     viewModel.createDiscount(type, value, from, to, scope, categoryId)
                 },
@@ -91,6 +94,9 @@ fun ManagerHomeScreen(
                 promotions = uiState.promotions,
                 isCreating = uiState.isCreatingPromotion,
                 deletingId = uiState.deletingPromotionId,
+                fieldErrors = uiState.promotionFieldErrors,
+                created = uiState.promotionCreated,
+                onCreatedConsumed = { viewModel.consumePromotionCreated() },
                 onCreate = { name, desc, code, type, value, from, to ->
                     viewModel.createPromotion(name, desc, code, type, value, from, to)
                 },
@@ -175,6 +181,9 @@ private fun DiscountsTab(
     categories: List<Pair<Long, String>>,
     isCreating: Boolean,
     deletingId: Long?,
+    fieldErrors: Map<String, String>,
+    created: Boolean,
+    onCreatedConsumed: () -> Unit,
     onCreate: (String, BigDecimal, String, String, String, Long?) -> Unit,
     onDelete: (Long) -> Unit
 ) {
@@ -187,6 +196,17 @@ private fun DiscountsTab(
     var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showTypeMenu by remember { mutableStateOf(false) }
+
+    // Forma se zatvara i resetuje tek na uspesno kreiranje - na gresku
+    // (validacija/mreza) unos ostaje sacuvan i greske se vide ispod polja.
+    LaunchedEffect(created) {
+        if (created) {
+            showForm = false
+            value = ""; validFrom = ""; validTo = ""
+            selectedScope = "GLOBAL"; selectedCategoryId = null
+            onCreatedConsumed()
+        }
+    }
 
     val valueError = value.isNotBlank() && (value.toBigDecimalOrNull() == null
             || value.toBigDecimalOrNull()!! <= BigDecimal.ZERO
@@ -225,13 +245,39 @@ private fun DiscountsTab(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            isError = valueError,
-                            supportingText = if (valueError) {
-                                { Text(if (discountType == "PERCENTAGE") "Enter a percentage between 0 and 100" else "Enter an amount greater than 0") }
-                            } else null
+                            isError = valueError || fieldErrors.containsKey("value"),
+                            supportingText = when {
+                                valueError -> {
+                                    { Text(if (discountType == "PERCENTAGE") "Enter a percentage between 0 and 100" else "Enter an amount greater than 0") }
+                                }
+                                fieldErrors.containsKey("value") -> {
+                                    { Text(text = fieldErrors.getValue("value"), color = MaterialTheme.colorScheme.error) }
+                                }
+                                else -> null
+                            }
                         )
-                        OutlinedTextField(value = validFrom, onValueChange = { validFrom = it }, label = { Text("Valid From (2026-01-01T00:00:00)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        OutlinedTextField(value = validTo, onValueChange = { validTo = it }, label = { Text("Valid To (2026-12-31T23:59:59)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        OutlinedTextField(
+                            value = validFrom,
+                            onValueChange = { validFrom = it },
+                            label = { Text("Valid From (2026-01-01T00:00:00)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            isError = fieldErrors.containsKey("validFrom"),
+                            supportingText = fieldErrors["validFrom"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
+                        OutlinedTextField(
+                            value = validTo,
+                            onValueChange = { validTo = it },
+                            label = { Text("Valid To (2026-12-31T23:59:59)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            isError = fieldErrors.containsKey("validTo"),
+                            supportingText = fieldErrors["validTo"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
 
                         Text(text = "Applies to:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -263,9 +309,6 @@ private fun DiscountsTab(
                                 val v = value.toBigDecimalOrNull() ?: return@Button
                                 val categoryId = if (selectedScope == "CATEGORY") selectedCategoryId else null
                                 onCreate(discountType, v, validFrom, validTo, selectedScope, categoryId)
-                                showForm = false
-                                value = ""; validFrom = ""; validTo = ""
-                                selectedScope = "GLOBAL"; selectedCategoryId = null
                             },
                             enabled = !isCreating && value.isNotBlank() && !valueError
                                     && validFrom.isNotBlank() && validTo.isNotBlank()
@@ -315,6 +358,9 @@ private fun PromotionsTab(
     promotions: List<PromotionResponse>,
     isCreating: Boolean,
     deletingId: Long?,
+    fieldErrors: Map<String, String>,
+    created: Boolean,
+    onCreatedConsumed: () -> Unit,
     onCreate: (String, String, String?, String, BigDecimal, String, String) -> Unit,
     onDelete: (Long) -> Unit
 ) {
@@ -328,6 +374,17 @@ private fun PromotionsTab(
     var validFrom by remember { mutableStateOf("") }
     var validTo by remember { mutableStateOf("") }
     var showTypeMenu by remember { mutableStateOf(false) }
+
+    // Forma se zatvara i resetuje tek na uspesno kreiranje - na gresku
+    // (validacija/mreza) unos ostaje sacuvan i greske se vide ispod polja.
+    LaunchedEffect(created) {
+        if (created) {
+            showForm = false
+            name = ""; description = ""; code = ""; value = ""; validFrom = ""; validTo = ""
+            autoGenerateCode = true; discountType = "PERCENTAGE"
+            onCreatedConsumed()
+        }
+    }
 
     val valueError = value.isNotBlank() && (value.toBigDecimalOrNull() == null
             || value.toBigDecimalOrNull()!! <= BigDecimal.ZERO
@@ -348,8 +405,28 @@ private fun PromotionsTab(
             item {
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Promotion Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Promotion Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            isError = fieldErrors.containsKey("name"),
+                            supportingText = fieldErrors["name"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Description") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3,
+                            isError = fieldErrors.containsKey("description"),
+                            supportingText = fieldErrors["description"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(
@@ -370,7 +447,11 @@ private fun PromotionsTab(
                                 onValueChange = { code = it.uppercase() },
                                 label = { Text("Promo Code") },
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
+                                singleLine = true,
+                                isError = fieldErrors.containsKey("code"),
+                                supportingText = fieldErrors["code"]?.let { msg ->
+                                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                                }
                             )
                         }
 
@@ -392,21 +473,44 @@ private fun PromotionsTab(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            isError = valueError,
-                            supportingText = if (valueError) {
-                                { Text(if (discountType == "PERCENTAGE") "Enter a percentage between 0 and 100" else "Enter an amount greater than 0") }
-                            } else null
+                            isError = valueError || fieldErrors.containsKey("value"),
+                            supportingText = when {
+                                valueError -> {
+                                    { Text(if (discountType == "PERCENTAGE") "Enter a percentage between 0 and 100" else "Enter an amount greater than 0") }
+                                }
+                                fieldErrors.containsKey("value") -> {
+                                    { Text(text = fieldErrors.getValue("value"), color = MaterialTheme.colorScheme.error) }
+                                }
+                                else -> null
+                            }
                         )
-                        OutlinedTextField(value = validFrom, onValueChange = { validFrom = it }, label = { Text("Valid From (2026-01-01T00:00:00)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                        OutlinedTextField(value = validTo, onValueChange = { validTo = it }, label = { Text("Valid To (2026-12-31T23:59:59)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        OutlinedTextField(
+                            value = validFrom,
+                            onValueChange = { validFrom = it },
+                            label = { Text("Valid From (2026-01-01T00:00:00)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            isError = fieldErrors.containsKey("validFrom"),
+                            supportingText = fieldErrors["validFrom"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
+                        OutlinedTextField(
+                            value = validTo,
+                            onValueChange = { validTo = it },
+                            label = { Text("Valid To (2026-12-31T23:59:59)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            isError = fieldErrors.containsKey("validTo"),
+                            supportingText = fieldErrors["validTo"]?.let { msg ->
+                                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                            }
+                        )
 
                         Button(
                             onClick = {
                                 val v = value.toBigDecimalOrNull() ?: return@Button
                                 onCreate(name, description, if (autoGenerateCode) null else code, discountType, v, validFrom, validTo)
-                                showForm = false
-                                name = ""; description = ""; code = ""; value = ""; validFrom = ""; validTo = ""
-                                autoGenerateCode = true; discountType = "PERCENTAGE"
                             },
                             enabled = !isCreating && name.isNotBlank() && description.isNotBlank()
                                     && value.isNotBlank() && !valueError

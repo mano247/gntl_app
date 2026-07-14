@@ -58,4 +58,18 @@ interface SupportApiService {
 
     @GET("support/tickets/unread-total")
     suspend fun getTotalUnreadCount(): ApiResponse<Int>
+
+    // Unread brojaci po statusu tiketa (racunati nad SVIM tiketima na backendu,
+    // ne nad jednom paginiranom stranicom) - za badge na status filter chipovima.
+    @GET("support/tickets/my/unread-summary")
+    suspend fun getMyUnreadSummary(): ApiResponse<Map<String, Int>>
+
+    @GET("support/tickets/unread-summary")
+    suspend fun getStaffUnreadSummary(): ApiResponse<Map<String, Int>>
+
+    // Staff uklanja tiket iz staff liste (arhiviranje) - customer zadrzava istoriju
+    @PUT("support/tickets/{id}/archive")
+    suspend fun archiveTicket(
+        @Path("id") id: Long
+    ): ApiResponse<Unit>
 }

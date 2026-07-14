@@ -19,7 +19,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.getNotifications(page, size, "createdAt,desc")
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -28,7 +28,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.getUnreadCount()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -37,7 +37,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.markAsRead(id)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -46,7 +46,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.markAllAsRead()
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -55,7 +55,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.deleteNotification(id)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -64,7 +64,7 @@ class NotificationRepository @Inject constructor(
             val response = notificationApiService.deleteAllNotifications()
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

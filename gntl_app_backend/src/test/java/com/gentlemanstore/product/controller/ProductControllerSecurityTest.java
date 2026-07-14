@@ -28,7 +28,7 @@ public class ProductControllerSecurityTest {
 
     @Test
     void customerCannotAccessProductCrudEndpoints() {
-        for (String method : new String[]{"createProduct", "updateProduct", "deleteProduct"}) {
+        for (String method : new String[]{"createProduct", "updateProduct", "deleteProduct", "restoreProduct"}) {
             String rules = preAuthorizeOf(ProductController.class, method);
             assertFalse(rules.contains("CUSTOMER"), method + " must not allow CUSTOMER");
         }
@@ -36,8 +36,17 @@ public class ProductControllerSecurityTest {
 
     @Test
     void employeeHasFullProductCrud() {
-        for (String method : new String[]{"createProduct", "updateProduct", "deleteProduct"}) {
+        for (String method : new String[]{"createProduct", "updateProduct", "deleteProduct", "restoreProduct"}) {
             String rules = preAuthorizeOf(ProductController.class, method);
+            assertTrue(rules.contains("EMPLOYEE"), method + " must allow EMPLOYEE");
+        }
+    }
+
+    @Test
+    void ticketArchiveAndStaffUnreadSummaryAreStaffOnly() {
+        for (String method : new String[]{"archiveTicket", "getStaffUnreadSummary"}) {
+            String rules = preAuthorizeOf(com.gentlemanstore.support.controller.SupportController.class, method);
+            assertFalse(rules.contains("CUSTOMER"), method + " must not allow CUSTOMER");
             assertTrue(rules.contains("EMPLOYEE"), method + " must allow EMPLOYEE");
         }
     }

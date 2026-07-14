@@ -21,4 +21,6 @@ public class ProductDTO {
     private List<String> imageUrls;
     private List<String> tags;
     private BigDecimal discountPercentage;
+    // Staff prikaz DELETED/ALL - UI mora znati da li je proizvod obrisan
+    private boolean deleted;
 }

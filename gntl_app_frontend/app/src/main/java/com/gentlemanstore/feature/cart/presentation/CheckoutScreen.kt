@@ -185,6 +185,8 @@ fun CheckoutScreen(
                         if (addressState.showCreateForm) {
                             AddressForm(
                                 isCreating = addressState.isCreating,
+                                fieldErrors = addressState.fieldErrors,
+                                onFieldEdited = { addressViewModel.clearFieldError(it) },
                                 onSubmit = { street, apartment, city, postalCode, country ->
                                     addressViewModel.createAddress(
                                         street = street,
@@ -498,7 +500,9 @@ private fun PaymentMethodCard(
 private fun AddressForm(
     isCreating: Boolean,
     onSubmit: (street: String, apartment: String?, city: String, postalCode: String, country: String) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    fieldErrors: Map<String, String> = emptyMap(),
+    onFieldEdited: (String) -> Unit = {}
 ) {
     var street by remember { mutableStateOf("") }
     var apartment by remember { mutableStateOf("") }
@@ -516,39 +520,59 @@ private fun AddressForm(
     ) {
         OutlinedTextField(
             value = street,
-            onValueChange = { street = it },
+            onValueChange = { street = it; onFieldEdited("street") },
             label = { Text("Street") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = fieldErrors.containsKey("street"),
+            supportingText = fieldErrors["street"]?.let { msg ->
+                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+            }
         )
         OutlinedTextField(
             value = apartment,
-            onValueChange = { apartment = it },
+            onValueChange = { apartment = it; onFieldEdited("apartment") },
             label = { Text("Apartment (optional)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = fieldErrors.containsKey("apartment"),
+            supportingText = fieldErrors["apartment"]?.let { msg ->
+                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+            }
         )
         OutlinedTextField(
             value = city,
-            onValueChange = { city = it },
+            onValueChange = { city = it; onFieldEdited("city") },
             label = { Text("City") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = fieldErrors.containsKey("city"),
+            supportingText = fieldErrors["city"]?.let { msg ->
+                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+            }
         )
         OutlinedTextField(
             value = postalCode,
-            onValueChange = { postalCode = it },
+            onValueChange = { postalCode = it; onFieldEdited("postalCode") },
             label = { Text("Postal Code") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = fieldErrors.containsKey("postalCode"),
+            supportingText = fieldErrors["postalCode"]?.let { msg ->
+                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+            }
         )
         OutlinedTextField(
             value = country,
-            onValueChange = { country = it },
+            onValueChange = { country = it; onFieldEdited("country") },
             label = { Text("Country") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = fieldErrors.containsKey("country"),
+            supportingText = fieldErrors["country"]?.let { msg ->
+                { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+            }
         )
 
         Row(

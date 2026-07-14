@@ -73,7 +73,14 @@ class AdminViewModel @Inject constructor(
     }
 
     fun changeUserRole(userId: Long, role: String) {
-        if (_uiState.value.updatingUserId == userId) return
+        // Sprecava dupli submit dok je bilo koja promena role u toku
+        if (_uiState.value.updatingUserId != null) return
+        // Ne salje zahtev ako korisnik vec ima izabranu rolu
+        val currentRole = _uiState.value.users.find { it.id == userId }?.role
+        if (currentRole != null && currentRole.equals(role, ignoreCase = true)) {
+            _uiState.value = _uiState.value.copy(error = "User already has the $role role")
+            return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(updatingUserId = userId)
             when (val result = adminRepository.changeUserRole(userId, role)) {

@@ -19,7 +19,7 @@ class OrderRepository @Inject constructor(
             val response = orderApiService.getMyOrders(page, size, status)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -28,7 +28,7 @@ class OrderRepository @Inject constructor(
             val response = orderApiService.getOrderById(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -38,7 +38,7 @@ class OrderRepository @Inject constructor(
             // Void odgovor (data = null) — toResource() bi ga pogrešno tretirao kao grešku
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

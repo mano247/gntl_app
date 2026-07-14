@@ -46,7 +46,16 @@ fun EmployeeHomeScreen(
         ordersState.error?.let { onShowError(it) }
     }
     LaunchedEffect(ticketsState.error) {
-        ticketsState.error?.let { onShowError(it) }
+        ticketsState.error?.let {
+            onShowError(it)
+            viewModel.clearTicketMessages()
+        }
+    }
+    LaunchedEffect(ticketsState.successMessage) {
+        ticketsState.successMessage?.let {
+            onShowError(it)
+            viewModel.clearTicketMessages()
+        }
     }
     LaunchedEffect(Unit) {
         viewModel.loadOrders()
@@ -100,7 +109,8 @@ fun EmployeeHomeScreen(
                 onUpdateStatus = { ticketId, status -> viewModel.updateTicketStatus(ticketId, status) },
                 onOpenChat = onOpenChat,
                 onRefresh = { viewModel.loadTickets() },
-                onStatusFilter = { viewModel.onTicketStatusFilter(it) }
+                onStatusFilter = { viewModel.onTicketStatusFilter(it) },
+                onArchive = { viewModel.archiveTicket(it) }
             )
             2 -> EmployeeProductsTab(
                 onProductClick = onProductClick,
@@ -204,35 +214,20 @@ private fun EmployeeTicketsTab(
     onUpdateStatus: (Long, String) -> Unit,
     onOpenChat: (Long, Long) -> Unit,
     onRefresh: () -> Unit,
-    onStatusFilter: (String?) -> Unit
+    onStatusFilter: (String?) -> Unit,
+    onArchive: (Long) -> Unit
 ) {
     val pullRefreshState = rememberPullRefreshState(refreshing = state.isLoading, onRefresh = onRefresh)
-    val statuses = listOf("ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        androidx.compose.foundation.lazy.LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Deljena komponenta sa customer Support ekranom - status chipovi
+        // sa unread badge-om po kategoriji
+        com.gentlemanstore.feature.support.presentation.TicketStatusFilterRow(
+            selectedStatus = state.selectedStatus,
+            unreadByStatus = state.unreadByStatus,
+            onStatusSelected = onStatusFilter,
             modifier = Modifier.padding(vertical = 8.dp)
-        ) {
-            items(count = statuses.size, key = { statuses[it] }) { index ->
-                val status = statuses[index]
-                val isSelected = when {
-                    status == "ALL" && state.selectedStatus == null -> true
-                    status == state.selectedStatus -> true
-                    else -> false
-                }
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onStatusFilter(if (status == "ALL") null else status) },
-                    label = { Text(status) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Gold500,
-                        selectedLabelColor = MaterialTheme.colorScheme.background
-                    )
-                )
-            }
-        }
+        )
 
         Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
             when {
@@ -256,8 +251,10 @@ private fun EmployeeTicketsTab(
                             EmployeeTicketCard(
                                 ticket = ticket,
                                 isUpdating = state.updatingTicketId == ticket.id,
+                                isArchiving = state.archivingTicketId == ticket.id,
                                 onUpdateStatus = onUpdateStatus,
-                                onOpenChat = onOpenChat
+                                onOpenChat = onOpenChat,
+                                onArchive = onArchive
                             )
                         }
                     }
@@ -372,11 +369,29 @@ private fun EmployeeOrderCard(
 private fun EmployeeTicketCard(
     ticket: SupportTicketResponse,
     isUpdating: Boolean,
+    isArchiving: Boolean,
     onUpdateStatus: (Long, String) -> Unit,
-    onOpenChat: (Long, Long) -> Unit
+    onOpenChat: (Long, Long) -> Unit,
+    onArchive: (Long) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showArchiveDialog by remember { mutableStateOf(false) }
     val ticketStatuses = listOf("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
+
+    if (showArchiveDialog) {
+        AlertDialog(
+            onDismissRequest = { showArchiveDialog = false },
+            title = { Text("Remove Ticket") },
+            text = { Text("Remove this ticket from the support list? The customer will still see it in their own ticket history.") },
+            confirmButton = {
+                Button(
+                    onClick = { onArchive(ticket.id); showArchiveDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Remove") }
+            },
+            dismissButton = { OutlinedButton(onClick = { showArchiveDialog = false }) { Text("Cancel") } }
+        )
+    }
 
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -406,6 +421,23 @@ private fun EmployeeTicketCard(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(text = ticket.status, style = MaterialTheme.typography.labelSmall, color = getTicketStatusColor(ticket.status))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = { showArchiveDialog = true },
+                        modifier = Modifier.size(32.dp),
+                        enabled = !isArchiving
+                    ) {
+                        if (isArchiving) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.error)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Remove ticket",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }

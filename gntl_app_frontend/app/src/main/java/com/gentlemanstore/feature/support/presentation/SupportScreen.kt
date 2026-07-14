@@ -101,30 +101,12 @@ fun SupportScreen(
                 Text(text = "New Support Request", color = MaterialTheme.colorScheme.background, style = MaterialTheme.typography.labelLarge)
             }
 
-            val ticketStatuses = listOf("ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED")
-            androidx.compose.foundation.lazy.LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            TicketStatusFilterRow(
+                selectedStatus = uiState.selectedStatus,
+                unreadByStatus = uiState.unreadByStatus,
+                onStatusSelected = { viewModel.onStatusFilter(it) },
                 modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                items(count = ticketStatuses.size, key = { ticketStatuses[it] }) { index ->
-                    val status = ticketStatuses[index]
-                    val isSelected = when {
-                        status == "ALL" && uiState.selectedStatus == null -> true
-                        status == uiState.selectedStatus -> true
-                        else -> false
-                    }
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { viewModel.onStatusFilter(if (status == "ALL") null else status) },
-                        label = { Text(status) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Gold500,
-                            selectedLabelColor = MaterialTheme.colorScheme.background
-                        )
-                    )
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

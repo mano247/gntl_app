@@ -34,8 +34,24 @@ public class ProductService {
     private final DiscountRepository discountRepository;
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> getAllProducts(String category, String search, Pageable pageable) {
-        Page<Long> ids = repo.findIdsByFilters(category, search, pageable);
+    public Page<ProductDTO> getAllProducts(String category, String search, String status,
+                                           boolean isStaff, Pageable pageable) {
+        String normalizedStatus = status == null ? "ACTIVE" : status.trim().toUpperCase();
+        boolean includeActive;
+        boolean includeDeleted;
+        switch (normalizedStatus) {
+            case "ACTIVE" -> { includeActive = true; includeDeleted = false; }
+            case "DELETED" -> { includeActive = false; includeDeleted = true; }
+            case "ALL" -> { includeActive = true; includeDeleted = true; }
+            default -> throw new BadRequestException("Invalid product status filter: " + status);
+        }
+        // Obrisane proizvode vidi samo staff (employee/admin panel) - customer
+        // katalog uvek prikazuje iskljucivo aktivne.
+        if (includeDeleted && !isStaff) {
+            throw new BadRequestException("Invalid product status filter: " + status);
+        }
+
+        Page<Long> ids = repo.findIdsByFilters(category, search, includeActive, includeDeleted, pageable);
         List<Product> products = repo.findAllByIdInWithDetails(ids.getContent());
         LocalDateTime now = LocalDateTime.now();
         List<ProductDTO> dtos = products.stream().map(product -> {
@@ -47,8 +63,10 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductDTO getProduct(Long id){
-        Product product = repo.findByIdAndDeletedFalse(id)
+    public ProductDTO getProduct(Long id, boolean isStaff){
+        // Staff sme da pregleda i detalje obrisanog proizvoda (DELETED prikaz);
+        // za customera obrisan proizvod ostaje 404.
+        Product product = (isStaff ? repo.findById(id) : repo.findByIdAndDeletedFalse(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         ProductDTO dto = mapper.toDTO(product);
         applyActiveDiscount(dto, product, LocalDateTime.now());
@@ -71,6 +89,28 @@ public class ProductService {
         product.setDeleted(true);
 
         repo.save(product);
+    }
+
+    /**
+     * Vraca soft-obrisan proizvod u katalog - isti entitet (SKU, opis, slike,
+     * tagovi, velicine, kategorija i sve relacije ostaju netaknuti), samo se
+     * skida deleted flag. Ne kreira se nov proizvod.
+     */
+    @Transactional
+    public ProductDTO restoreProduct(Long id) {
+        Product product = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        if (!product.isDeleted()) {
+            throw new BadRequestException("Product is not deleted");
+        }
+
+        product.setDeleted(false);
+        repo.save(product);
+
+        ProductDTO dto = mapper.toDTO(product);
+        applyActiveDiscount(dto, product, LocalDateTime.now());
+        return dto;
     }
 
     @Transactional()

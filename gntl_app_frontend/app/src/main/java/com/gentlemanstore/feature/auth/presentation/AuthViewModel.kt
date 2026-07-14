@@ -15,6 +15,7 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null,
+    val fieldErrors: Map<String, String> = emptyMap(),
     val userRole: String? = null
 )
 
@@ -38,8 +39,11 @@ class AuthViewModel @Inject constructor(
                     )
                 }
                 is Resource.Error -> {
+                    // Konkretna backend poruka (npr. "Invalid email or password")
+                    // ili validacione greske po polju - bez generickog teksta.
                     _uiState.value = AuthUiState(
-                        error = mapAuthError(result.message)
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit
@@ -68,7 +72,8 @@ class AuthViewModel @Inject constructor(
                 }
                 is Resource.Error -> {
                     _uiState.value = AuthUiState(
-                        error = mapAuthError(result.message)
+                        error = if (result.fieldErrors.isEmpty()) result.message else null,
+                        fieldErrors = result.fieldErrors
                     )
                 }
                 is Resource.Loading -> Unit
@@ -76,21 +81,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun mapAuthError(message: String?): String {
-        return when {
-            message == null -> "Something went wrong. Please try again."
-            message.contains("401") || message.contains("Unauthorized") || message.contains("Bad credentials") -> "Invalid email or password."
-            message.contains("403") || message.contains("Forbidden") -> "Access denied."
-            message.contains("404") -> "Account not found."
-            message.contains("409") || message.contains("already exists") || message.contains("already taken") -> "An account with this email already exists."
-            message.contains("400") || message.contains("Bad Request") -> "Invalid input. Please check your details."
-            message.contains("500") || message.contains("Internal Server") -> "Server error. Please try again later."
-            message.contains("timeout") || message.contains("Unable to resolve") || message.contains("failed to connect") -> "No internet connection. Please check your network."
-            else -> "Something went wrong. Please try again."
-        }
-    }
-
     fun clearError(){
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.value = _uiState.value.copy(error = null, fieldErrors = emptyMap())
     }
 }

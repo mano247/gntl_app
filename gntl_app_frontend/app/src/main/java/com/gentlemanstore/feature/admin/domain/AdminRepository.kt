@@ -8,8 +8,6 @@ import com.gentlemanstore.feature.admin.data.AdminApiService
 import com.gentlemanstore.feature.admin.data.dto.*
 import javax.inject.Inject
 import javax.inject.Singleton
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.MediaType.Companion.toMediaType
 
 @Singleton
 class AdminRepository @Inject constructor(
@@ -21,17 +19,23 @@ class AdminRepository @Inject constructor(
             val response = adminApiService.getAllUsers(page, deleted = deleted)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
+    /**
+     * [role] je UI naziv role bez prefiksa ("ADMIN", "MANAGER", "EMPLOYEE",
+     * "CUSTOMER") - backend RoleName enum zahteva "ROLE_" prefiks, a telo mora
+     * biti JSON ChangeRoleRequest (raniji plain-text body je bio uzrok da
+     * Change Role nikada ne radi - backend ga odbija pre kontrolera).
+     */
     suspend fun changeUserRole(id: Long, role: String): Resource<UserListResponse> {
         return try {
-            val body = role.toRequestBody("text/plain".toMediaType())
-            val response = adminApiService.changeUserRole(id, body)
+            val roleName = if (role.startsWith("ROLE_")) role else "ROLE_${role.uppercase()}"
+            val response = adminApiService.changeUserRole(id, ChangeRoleRequest(roleName))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -43,7 +47,7 @@ class AdminRepository @Inject constructor(
             // za Void odgovore mora toUnitResource() koji gleda samo success flag.
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -52,7 +56,7 @@ class AdminRepository @Inject constructor(
             val response = adminApiService.reactivateUser(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 }

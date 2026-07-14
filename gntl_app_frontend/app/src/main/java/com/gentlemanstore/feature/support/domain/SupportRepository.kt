@@ -19,7 +19,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.createTicket(CreateTicketRequest(subject))
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -28,7 +28,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getMyTickets(page, size)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -37,7 +37,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getTicket(id)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -46,7 +46,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getMessages(sessionId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -58,7 +58,7 @@ class SupportRepository @Inject constructor(
             )
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -67,7 +67,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getBotQuestions()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -82,7 +82,7 @@ class SupportRepository @Inject constructor(
             )
             apiResponse.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -91,7 +91,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.deleteTicket(ticketId)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -100,7 +100,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getUnreadCount(ticketId)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -109,7 +109,7 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.markMessagesAsRead(sessionId)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -118,7 +118,34 @@ class SupportRepository @Inject constructor(
             val response = supportApiService.getTotalUnreadCount()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
+        }
+    }
+
+    suspend fun getMyUnreadSummary(): Resource<Map<String, Int>> {
+        return try {
+            val response = supportApiService.getMyUnreadSummary()
+            response.toResource()
+        } catch (e: Exception) {
+            ErrorMapper.map(e)
+        }
+    }
+
+    suspend fun getStaffUnreadSummary(): Resource<Map<String, Int>> {
+        return try {
+            val response = supportApiService.getStaffUnreadSummary()
+            response.toResource()
+        } catch (e: Exception) {
+            ErrorMapper.map(e)
+        }
+    }
+
+    suspend fun archiveTicket(ticketId: Long): Resource<Unit> {
+        return try {
+            val response = supportApiService.archiveTicket(ticketId)
+            response.toUnitResource()
+        } catch (e: Exception) {
+            ErrorMapper.map(e)
         }
     }
 }

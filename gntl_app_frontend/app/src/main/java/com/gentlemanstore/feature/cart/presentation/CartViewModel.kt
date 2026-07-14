@@ -138,6 +138,8 @@ class CartViewModel @Inject constructor(
     }
 
     fun checkout(addressId: Long) {
+        // Sprecava dupli submit (dupli tap na "Place Order")
+        if (_uiState.value.isCheckingOut) return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCheckingOut = true)
             val promoCode = _uiState.value.promoCode.ifBlank { null }

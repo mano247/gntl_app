@@ -19,7 +19,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getDashboard()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -28,7 +28,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getAllDiscounts()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -37,7 +37,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.createDiscount(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -46,7 +46,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.deleteDiscount(id)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -55,7 +55,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.getAllPromotions()
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -64,7 +64,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.createPromotion(request)
             response.toResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 
@@ -73,7 +73,7 @@ class ManagerRepository @Inject constructor(
             val response = managerApiService.deletePromotion(id)
             response.toUnitResource()
         } catch (e: Exception) {
-            Resource.Error(ErrorMapper.map(e.message))
+            ErrorMapper.map(e)
         }
     }
 

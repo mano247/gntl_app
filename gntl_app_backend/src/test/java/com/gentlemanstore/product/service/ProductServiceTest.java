@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,7 +67,7 @@ public class ProductServiceTest {
 
         // when + then
         assertThrows(ResourceNotFoundException.class, () -> {
-            productService.getProduct(1L);
+            productService.getProduct(1L, false);
         });
     }
 
@@ -128,5 +130,97 @@ public class ProductServiceTest {
 
         assertTrue(product.isDeleted());
         verify(repo).save(product);
+    }
+
+    // ---------- restore (Employee Products - DELETED prikaz) ----------
+
+    @Test
+    void restoreShouldReviveSameEntityWithoutCreatingNew() {
+        Category category = Category.builder().id(1L).name("Suits").build();
+        Product product = Product.builder()
+                .id(1L)
+                .sku("SKU001")
+                .name("Suit")
+                .price(BigDecimal.TEN)
+                .category(category)
+                .build();
+        product.setDeleted(true);
+        when(repo.findById(1L)).thenReturn(Optional.of(product));
+        when(mapper.toDTO(product)).thenReturn(new ProductDTO());
+        when(discountRepository.findActiveDiscountForProduct(any(), any()))
+                .thenReturn(Optional.empty());
+
+        productService.restoreProduct(1L);
+
+        assertFalse(product.isDeleted(), "isti entitet se vraca u katalog");
+        assertEquals("SKU001", product.getSku(), "SKU i ostali podaci ostaju netaknuti");
+        verify(repo).save(product);
+    }
+
+    @Test
+    void restoreNonDeletedProductThrows400() {
+        Product product = Product.builder().id(1L).sku("SKU001").build();
+        when(repo.findById(1L)).thenReturn(Optional.of(product));
+
+        assertThrows(BadRequestException.class, () -> productService.restoreProduct(1L));
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    void restoreMissingProductThrows404() {
+        when(repo.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> productService.restoreProduct(99L));
+    }
+
+    // ---------- status filter (ACTIVE / DELETED / ALL) ----------
+
+    @Test
+    void deletedFilterIsStaffOnly() {
+        assertThrows(BadRequestException.class, () ->
+                productService.getAllProducts(null, null, "DELETED", false, org.springframework.data.domain.Pageable.unpaged()));
+        assertThrows(BadRequestException.class, () ->
+                productService.getAllProducts(null, null, "ALL", false, org.springframework.data.domain.Pageable.unpaged()));
+    }
+
+    @Test
+    void invalidStatusFilterThrows400() {
+        assertThrows(BadRequestException.class, () ->
+                productService.getAllProducts(null, null, "WHATEVER", true, org.springframework.data.domain.Pageable.unpaged()));
+    }
+
+    @Test
+    void statusFilterMapsToRepositoryFlags() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.Pageable.unpaged();
+        when(repo.findIdsByFilters(any(), any(), anyBoolean(), anyBoolean(), any()))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+        when(repo.findAllByIdInWithDetails(any())).thenReturn(List.of());
+
+        productService.getAllProducts(null, null, null, false, pageable);
+        verify(repo).findIdsByFilters(null, null, true, false, pageable);
+
+        productService.getAllProducts(null, null, "DELETED", true, pageable);
+        verify(repo).findIdsByFilters(null, null, false, true, pageable);
+
+        productService.getAllProducts(null, null, "ALL", true, pageable);
+        verify(repo).findIdsByFilters(null, null, true, true, pageable);
+    }
+
+    @Test
+    void staffCanReadDeletedProductDetailsButCustomerCannot() {
+        Category category = Category.builder().id(1L).name("Suits").build();
+        Product deletedProduct = Product.builder().id(1L).sku("SKU001").category(category).build();
+        deletedProduct.setDeleted(true);
+
+        when(repo.findById(1L)).thenReturn(Optional.of(deletedProduct));
+        when(mapper.toDTO(deletedProduct)).thenReturn(new ProductDTO());
+        when(discountRepository.findActiveDiscountForProduct(any(), any()))
+                .thenReturn(Optional.empty());
+
+        assertNotNull(productService.getProduct(1L, true), "staff vidi detalje obrisanog proizvoda");
+
+        when(repo.findByIdAndDeletedFalse(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> productService.getProduct(1L, false),
+                "customer i dalje dobija 404 za obrisan proizvod");
     }
 }

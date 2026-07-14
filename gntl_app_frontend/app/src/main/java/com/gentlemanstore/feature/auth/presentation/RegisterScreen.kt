@@ -72,11 +72,18 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Backend validacione greske po polju (RegisterRequest nazivi polja)
+            val fieldErrors = uiState.fieldErrors
+
             OutlinedTextField(
                 value = firstName,
-                onValueChange = { firstName = it },
+                onValueChange = { firstName = it; viewModel.clearError() },
                 label = { Text("First Name") },
                 singleLine = true,
+                isError = fieldErrors.containsKey("firstName"),
+                supportingText = fieldErrors["firstName"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -84,9 +91,13 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = lastName,
-                onValueChange = { lastName = it },
+                onValueChange = { lastName = it; viewModel.clearError() },
                 label = { Text("Last Name") },
                 singleLine = true,
+                isError = fieldErrors.containsKey("lastName"),
+                supportingText = fieldErrors["lastName"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -94,12 +105,16 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; viewModel.clearError() },
                 label = { Text("Email") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email
                 ),
+                isError = fieldErrors.containsKey("email"),
+                supportingText = fieldErrors["email"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -107,9 +122,13 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
+                onValueChange = { phone = it; viewModel.clearError() },
                 label = { Text("Phone (optional)") },
                 singleLine = true,
+                isError = fieldErrors.containsKey("phoneNumber"),
+                supportingText = fieldErrors["phoneNumber"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -120,6 +139,7 @@ fun RegisterScreen(
                 onValueChange = {
                     password = it
                     passwordError = null
+                    viewModel.clearError()
                 },
                 label = { Text("Password") },
                 singleLine = true,
@@ -139,6 +159,10 @@ fun RegisterScreen(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password
                 ),
+                isError = fieldErrors.containsKey("password"),
+                supportingText = fieldErrors["password"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -191,8 +215,9 @@ fun RegisterScreen(
                         passwordError = "Passwords do not match"
                         return@Button
                     }
-                    if (password.length < 6){
-                        passwordError = "Password must be at least 6 characters"
+                    // Uskladjeno sa backend politikom lozinke (min 8 karaktera)
+                    if (password.length < 8){
+                        passwordError = "Password must be at least 8 characters"
                         return@Button
                     }
                     viewModel.register(

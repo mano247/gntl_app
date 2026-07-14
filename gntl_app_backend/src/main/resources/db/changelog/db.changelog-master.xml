@@ -27,4 +27,5 @@
     <include file="db/changelog/migrations/V20__create_refresh_tokens.xml"/>
     <include file="db/changelog/migrations/V21__fix_schema_gaps.xml"/>
     <include file="db/changelog/migrations/V22__separate_discounts_promotions.xml"/>
+    <include file="db/changelog/migrations/V23__add_ticket_staff_archive.xml"/>
 </databaseChangeLog>

@@ -297,8 +297,17 @@ private fun AdminUserCard(
                     }
                     DropdownMenu(expanded = showRoleMenu, onDismissRequest = { showRoleMenu = false }) {
                         roles.forEach { role ->
+                            // Trenutna rola je onemogucena - nema smisla slati istu rolu
+                            val isCurrentRole = user.role?.equals(role, ignoreCase = true) == true
                             DropdownMenuItem(
-                                text = { Text(role) },
+                                text = {
+                                    Text(
+                                        text = if (isCurrentRole) "$role (current)" else role,
+                                        color = if (isCurrentRole) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                enabled = !isCurrentRole,
                                 onClick = { onChangeRole(role); showRoleMenu = false }
                             )
                         }

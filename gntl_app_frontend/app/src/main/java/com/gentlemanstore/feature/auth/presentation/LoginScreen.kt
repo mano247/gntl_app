@@ -62,14 +62,21 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
+            // Backend validacione greske po polju (LoginRequest nazivi polja)
+            val fieldErrors = uiState.fieldErrors
+
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; viewModel.clearError() },
                 label = { Text("Email") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email
                 ),
+                isError = fieldErrors.containsKey("email"),
+                supportingText = fieldErrors["email"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -77,7 +84,7 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it; viewModel.clearError() },
                 label = { Text("Password") },
                 singleLine = true,
                 visualTransformation = if (passwordVisible)
@@ -96,6 +103,10 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password
                 ),
+                isError = fieldErrors.containsKey("password"),
+                supportingText = fieldErrors["password"]?.let { msg ->
+                    { Text(text = msg, color = MaterialTheme.colorScheme.error) }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- Staff (employee/admin) uklanja tiket iz svoje liste bez brisanja -
+         customer i dalje vidi sopstvenu istoriju tiketa (soft "archive" umesto delete) -->
+    <changeSet id="68" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="support_tickets" columnName="archived_by_staff"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="support_tickets">
+            <column name="archived_by_staff" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
