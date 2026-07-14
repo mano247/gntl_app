@@ -26,4 +26,5 @@
     <include file="db/changelog/migrations/V19__create_notifications.xml"/>
     <include file="db/changelog/migrations/V20__create_refresh_tokens.xml"/>
     <include file="db/changelog/migrations/V21__fix_schema_gaps.xml"/>
+    <include file="db/changelog/migrations/V22__separate_discounts_promotions.xml"/>
 </databaseChangeLog>

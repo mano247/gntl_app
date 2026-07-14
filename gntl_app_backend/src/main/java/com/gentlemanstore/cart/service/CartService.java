@@ -10,7 +10,7 @@ import com.gentlemanstore.cart.repository.CartItemRepository;
 import com.gentlemanstore.cart.repository.CartRepository;
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
-import com.gentlemanstore.discount.dto.DiscountDTO;
+import com.gentlemanstore.discount.dto.PromotionDTO;
 import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.discount.service.DiscountService;
 import com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository;
@@ -138,7 +138,7 @@ public class CartService {
         BigDecimal unitPrice = product.getPrice();
         java.util.Optional<com.gentlemanstore.discount.model.Discount> activeDiscount =
                 discountRepository.findActiveDiscountForProduct(
-                        product.getId(), product.getCategory().getId(), now
+                        product.getCategory().getId(), now
                 );
         if (activeDiscount.isPresent()) {
             com.gentlemanstore.discount.model.Discount discount = activeDiscount.get();
@@ -246,32 +246,30 @@ public class CartService {
             order.setFinalPrice(finalTotalPrice);
         });
 
-        // Promo kod popust
+        // Promo kod (Promotion) — poslovno pravilo za stacking popusta:
+        // 1. automatski discount je vec ugradjen u CartItem.unitPrice pri dodavanju u korpu,
+        // 2. loyalty tier popust se obracunava na totalPrice,
+        // 3. promo kod se obracunava poslednji, nad vec umanjenim iznosom.
+        // redeemPromotion trajno upisuje UserPromotion; parcijalni unique index u bazi
+        // sprecava dvostruko koriscenje i pri paralelnim zahtevima (drugi upis obara
+        // celu checkout transakciju).
         if (request.getPromoCode() != null && !request.getPromoCode().isBlank()) {
-            try {
-                DiscountDTO promoDiscount = discountService.validateAndUsePromoCode(
-                        request.getPromoCode(), userId
-                );
+            PromotionDTO promotion = discountService.redeemPromotion(request.getPromoCode(), userId);
 
-                BigDecimal basePrice = order.getFinalPrice() != null ?
-                        order.getFinalPrice() : order.getTotalPrice();
+            BigDecimal basePrice = order.getFinalPrice() != null ?
+                    order.getFinalPrice() : order.getTotalPrice();
 
-                BigDecimal promoDiscountAmount;
-                if (promoDiscount.getDiscountType().equals("PERCENTAGE")) {
-                    promoDiscountAmount = basePrice.multiply(promoDiscount.getValue())
-                            .divide(BigDecimal.valueOf(100));
-                } else {
-                    promoDiscountAmount = promoDiscount.getValue();
-                }
-
-                promoDiscountAmount = promoDiscountAmount.min(basePrice);
-                order.setPromoDiscount(promoDiscountAmount);
-                order.setFinalPrice(basePrice.subtract(promoDiscountAmount));
-
-                discountService.markPromoCodeAsUsed(request.getPromoCode(), userId);
-            } catch (Exception e) {
-                throw new BadRequestException("Invalid promo code: " + e.getMessage());
+            BigDecimal promoDiscountAmount;
+            if (promotion.getDiscountType().equals("PERCENTAGE")) {
+                promoDiscountAmount = basePrice.multiply(promotion.getValue())
+                        .divide(BigDecimal.valueOf(100));
+            } else {
+                promoDiscountAmount = promotion.getValue();
             }
+
+            promoDiscountAmount = promoDiscountAmount.min(basePrice);
+            order.setPromoDiscount(promoDiscountAmount);
+            order.setFinalPrice(basePrice.subtract(promoDiscountAmount));
         }
 
         orderRepository.save(order);

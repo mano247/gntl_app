@@ -6,6 +6,7 @@ import com.gentlemanstore.discount.repository.DiscountRepository;
 import com.gentlemanstore.product.dto.CategoryDTO;
 import com.gentlemanstore.product.dto.CreateProductRequest;
 import com.gentlemanstore.product.dto.ProductDTO;
+import com.gentlemanstore.product.dto.SizeRequest;
 import com.gentlemanstore.product.mapper.ProductMapper;
 import com.gentlemanstore.product.model.*;
 import com.gentlemanstore.product.repository.CategoryRepository;
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,8 +40,7 @@ public class ProductService {
         LocalDateTime now = LocalDateTime.now();
         List<ProductDTO> dtos = products.stream().map(product -> {
             ProductDTO dto = mapper.toDTO(product);
-            discountRepository.findActiveDiscountForProduct(product.getId(), product.getCategory().getId(), now)
-                    .ifPresent(discount -> dto.setDiscountPercentage(discount.getValue()));
+            applyActiveDiscount(dto, product, now);
             return dto;
         }).collect(Collectors.toList());
         return new PageImpl<>(dtos, pageable, ids.getTotalElements());
@@ -49,10 +51,16 @@ public class ProductService {
         Product product = repo.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         ProductDTO dto = mapper.toDTO(product);
-        LocalDateTime now = LocalDateTime.now();
-        discountRepository.findActiveDiscountForProduct(product.getId(), product.getCategory().getId(), now)
-                .ifPresent(discount -> dto.setDiscountPercentage(discount.getValue()));
+        applyActiveDiscount(dto, product, LocalDateTime.now());
         return dto;
+    }
+
+    // discountPercentage u DTO je procenat — FIXED popusti se ne prikazuju kao badge
+    // (primenjuju se na cenu tek pri dodavanju u korpu).
+    private void applyActiveDiscount(ProductDTO dto, Product product, LocalDateTime now) {
+        discountRepository.findActiveDiscountForProduct(product.getCategory().getId(), now)
+                .filter(discount -> discount.getDiscountType() == com.gentlemanstore.discount.model.DiscountType.PERCENTAGE)
+                .ifPresent(discount -> dto.setDiscountPercentage(discount.getValue()));
     }
 
     @Transactional()
@@ -119,7 +127,7 @@ public class ProductService {
 
     @Transactional()
     public ProductDTO updateProduct(Long id, CreateProductRequest request){
-        Product product = repo.findById(id)
+        Product product = repo.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         product.setName(request.getName());
@@ -132,9 +140,69 @@ public class ProductService {
             product.setCategory(category);
         }
 
+        if (request.getSizes() != null) {
+            syncSizes(product, request.getSizes());
+        }
+
+        if (request.getImageUrls() != null) {
+            syncImages(product, request.getImageUrls());
+        }
+
+        if (request.getTags() != null) {
+            product.getTags().clear();
+            request.getTags().forEach(tagName ->
+                    product.getTags().add(Tag.builder().name(tagName).build()));
+        }
+
         repo.save(product);
 
         return mapper.toDTO(product);
+    }
+
+    // Velicine se sinhronizuju po labelu: postojece se azuriraju (kolicina),
+    // izostavljene se soft-delete-uju (cart/order stavke ih i dalje referenciraju),
+    // nove se dodaju; ranije obrisana velicina sa istim labelom se reaktivira.
+    private void syncSizes(Product product, List<SizeRequest> requestedSizes) {
+        Map<String, SizeRequest> requestedByLabel = requestedSizes.stream()
+                .collect(Collectors.toMap(
+                        s -> s.getSize().trim().toUpperCase(),
+                        s -> s,
+                        (first, second) -> second));
+
+        for (ProductSize existing : product.getSizes()) {
+            SizeRequest match = requestedByLabel.remove(existing.getSize().trim().toUpperCase());
+            if (match != null) {
+                existing.setQuantity(match.getQuantity());
+                existing.setDeleted(false);
+            } else if (!existing.isDeleted()) {
+                existing.setDeleted(true);
+            }
+        }
+
+        requestedByLabel.values().forEach(s -> product.getSizes().add(
+                ProductSize.builder()
+                        .size(s.getSize())
+                        .quantity(s.getQuantity())
+                        .product(product)
+                        .build()));
+    }
+
+    private void syncImages(Product product, List<String> requestedUrls) {
+        Set<String> remaining = new java.util.LinkedHashSet<>(requestedUrls);
+
+        for (ProductImage existing : product.getImages()) {
+            if (remaining.remove(existing.getImageUrl())) {
+                existing.setDeleted(false);
+            } else if (!existing.isDeleted()) {
+                existing.setDeleted(true);
+            }
+        }
+
+        remaining.forEach(url -> product.getImages().add(
+                ProductImage.builder()
+                        .imageUrl(url)
+                        .product(product)
+                        .build()));
     }
 
     @Transactional(readOnly = true)

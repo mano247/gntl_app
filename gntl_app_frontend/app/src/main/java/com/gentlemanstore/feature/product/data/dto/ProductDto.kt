@@ -35,3 +35,20 @@ data class CategoryResponse(
     val name: String,
     val description: String?
 )
+
+// Employee CRUD — odgovara backend CreateProductRequest (create i update)
+data class SizeRequest(
+    val size: String,
+    val quantity: Int
+)
+
+data class CreateProductRequest(
+    val sku: String,
+    val name: String,
+    val description: String,
+    val price: Double,
+    val categoryId: Long,
+    val sizes: List<SizeRequest>,
+    val imageUrls: List<String>,
+    val tags: List<String>
+)

@@ -46,6 +46,15 @@ public class AuthServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private com.gentlemanstore.security.RefreshTokenService refreshTokenService;
+
+    @Mock
+    private com.gentlemanstore.loyalty.reporitory.LoyaltyAccountRepository loyaltyAccountRepository;
+
+    @Mock
+    private com.gentlemanstore.loyalty.reporitory.LoyaltyTierRepository loyaltyTierRepository;
+
     @InjectMocks
     private AuthService authService;
 
@@ -89,6 +98,14 @@ public class AuthServiceTest {
         when(roleRepository.findByName(RoleName.ROLE_CUSTOMER)).thenReturn(Optional.of(role));
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encodedPassword");
         when(jwtService.generateToken(any())).thenReturn("jwtToken");
+        when(refreshTokenService.issueRefreshToken(any())).thenReturn("refreshToken");
+        when(loyaltyTierRepository.findTopByMinPointsLessThanEqualOrderByMinPointsDesc(0))
+                .thenReturn(Optional.of(com.gentlemanstore.loyalty.model.LoyaltyTier.builder()
+                        .id(1L)
+                        .name("Gentleman")
+                        .minPoints(0)
+                        .discountPercentage(java.math.BigDecimal.ZERO)
+                        .build()));
 
         // when
         AuthResponse response = authService.register(request);

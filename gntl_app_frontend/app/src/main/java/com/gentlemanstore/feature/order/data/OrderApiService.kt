@@ -12,7 +12,8 @@ interface OrderApiService {
     @GET("orders/my/paged")
     suspend fun getMyOrders(
         @Query("page") page: Int,
-        @Query("size") size: Int = 20
+        @Query("size") size: Int = 20,
+        @Query("status") status: String? = null
     ): ApiResponse<PagedOrderResponse>
 
     @GET("orders/{id}")

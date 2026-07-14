@@ -22,7 +22,8 @@ data class ManagerUiState(
     val error: String? = null,
     val isCreatingDiscount: Boolean = false,
     val isCreatingPromotion: Boolean = false,
-    val deletingDiscountId: Long? = null
+    val deletingDiscountId: Long? = null,
+    val deletingPromotionId: Long? = null
 )
 
 @HiltViewModel
@@ -84,7 +85,7 @@ class ManagerViewModel @Inject constructor(
 
     fun loadPromotions() {
         viewModelScope.launch {
-            when (val result = managerRepository.getActivePromotions()) {
+            when (val result = managerRepository.getAllPromotions()) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(promotions = result.data)
                 }
@@ -97,23 +98,21 @@ class ManagerViewModel @Inject constructor(
     }
 
     fun createDiscount(
-        code: String,
         discountType: String,
         value: java.math.BigDecimal,
         validFrom: String,
         validTo: String,
-        productId: Long? = null,
+        scope: String,
         categoryId: Long? = null
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCreatingDiscount = true)
             val request = CreateDiscountRequest(
-                code = code,
                 discountType = discountType,
                 value = value,
                 validFrom = validFrom,
                 validTo = validTo,
-                productId = productId,
+                scope = scope,
                 categoryId = categoryId
             )
             when (val result = managerRepository.createDiscount(request)) {
@@ -159,13 +158,23 @@ class ManagerViewModel @Inject constructor(
     fun createPromotion(
         name: String,
         description: String,
+        code: String?,
+        discountType: String,
+        value: java.math.BigDecimal,
         validFrom: String,
-        validTo: String,
-        discountId: Long
+        validTo: String
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCreatingPromotion = true)
-            val request = CreatePromotionRequest(name, description, validFrom, validTo, discountId)
+            val request = CreatePromotionRequest(
+                name = name,
+                description = description,
+                code = code?.trim()?.takeIf { it.isNotBlank() },
+                discountType = discountType,
+                value = value,
+                validFrom = validFrom,
+                validTo = validTo
+            )
             when (val result = managerRepository.createPromotion(request)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -177,6 +186,28 @@ class ManagerViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isCreatingPromotion = false,
                         error = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun deletePromotion(id: Long) {
+        if (_uiState.value.deletingPromotionId == id) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(deletingPromotionId = id)
+            when (val result = managerRepository.deletePromotion(id)) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        promotions = _uiState.value.promotions.filter { it.id != id },
+                        deletingPromotionId = null
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        error = result.message,
+                        deletingPromotionId = null
                     )
                 }
                 is Resource.Loading -> Unit

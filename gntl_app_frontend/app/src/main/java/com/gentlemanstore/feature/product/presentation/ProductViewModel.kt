@@ -3,6 +3,8 @@ package com.gentlemanstore.feature.product.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.util.Resource
+import com.gentlemanstore.feature.product.data.dto.CategoryResponse
+import com.gentlemanstore.feature.product.data.dto.CreateProductRequest
 import com.gentlemanstore.feature.product.data.dto.ProductResponse
 import com.gentlemanstore.feature.product.data.dto.ProductSizeResponse
 import com.gentlemanstore.feature.product.domain.ProductRepository
@@ -17,6 +19,7 @@ data class ProductListUiState(
     val isLoading: Boolean = false,
     val products: List<ProductResponse> = emptyList(),
     val categories: List<String> = emptyList(),
+    val categoryOptions: List<CategoryResponse> = emptyList(),
     val selectedCategory: String? = null,
     val searchQuery: String = "",
     val error: String? = null,
@@ -33,6 +36,14 @@ data class ProductDetailUiState(
     val selectedSize: ProductSizeResponse? = null
 )
 
+// Stanje employee CRUD operacija nad proizvodima
+data class ProductMutationUiState(
+    val isSaving: Boolean = false,
+    val deletingId: Long? = null,
+    val error: String? = null,
+    val saveSuccess: Boolean = false
+)
+
 @HiltViewModel
 class ProductViewModel @Inject constructor(
     private val productRepository: ProductRepository
@@ -45,6 +56,9 @@ class ProductViewModel @Inject constructor(
 
     private val _detailUiState = MutableStateFlow(ProductDetailUiState())
     val detailUiState: StateFlow<ProductDetailUiState> = _detailUiState.asStateFlow()
+
+    private val _mutationUiState = MutableStateFlow(ProductMutationUiState())
+    val mutationUiState: StateFlow<ProductMutationUiState> = _mutationUiState.asStateFlow()
 
     val sortedProducts: List<ProductResponse>
         get() = getSortedProducts(_listUiState.value.products, _listUiState.value.sortOption)
@@ -168,12 +182,74 @@ class ProductViewModel @Inject constructor(
             when (val result = productRepository.getCategories()) {
                 is Resource.Success -> {
                     _listUiState.value = _listUiState.value.copy(
-                        categories = listOf("All") + result.data.map { it.name }
+                        categories = listOf("All") + result.data.map { it.name },
+                        categoryOptions = result.data
                     )
                 }
                 else -> Unit
             }
         }
+    }
+
+    // ---------- Employee CRUD ----------
+
+    fun createProduct(request: CreateProductRequest) {
+        viewModelScope.launch {
+            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null)
+            when (val result = productRepository.createProduct(request)) {
+                is Resource.Success -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, saveSuccess = true)
+                    loadProducts(refresh = true)
+                }
+                is Resource.Error -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, error = result.message)
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun updateProduct(id: Long, request: CreateProductRequest) {
+        viewModelScope.launch {
+            _mutationUiState.value = _mutationUiState.value.copy(isSaving = true, error = null)
+            when (val result = productRepository.updateProduct(id, request)) {
+                is Resource.Success -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, saveSuccess = true)
+                    loadProducts(refresh = true)
+                }
+                is Resource.Error -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(isSaving = false, error = result.message)
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun deleteProduct(id: Long) {
+        if (_mutationUiState.value.deletingId == id) return
+        viewModelScope.launch {
+            _mutationUiState.value = _mutationUiState.value.copy(deletingId = id, error = null)
+            when (val result = productRepository.deleteProduct(id)) {
+                is Resource.Success -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(deletingId = null)
+                    _listUiState.value = _listUiState.value.copy(
+                        products = _listUiState.value.products.filter { it.id != id }
+                    )
+                }
+                is Resource.Error -> {
+                    _mutationUiState.value = _mutationUiState.value.copy(deletingId = null, error = result.message)
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun clearMutationError() {
+        _mutationUiState.value = _mutationUiState.value.copy(error = null)
+    }
+
+    fun resetSaveSuccess() {
+        _mutationUiState.value = _mutationUiState.value.copy(saveSuccess = false)
     }
 
     fun onSortChange(sort: String) {

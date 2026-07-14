@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface UserPromotionRepository extends JpaRepository<UserPromotion, Long> {
     List<UserPromotion> findAllByUserIdAndDeletedFalse(Long userId);
+    boolean existsByUserIdAndPromotionIdAndDeletedFalse(Long userId, Long promotionId);
 }

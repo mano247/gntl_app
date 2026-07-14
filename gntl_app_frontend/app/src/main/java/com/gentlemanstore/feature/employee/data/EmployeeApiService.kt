@@ -12,7 +12,8 @@ interface EmployeeApiService {
     @GET("orders/paged")
     suspend fun getAllOrders(
         @Query("page") page: Int,
-        @Query("size") size: Int = 20
+        @Query("size") size: Int = 20,
+        @Query("status") status: String? = null
     ): ApiResponse<PagedOrderResponse>
 
     @PUT("orders/{id}/status")

@@ -3,7 +3,7 @@ package com.gentlemanstore.feature.cart.data
 import com.gentlemanstore.core.network.ApiResponse
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
-import com.gentlemanstore.feature.manager.data.dto.DiscountResponse
+import com.gentlemanstore.feature.manager.data.dto.PromotionResponse
 import com.gentlemanstore.feature.order.data.dto.CheckoutRequest
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import retrofit2.http.Body
@@ -35,5 +35,5 @@ interface CartApiService {
     @GET("discounts/validate/{code}")
     suspend fun validatePromoCode(
         @Path("code") code: String
-    ): ApiResponse<DiscountResponse>
+    ): ApiResponse<PromotionResponse>
 }

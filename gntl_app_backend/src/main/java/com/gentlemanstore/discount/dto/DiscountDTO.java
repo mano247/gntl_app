@@ -12,13 +12,11 @@ import java.time.LocalDateTime;
 @Builder
 public class DiscountDTO {
     private Long id;
-    private String code;
     private String discountType;
     private BigDecimal value;
     private LocalDateTime validFrom;
     private LocalDateTime validTo;
-    private Long productId;
-    private String productName;
+    private String scope;
     private Long categoryId;
     private String categoryName;
 }

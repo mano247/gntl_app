@@ -14,9 +14,9 @@ import javax.inject.Singleton
 class OrderRepository @Inject constructor(
     private val orderApiService: OrderApiService
 ){
-    suspend fun getMyOrders(page: Int, size: Int = 20): Resource<PagedOrderResponse> {
+    suspend fun getMyOrders(page: Int, size: Int = 20, status: String? = null): Resource<PagedOrderResponse> {
         return try {
-            val response = orderApiService.getMyOrders(page, size)
+            val response = orderApiService.getMyOrders(page, size, status)
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))

@@ -24,12 +24,6 @@ public class DiscountController {
 
     private final DiscountService service;
 
-    @GetMapping("/code/{code}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<DiscountDTO>> getDiscount(@PathVariable String code){
-        return ResponseEntity.ok(ApiResponse.success("Discount retrieved successfully", service.getDiscount(code)));
-    }
-
     @GetMapping()
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<List<DiscountDTO>>> getAllDiscounts(){
@@ -50,6 +44,12 @@ public class DiscountController {
         return ResponseEntity.ok(ApiResponse.success("Discount deleted successfully", null));
     }
 
+    @GetMapping("/promotions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<List<PromotionDTO>>> getAllPromotions(){
+        return ResponseEntity.ok(ApiResponse.success("Promotions retrieved successfully", service.getAllPromotions()));
+    }
+
     @GetMapping("/promotions/active")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<List<PromotionDTO>>> getActivePromotions(){
@@ -63,19 +63,19 @@ public class DiscountController {
                 .body(ApiResponse.success("Promotion created successfully", service.createPromotion(request)));
     }
 
-    @PostMapping("/promotions/{promotionId}/apply/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER', 'EMPLOYEE')")
-    public ResponseEntity<ApiResponse<Void>> applyPromotion(@PathVariable Long promotionId, @PathVariable Long userId, @AuthenticationPrincipal User currentUser){
-        service.applyPromotion(userId, promotionId, currentUser);
-        return ResponseEntity.ok(ApiResponse.success("Promotion applied successfully", null));
+    @DeleteMapping("/promotions/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<ApiResponse<Void>> deletePromotion(@PathVariable Long id){
+        service.deletePromotion(id);
+        return ResponseEntity.ok(ApiResponse.success("Promotion deleted successfully", null));
     }
 
     @GetMapping("/validate/{code}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<DiscountDTO>> validatePromoCode(
+    public ResponseEntity<ApiResponse<PromotionDTO>> validatePromoCode(
             @PathVariable String code,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Promo code valid",
-                service.validateAndUsePromoCode(code, currentUser.getId())));
+                service.validatePromoCode(code, currentUser.getId())));
     }
 }

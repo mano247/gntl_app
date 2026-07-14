@@ -22,11 +22,16 @@ interface ManagerApiService {
         @Path("id") id: Long
     ): ApiResponse<Unit>
 
-    @GET("discounts/promotions/active")
-    suspend fun getActivePromotions(): ApiResponse<List<PromotionResponse>>
+    @GET("discounts/promotions")
+    suspend fun getAllPromotions(): ApiResponse<List<PromotionResponse>>
 
     @POST("discounts/promotions")
     suspend fun createPromotion(
         @Body request: CreatePromotionRequest
     ): ApiResponse<PromotionResponse>
+
+    @DELETE("discounts/promotions/{id}")
+    suspend fun deletePromotion(
+        @Path("id") id: Long
+    ): ApiResponse<Unit>
 }

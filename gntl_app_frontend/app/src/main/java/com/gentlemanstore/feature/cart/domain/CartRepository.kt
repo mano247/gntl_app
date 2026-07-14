@@ -6,7 +6,7 @@ import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.cart.data.CartApiService
 import com.gentlemanstore.feature.cart.data.dto.AddToCartRequest
 import com.gentlemanstore.feature.cart.data.dto.CartResponse
-import com.gentlemanstore.feature.manager.data.dto.DiscountResponse
+import com.gentlemanstore.feature.manager.data.dto.PromotionResponse
 import com.gentlemanstore.feature.order.data.dto.CheckoutRequest
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import javax.inject.Inject
@@ -58,7 +58,7 @@ class CartRepository @Inject constructor(
         }
     }
 
-    suspend fun validatePromoCode(code: String): Resource<DiscountResponse> {
+    suspend fun validatePromoCode(code: String): Resource<PromotionResponse> {
         return try {
             val response = cartApiService.validatePromoCode(code)
             response.toResource()

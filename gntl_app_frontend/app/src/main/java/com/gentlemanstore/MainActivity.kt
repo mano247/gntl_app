@@ -306,6 +306,9 @@ class MainActivity : ComponentActivity() {
                                 onOpenChat = { ticketId, sessionId ->
                                     navController.navigate("chat/$ticketId/$sessionId")
                                 },
+                                onProductClick = { productId ->
+                                    navController.navigate("product_detail/$productId")
+                                },
                                 onLogout = {
                                     lifecycleScope.launch {
                                         authRepository.logout()

@@ -31,9 +31,11 @@ import com.gentlemanstore.ui.theme.Gold500
 @Composable
 fun EmployeeHomeScreen(
     onOpenChat: (Long, Long) -> Unit,
+    onProductClick: (Long) -> Unit,
     onLogout: () -> Unit,
     onShowError: (String) -> Unit = {},
-    viewModel: EmployeeViewModel = hiltViewModel()
+    viewModel: EmployeeViewModel = hiltViewModel(),
+    productViewModel: com.gentlemanstore.feature.product.presentation.ProductViewModel = hiltViewModel()
 ) {
     val ordersState by viewModel.ordersUiState.collectAsStateWithLifecycle()
     val ticketsState by viewModel.ticketsUiState.collectAsStateWithLifecycle()
@@ -52,7 +54,7 @@ fun EmployeeHomeScreen(
     }
 
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Orders", "Support Tickets")
+    val tabs = listOf("Orders", "Support Tickets", "Products")
 
     Column(
         modifier = Modifier
@@ -99,6 +101,11 @@ fun EmployeeHomeScreen(
                 onOpenChat = onOpenChat,
                 onRefresh = { viewModel.loadTickets() },
                 onStatusFilter = { viewModel.onTicketStatusFilter(it) }
+            )
+            2 -> EmployeeProductsTab(
+                onProductClick = onProductClick,
+                onShowError = onShowError,
+                viewModel = productViewModel
             )
         }
     }
@@ -149,7 +156,9 @@ private fun EmployeeOrdersTab(
                         CircularProgressIndicator(color = Gold500)
                     }
                 }
-                filteredOrders.isEmpty() -> {
+                // Empty state tek kad su sve stranice iscrpljene (ili je zahtev pao) —
+                // inače prazna filtrirana lista sakriva load-more okidač i paginacija se zaglavi.
+                filteredOrders.isEmpty() && (state.isLastPage || state.error != null) -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No orders found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -169,7 +178,9 @@ private fun EmployeeOrdersTab(
                         }
                         if (!state.isLastPage) {
                             item {
-                                LaunchedEffect(Unit) { onLoadMore() }
+                                // Ključ na currentPage: okidač se ponovo aktivira i kad nova
+                                // stranica ne promeni (prazan) filtrirani prikaz.
+                                LaunchedEffect(state.currentPage) { onLoadMore() }
                                 Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                                     if (state.isLoadingMore) {
                                         CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))

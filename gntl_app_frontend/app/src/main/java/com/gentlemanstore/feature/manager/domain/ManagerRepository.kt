@@ -50,9 +50,9 @@ class ManagerRepository @Inject constructor(
         }
     }
 
-    suspend fun getActivePromotions(): Resource<List<PromotionResponse>> {
+    suspend fun getAllPromotions(): Resource<List<PromotionResponse>> {
         return try {
-            val response = managerApiService.getActivePromotions()
+            val response = managerApiService.getAllPromotions()
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
@@ -63,6 +63,15 @@ class ManagerRepository @Inject constructor(
         return try {
             val response = managerApiService.createPromotion(request)
             response.toResource()
+        } catch (e: Exception) {
+            Resource.Error(ErrorMapper.map(e.message))
+        }
+    }
+
+    suspend fun deletePromotion(id: Long): Resource<Unit> {
+        return try {
+            val response = managerApiService.deletePromotion(id)
+            response.toUnitResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))
         }

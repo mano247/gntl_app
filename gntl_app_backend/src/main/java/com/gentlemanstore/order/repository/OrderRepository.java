@@ -1,6 +1,7 @@
 package com.gentlemanstore.order.repository;
 
 import com.gentlemanstore.order.model.Order;
+import com.gentlemanstore.order.model.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
+    Page<Order> findAllByUserIdAndStatusAndDeletedFalse(Long userId, OrderStatus status, Pageable pageable);
     Optional<Order> findByIdAndDeletedFalse(Long id);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.deleted = false")
@@ -26,4 +28,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Object[]> getMonthlyRevenue();
 
     Page<Order> findAllByDeletedFalse(Pageable pageable);
+    Page<Order> findAllByStatusAndDeletedFalse(OrderStatus status, Pageable pageable);
 }

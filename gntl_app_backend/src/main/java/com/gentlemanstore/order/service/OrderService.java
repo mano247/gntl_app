@@ -65,9 +65,24 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OrderDTO> getUserOrdersPaged(Long userId, Pageable pageable) {
-        return repo.findAllByUserIdAndDeletedFalse(userId, pageable)
-                .map(mapper::toDTO);
+    public Page<OrderDTO> getUserOrdersPaged(Long userId, String status, Pageable pageable) {
+        OrderStatus orderStatus = parseStatusFilter(status);
+        Page<Order> page = orderStatus == null
+                ? repo.findAllByUserIdAndDeletedFalse(userId, pageable)
+                : repo.findAllByUserIdAndStatusAndDeletedFalse(userId, orderStatus, pageable);
+        return page.map(mapper::toDTO);
+    }
+
+    // Ista normalizacija kao u updateOrderStatus; null/blank = bez filtera ("ALL").
+    private OrderStatus parseStatusFilter(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return OrderStatus.valueOf(status.trim().replace("\"", "").toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid order status: " + status);
+        }
     }
 
     @Transactional()
@@ -197,9 +212,12 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OrderDTO> getAllOrdersPaged(Pageable pageable) {
-        return repo.findAllByDeletedFalse(pageable)
-                .map(mapper::toDTO);
+    public Page<OrderDTO> getAllOrdersPaged(String status, Pageable pageable) {
+        OrderStatus orderStatus = parseStatusFilter(status);
+        Page<Order> page = orderStatus == null
+                ? repo.findAllByDeletedFalse(pageable)
+                : repo.findAllByStatusAndDeletedFalse(orderStatus, pageable);
+        return page.map(mapper::toDTO);
     }
 
     private void applyLoyaltyDiscount(OrderDTO orderDTO, Long userId) {

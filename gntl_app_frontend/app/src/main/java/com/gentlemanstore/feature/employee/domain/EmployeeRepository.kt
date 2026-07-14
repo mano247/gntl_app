@@ -20,9 +20,9 @@ class EmployeeRepository @Inject constructor(
     private val employeeApiService: EmployeeApiService
 ) {
 
-    suspend fun getAllOrders(page: Int): Resource<PagedOrderResponse> {
+    suspend fun getAllOrders(page: Int, status: String? = null): Resource<PagedOrderResponse> {
         return try {
-            val response = employeeApiService.getAllOrders(page)
+            val response = employeeApiService.getAllOrders(page = page, status = status)
             response.toResource()
         } catch (e: Exception) {
             Resource.Error(ErrorMapper.map(e.message))

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!--
+        Razdvajanje Discounts i Promotions:
+        - discounts = automatski popusti (scope GLOBAL/CATEGORY), bez koda
+        - promotions = promo kodovi (sopstveni code/discount_type/value/active)
+        - user_promotions = trajna evidencija koriscenja, unique po (user, promotion)
+        Postojeci podaci se cuvaju: svaki stari discount code postaje promotion,
+        a evidencija iz user_discounts se preslikava u user_promotions.
+    -->
+
+    <!-- 1. discounts dobija scope kolonu -->
+    <changeSet id="58" author="gentlemanstore">
+        <addColumn tableName="discounts">
+            <column name="scope" type="VARCHAR(20)" defaultValue="GLOBAL">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 2. promotions dobija code/discount_type/value/active kolone (privremeno nullable) -->
+    <changeSet id="59" author="gentlemanstore">
+        <addColumn tableName="promotions">
+            <column name="code" type="VARCHAR(50)"/>
+            <column name="discount_type" type="VARCHAR(20)"/>
+            <column name="value" type="DECIMAL(10,2)"/>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 3. Backfill postojecih promocija iz vezanog discount-a -->
+    <changeSet id="60" author="gentlemanstore">
+        <sql>
+            UPDATE promotions p
+            SET code = d.code,
+                discount_type = d.discount_type,
+                value = d.value
+            FROM discounts d
+            WHERE p.discount_id = d.id;
+        </sql>
+    </changeSet>
+
+    <!-- 4. Svaki discount koji nema promociju dobija "migriranu" promociju,
+            da njegov kod nastavi da radi na checkout-u -->
+    <changeSet id="61" author="gentlemanstore">
+        <sql>
+            INSERT INTO promotions (name, description, valid_from, valid_to, deleted,
+                                    discount_id, code, discount_type, value, active)
+            SELECT 'Promo ' || d.code,
+                   'Migrated from discount code ' || d.code,
+                   d.valid_from,
+                   d.valid_to,
+                   d.deleted,
+                   d.id,
+                   d.code,
+                   d.discount_type,
+                   d.value,
+                   true
+            FROM discounts d
+            WHERE NOT EXISTS (SELECT 1 FROM promotions p WHERE p.discount_id = d.id);
+        </sql>
+    </changeSet>
+
+    <!-- 5. Deduplikacija kodova (vise promocija je moglo deliti isti discount)
+            + fallback za eventualne NULL vrednosti -->
+    <changeSet id="62" author="gentlemanstore">
+        <sql>
+            UPDATE promotions
+            SET code = code || '-' || id
+            WHERE id NOT IN (SELECT MIN(id) FROM promotions WHERE code IS NOT NULL GROUP BY code)
+              AND code IS NOT NULL;
+
+            UPDATE promotions SET code = 'PROMO-' || id WHERE code IS NULL;
+            UPDATE promotions SET discount_type = 'PERCENTAGE' WHERE discount_type IS NULL;
+            UPDATE promotions SET value = 0 WHERE value IS NULL;
+        </sql>
+    </changeSet>
+
+    <!-- 6. NOT NULL + UNIQUE na promotions.code, NOT NULL na type/value -->
+    <changeSet id="63" author="gentlemanstore">
+        <addNotNullConstraint tableName="promotions" columnName="code" columnDataType="VARCHAR(50)"/>
+        <addNotNullConstraint tableName="promotions" columnName="discount_type" columnDataType="VARCHAR(20)"/>
+        <addNotNullConstraint tableName="promotions" columnName="value" columnDataType="DECIMAL(10,2)"/>
+        <addUniqueConstraint tableName="promotions" columnNames="code" constraintName="ux_promotions_code"/>
+    </changeSet>
+
+    <!-- 7. Scope postojecih discounts redova:
+            - category_id != null  -> CATEGORY (ostaje aktivan automatski popust)
+            - product-only i code-only redovi se soft-delete-uju: novi model ne podrzava
+              product scope, a stari code-only discounti se NIKAD nisu automatski primenjivali,
+              pa bi ih GLOBAL scope pogresno aktivirao na sve proizvode.
+              Njihovi kodovi nastavljaju da vaze kroz migrirane promocije (changeset 61). -->
+    <changeSet id="64" author="gentlemanstore">
+        <sql>
+            UPDATE discounts SET scope = 'CATEGORY' WHERE category_id IS NOT NULL;
+
+            UPDATE discounts
+            SET deleted = true
+            WHERE category_id IS NULL AND deleted = false;
+        </sql>
+    </changeSet>
+
+    <!-- 8. discounts.code vise nije obavezan (entitet ga vise ne koristi;
+            kolona i podaci ostaju radi istorije) -->
+    <changeSet id="65" author="gentlemanstore">
+        <dropNotNullConstraint tableName="discounts" columnName="code" columnDataType="VARCHAR(50)"/>
+    </changeSet>
+
+    <!-- 9. Evidencija koriscenja: user_discounts -> user_promotions -->
+    <changeSet id="66" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="user_discounts"/>
+        </preConditions>
+        <sql>
+            INSERT INTO user_promotions (used_at, deleted, user_id, promotion_id)
+            SELECT ud.used_at, false, ud.user_id, p.id
+            FROM user_discounts ud
+            JOIN promotions p ON p.discount_id = ud.discount_id
+            WHERE ud.deleted = false
+              AND NOT EXISTS (SELECT 1 FROM user_promotions up
+                              WHERE up.user_id = ud.user_id
+                                AND up.promotion_id = p.id
+                                AND up.deleted = false);
+        </sql>
+    </changeSet>
+
+    <!-- 10. Deduplikacija + parcijalni unique index koji sprecava da isti customer
+             dva puta iskoristi istu promociju (i pri paralelnim zahtevima) -->
+    <changeSet id="67" author="gentlemanstore">
+        <sql>
+            UPDATE user_promotions
+            SET deleted = true
+            WHERE deleted = false
+              AND id NOT IN (SELECT MIN(id) FROM user_promotions
+                             WHERE deleted = false
+                             GROUP BY user_id, promotion_id);
+
+            CREATE UNIQUE INDEX ux_user_promotions_user_promotion
+                ON user_promotions (user_id, promotion_id)
+                WHERE deleted = false;
+        </sql>
+        <rollback>
+            DROP INDEX IF EXISTS ux_user_promotions_user_promotion;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

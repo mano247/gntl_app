@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -136,10 +137,15 @@ class EmployeeViewModel @Inject constructor(
         }
     }
 
+    // Otkazivanjem prethodnog učitavanja sprečavamo da stariji odgovor
+    // (npr. za prethodno izabrani status) prepiše rezultat novijeg zahteva.
+    private var ordersLoadJob: Job? = null
+
     fun loadOrders() {
-        viewModelScope.launch {
+        ordersLoadJob?.cancel()
+        ordersLoadJob = viewModelScope.launch {
             _ordersUiState.value = _ordersUiState.value.copy(isLoading = true)
-            when (val result = employeeRepository.getAllOrders(0)) {
+            when (val result = employeeRepository.getAllOrders(0, _ordersUiState.value.selectedStatus)) {
                 is Resource.Success -> {
                     _ordersUiState.value = _ordersUiState.value.copy(
                         isLoading = false,
@@ -162,19 +168,20 @@ class EmployeeViewModel @Inject constructor(
 
     fun loadMoreOrders() {
         val state = _ordersUiState.value
-        if (state.isLastPage || state.isLoadingMore) return
+        if (state.isLastPage || state.isLoadingMore || state.isLoading) return
 
-        viewModelScope.launch {
+        ordersLoadJob = viewModelScope.launch {
             _ordersUiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
-            when (val result = employeeRepository.getAllOrders(nextPage)) {
+            when (val result = employeeRepository.getAllOrders(nextPage, state.selectedStatus)) {
                 is Resource.Success -> {
                     _ordersUiState.value = _ordersUiState.value.copy(
                         isLoadingMore = false,
                         orders = state.orders + result.data.content,
                         currentPage = nextPage,
-                        isLastPage = result.data.last
+                        isLastPage = result.data.last,
+                        error = null
                     )
                 }
                 is Resource.Error -> {
@@ -252,6 +259,8 @@ class EmployeeViewModel @Inject constructor(
         _ticketsUiState.value = _ticketsUiState.value.copy(selectedStatus = status)
     }
 
+    // Server već filtrira po statusu; klijentski filter samo uklanja porudžbine
+    // kojima je u međuvremenu promenjen status (updateOrderStatus) iz prikaza.
     val filteredOrders: StateFlow<List<OrderResponse>> = _ordersUiState
         .map { state ->
             if (state.selectedStatus == null) state.orders
@@ -260,7 +269,16 @@ class EmployeeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onOrderStatusFilter(status: String?) {
-        _ordersUiState.value = _ordersUiState.value.copy(selectedStatus = status)
+        if (_ordersUiState.value.selectedStatus == status) return
+        // Reset paginacije i liste — status se šalje serveru, pa se lista učitava ispočetka.
+        _ordersUiState.value = _ordersUiState.value.copy(
+            selectedStatus = status,
+            orders = emptyList(),
+            currentPage = 0,
+            isLastPage = false,
+            isLoadingMore = false
+        )
+        loadOrders()
     }
 
     fun loadUnreadCounts() {

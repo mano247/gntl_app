@@ -6,6 +6,7 @@ import com.gentlemanstore.core.util.Resource
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.feature.order.domain.OrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,11 +35,16 @@ class MyOrdersViewModel @Inject constructor(
         loadOrders()
     }
 
+    // Otkazivanjem prethodnog učitavanja sprečavamo da stariji odgovor
+    // (npr. za prethodno izabrani status) prepiše rezultat novijeg zahteva.
+    private var loadJob: Job? = null
+
     fun loadOrders() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            when (val result = orderRepository.getMyOrders(page = 0)) {
+            when (val result = orderRepository.getMyOrders(page = 0, status = _uiState.value.selectedStatus)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -61,19 +67,20 @@ class MyOrdersViewModel @Inject constructor(
 
     fun loadMoreOrders() {
         val state = _uiState.value
-        if (state.isLastPage || state.isLoadingMore || state.orders.isEmpty()) return
+        if (state.isLastPage || state.isLoadingMore || state.isLoading || state.orders.isEmpty()) return
 
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             _uiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
-            when (val result = orderRepository.getMyOrders(page = nextPage)) {
+            when (val result = orderRepository.getMyOrders(page = nextPage, status = state.selectedStatus)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingMore = false,
                         orders = state.orders + result.data.content,
                         currentPage = nextPage,
-                        isLastPage = result.data.last
+                        isLastPage = result.data.last,
+                        error = null
                     )
                 }
                 is Resource.Error -> {
@@ -87,6 +94,8 @@ class MyOrdersViewModel @Inject constructor(
         }
     }
 
+    // Server već filtrira po statusu; klijentski filter je samo zaštita
+    // ako neka porudžbina promeni status dok je lista učitana.
     val filteredOrders: List<OrderResponse>
         get() = if (_uiState.value.selectedStatus == null) {
             _uiState.value.orders
@@ -95,6 +104,15 @@ class MyOrdersViewModel @Inject constructor(
         }
 
     fun onStatusFilter(status: String?) {
-        _uiState.value = _uiState.value.copy(selectedStatus = status)
+        if (_uiState.value.selectedStatus == status) return
+        // Reset paginacije i liste — status se šalje serveru, pa se lista učitava ispočetka.
+        _uiState.value = _uiState.value.copy(
+            selectedStatus = status,
+            orders = emptyList(),
+            currentPage = 0,
+            isLastPage = false,
+            isLoadingMore = false
+        )
+        loadOrders()
     }
 }

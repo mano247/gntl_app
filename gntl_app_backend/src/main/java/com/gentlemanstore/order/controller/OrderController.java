@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,20 +32,25 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", service.getOrder(id, currentUser)));
     }
 
+    // Bez default sortiranja stranice su nedeterminističke (nema ORDER BY),
+    // pa se ista porudžbina može pojaviti/nestati između zahteva.
     @GetMapping("/my/paged")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<Page<OrderDTO>>> getMyOrdersPaged(
             @AuthenticationPrincipal User currentUser,
-            Pageable pageable){
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully",
-                service.getUserOrdersPaged(currentUser.getId(), pageable)));
+                service.getUserOrdersPaged(currentUser.getId(), status, pageable)));
     }
 
     @GetMapping("/paged")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'MANAGER')")
-    public ResponseEntity<ApiResponse<Page<OrderDTO>>> getAllOrdersPaged(Pageable pageable){
+    public ResponseEntity<ApiResponse<Page<OrderDTO>>> getAllOrdersPaged(
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable){
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully",
-                service.getAllOrdersPaged(pageable)));
+                service.getAllOrdersPaged(status, pageable)));
     }
 
     @PutMapping("/{id}/status")

@@ -14,14 +14,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class CreateDiscountRequest {
-    @NotBlank
-    private String code;
-
     @NotNull
     private String discountType;
 
     @NotNull
-    @DecimalMin("0.0")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Value must be greater than 0")
     private BigDecimal value;
 
     @NotNull
@@ -30,7 +27,8 @@ public class CreateDiscountRequest {
     @NotNull
     private LocalDateTime validTo;
 
-    private Long productId;
+    @NotBlank(message = "Scope is required")
+    private String scope;
 
     private Long categoryId;
 }
