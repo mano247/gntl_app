@@ -62,7 +62,9 @@ fun EmployeeHomeScreen(
         viewModel.loadTickets()
     }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    // Tab state u ViewModelu (SavedStateHandle) — preživljava povratak iz
+    // Chat/Product detail ekrana; lokalni remember se gubio pri rekreaciji.
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val tabs = listOf("Orders", "Support Tickets", "Products")
 
     Column(
@@ -88,7 +90,7 @@ fun EmployeeHomeScreen(
             tabs.forEachIndexed { index, title ->
                 Tab(
                     selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    onClick = { viewModel.onTabSelected(index) },
                     text = { Text(text = title, color = if (selectedTab == index) Gold500 else MaterialTheme.colorScheme.onSurfaceVariant) }
                 )
             }
@@ -298,6 +300,13 @@ private fun EmployeeOrderCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
+            if (order.customerName != null || order.customerEmail != null) {
+                Text(
+                    text = listOfNotNull(order.customerName, order.customerEmail).joinToString(" · "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Gold500
+                )
+            }
             Text(text = "Ordered: ${order.createdAt.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(text = "${order.items.size} items · ${order.finalPrice ?: order.totalPrice} din", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
@@ -444,6 +453,34 @@ private fun EmployeeTicketCard(
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = ticket.subject, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(text = ticket.userEmail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Urgency + povezana porudžbina — badge red (order badge se ne
+            // prikazuje ako tiket nije vezan za porudžbinu)
+            if (ticket.urgency != null || ticket.orderId != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    ticket.urgency?.let { urgency ->
+                        val urgencyColor = com.gentlemanstore.feature.support.presentation.getUrgencyColor(urgency)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(urgencyColor.copy(alpha = 0.2f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(text = urgency, style = MaterialTheme.typography.labelSmall, color = urgencyColor, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    ticket.orderId?.let { orderId ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(Gold500.copy(alpha = 0.15f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(text = "Order #$orderId", style = MaterialTheme.typography.labelSmall, color = Gold500)
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(modifier = Modifier.weight(1f)) {

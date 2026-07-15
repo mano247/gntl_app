@@ -20,6 +20,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.deleted = false AND MONTH(u.createdAt) = MONTH(CURRENT_DATE) AND YEAR(u.createdAt) = YEAR(CURRENT_DATE)")
     Integer countNewUsersThisMonth();
 
+    // Novi korisnici u opsegu [from, to) — mesečni izveštaji i current-month
+    // dashboard (testabilno, bez oslanjanja na CURRENT_DATE baze).
+    @Query("SELECT COUNT(u) FROM User u WHERE u.deleted = false AND u.createdAt >= :from AND u.createdAt < :to")
+    Integer countNewUsersBetween(@org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from,
+                                 @org.springframework.data.repository.query.Param("to") java.time.LocalDateTime to);
+
+    @Query("SELECT MIN(u.createdAt) FROM User u WHERE u.deleted = false")
+    java.time.LocalDateTime getEarliestUserDate();
+
     @Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE u.deleted = false AND r.name = :roleName")
     List<User> findAllActiveByRoleName(@org.springframework.data.repository.query.Param("roleName") com.gentlemanstore.user.model.RoleName roleName);
 }

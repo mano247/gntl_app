@@ -73,10 +73,13 @@ class EmployeeViewModelTest {
         numberOfElements = orders.size
     )
 
-    private fun createViewModel() = EmployeeViewModel(
+    private fun createViewModel(
+        savedStateHandle: androidx.lifecycle.SavedStateHandle = androidx.lifecycle.SavedStateHandle()
+    ) = EmployeeViewModel(
         employeeRepository = employeeRepository,
         supportRepository = supportRepository,
-        badgeWebSocketManager = badgeWebSocketManager
+        badgeWebSocketManager = badgeWebSocketManager,
+        savedStateHandle = savedStateHandle
     )
 
     @Test
@@ -184,5 +187,62 @@ class EmployeeViewModelTest {
         assertEquals(listOf(1L, 2L), state.orders.map { it.id })
         assertEquals(1, state.currentPage)
         assertTrue(state.isLastPage)
+    }
+
+    // ---------- aktivni tab (povratak iz Chat / Product detail) ----------
+
+    @Test
+    fun `tab pocinje na Orders i menja se kroz onTabSelected`() = runTest(testDispatcher) {
+        coEvery { employeeRepository.getAllOrders(any(), any()) } returns
+                Resource.Success(page(emptyList()))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals("default je Orders tab", 0, viewModel.selectedTab.value)
+        viewModel.onTabSelected(1)
+        assertEquals("Support Tickets tab", 1, viewModel.selectedTab.value)
+        viewModel.onTabSelected(2)
+        assertEquals("Products tab", 2, viewModel.selectedTab.value)
+    }
+
+    @Test
+    fun `tab se cuva u SavedStateHandle i vraca posle rekreacije`() = runTest(testDispatcher) {
+        coEvery { employeeRepository.getAllOrders(any(), any()) } returns
+                Resource.Success(page(emptyList()))
+
+        val handle = androidx.lifecycle.SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+        advanceUntilIdle()
+
+        viewModel.onTabSelected(1) // Support Tickets
+        assertEquals(1, handle.get<Int>("employee_selected_tab"))
+
+        // Rekreacija (novi VM sa sacuvanim handle stanjem — process death / povratak)
+        val restored = createViewModel(
+            savedStateHandle = androidx.lifecycle.SavedStateHandle(mapOf("employee_selected_tab" to 1))
+        )
+        advanceUntilIdle()
+        assertEquals("povratak iz Chat-a vraca Support tab", 1, restored.selectedTab.value)
+    }
+
+    @Test
+    fun `refresh pri povratku ne resetuje tab ni status filter`() = runTest(testDispatcher) {
+        coEvery { employeeRepository.getAllOrders(any(), any()) } returns
+                Resource.Success(page(emptyList()))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onTabSelected(1)
+        viewModel.onTicketStatusFilter("IN_PROGRESS")
+
+        // Povratak na ekran ponovo pokrece ucitavanje (LaunchedEffect u ekranu)
+        viewModel.loadOrders()
+        viewModel.loadTickets()
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.selectedTab.value)
+        assertEquals("IN_PROGRESS", viewModel.ticketsUiState.value.selectedStatus)
     }
 }

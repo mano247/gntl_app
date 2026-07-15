@@ -76,7 +76,16 @@ fun ManagerHomeScreen(
         }
 
         when (selectedTab) {
-            0 -> AnalyticsTab(analytics = uiState.analytics, onRefresh = { viewModel.loadDashboard() })
+            0 -> AnalyticsTab(
+                analytics = uiState.analytics,
+                monthlyReports = uiState.monthlyReports,
+                isLoadingReports = uiState.isLoadingReports,
+                reportsError = uiState.reportsError,
+                onRefresh = {
+                    viewModel.loadDashboard()
+                    viewModel.loadMonthlyReports()
+                }
+            )
             1 -> DiscountsTab(
                 discounts = uiState.discounts,
                 categories = uiState.categories,
@@ -106,10 +115,21 @@ fun ManagerHomeScreen(
     }
 }
 
+// "July 2026" iz (year, month); 0 = stariji backend bez perioda
+private fun formatPeriod(year: Int, month: Int): String? {
+    if (year <= 0 || month !in 1..12) return null
+    val monthName = java.time.Month.of(month)
+        .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+    return "$monthName $year"
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun AnalyticsTab(
     analytics: com.gentlemanstore.feature.manager.data.dto.AnalyticsResponse?,
+    monthlyReports: List<com.gentlemanstore.feature.manager.data.dto.MonthlyReportResponse>,
+    isLoadingReports: Boolean,
+    reportsError: String?,
     onRefresh: () -> Unit
 ) {
     val pullRefreshState = rememberPullRefreshState(
@@ -128,6 +148,24 @@ private fun AnalyticsTab(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Oznaka perioda — dashboard metrike se odnose na tekući mesec
+                item {
+                    Column {
+                        Text(
+                            text = "CURRENT MONTH",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        formatPeriod(analytics.year, analytics.month)?.let { period ->
+                            Text(
+                                text = period,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Gold500,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
                 item {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AnalyticsCard(modifier = Modifier.weight(1f), title = "Total Revenue", value = "${analytics.totalRevenue} din")
@@ -143,11 +181,58 @@ private fun AnalyticsTab(
                 item {
                     Text(text = "TOP PRODUCTS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                if (analytics.topProducts.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No sales this month yet",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 items(analytics.topProducts) { product ->
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(text = product.productName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                             Text(text = "${product.totalSold} sold", style = MaterialTheme.typography.bodyMedium, color = Gold500, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Istorija završenih meseci — trajni snapshot-i sa backenda
+                item {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "MONTHLY REPORTS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                when {
+                    isLoadingReports && monthlyReports.isEmpty() -> {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    }
+                    reportsError != null && monthlyReports.isEmpty() -> {
+                        item {
+                            Text(
+                                text = reportsError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    monthlyReports.isEmpty() -> {
+                        item {
+                            Text(
+                                text = "No monthly reports yet",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    else -> {
+                        items(monthlyReports, key = { it.id }) { report ->
+                            MonthlyReportCard(report = report)
                         }
                     }
                 }
@@ -161,6 +246,88 @@ private fun AnalyticsTab(
             backgroundColor = MaterialTheme.colorScheme.surface,
             contentColor = Gold500
         )
+    }
+}
+
+// Kartica završenog meseca — klik za expand sa detaljima i top proizvodima
+@Composable
+private fun MonthlyReportCard(report: com.gentlemanstore.feature.manager.data.dto.MonthlyReportResponse) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatPeriod(report.year, report.month) ?: "${report.year}-${report.month}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${report.totalRevenue} din",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Gold500,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = if (expanded) "Hide details ▲" else "Show details ▼",
+                style = MaterialTheme.typography.labelSmall,
+                color = Gold500
+            )
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                Spacer(modifier = Modifier.height(8.dp))
+                ReportDetailRow(label = "Total Orders", value = report.totalOrders.toString())
+                ReportDetailRow(label = "New Users", value = report.newUsers.toString())
+                ReportDetailRow(label = "Avg Order", value = "${"%.2f".format(report.averageOrderValue)} din")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "TOP PRODUCTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (report.topProducts.isEmpty()) {
+                    Text(
+                        text = "No sales this month",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    report.topProducts.forEach { product ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = product.productName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(text = "${product.totalSold} sold", style = MaterialTheme.typography.bodySmall, color = Gold500)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

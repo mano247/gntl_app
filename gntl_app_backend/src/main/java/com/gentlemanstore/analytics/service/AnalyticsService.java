@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,17 +25,33 @@ public class AnalyticsService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final OrderItemRepository orderItemRepository;
+    private final Clock clock;
 
+    /**
+     * Dashboard metrike se odnose na TEKUĆI kalendarski mesec (year/month u
+     * odgovoru) — istorija završenih meseci živi u mesečnim izveštajima
+     * (MonthlyReportService). monthlyRevenue ostaje istorijska serija po
+     * mesecima za grafikon.
+     */
     @Transactional(readOnly = true)
     public AnalyticsDTO getDashboardAnalytics() {
-        Integer totalOrders = orderRepository.countTotalOrders();
+        YearMonth currentMonth = YearMonth.now(clock);
+        LocalDateTime from = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime to = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
 
-        BigDecimal averageOrderValue = orderRepository.getAverageOrderValue();
+        Integer totalOrders = orderRepository.countOrdersBetween(from, to);
+
+        BigDecimal totalRevenue = orderRepository.getRevenueBetween(from, to);
+        if (totalRevenue == null) {
+            totalRevenue = BigDecimal.ZERO;
+        }
+
+        BigDecimal averageOrderValue = orderRepository.getAverageOrderValueBetween(from, to);
         if (averageOrderValue == null) {
             averageOrderValue = BigDecimal.ZERO;
         }
 
-        Integer newUsers = userRepository.countNewUsersThisMonth();
+        Integer newUsers = userRepository.countNewUsersBetween(from, to);
 
         List<MonthlyRevenueDTO> monthlyRevenue = orderRepository.getMonthlyRevenue()
                 .stream()
@@ -43,7 +62,8 @@ public class AnalyticsService {
                         .build())
                 .collect(Collectors.toList());
 
-        List<TopProductDTO> topProducts = orderItemRepository.getTopProducts(PageRequest.of(0, 5))
+        List<TopProductDTO> topProducts = orderItemRepository
+                .getTopProductsBetween(from, to, PageRequest.of(0, 5))
                 .stream()
                 .map(row -> TopProductDTO.builder()
                         .productName((String) row[0])
@@ -51,14 +71,12 @@ public class AnalyticsService {
                         .build())
                 .collect(Collectors.toList());
 
-        BigDecimal totalRevenue = monthlyRevenue.stream()
-                .map(MonthlyRevenueDTO::getRevenue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         return AnalyticsDTO.builder()
+                .year(currentMonth.getYear())
+                .month(currentMonth.getMonthValue())
                 .totalRevenue(totalRevenue)
-                .totalOrders(totalOrders)
-                .newUsers(newUsers)
+                .totalOrders(totalOrders == null ? 0 : totalOrders)
+                .newUsers(newUsers == null ? 0 : newUsers)
                 .averageOrderValue(averageOrderValue)
                 .monthlyRevenue(monthlyRevenue)
                 .topProducts(topProducts)

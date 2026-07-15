@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- Strukturisana hitnost tiketa (LOW/MEDIUM/HIGH). Postojeći tiketi
+         dobijaju razumnu default vrednost MEDIUM — bez brisanja podataka. -->
+    <changeSet id="69" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="support_tickets" columnName="urgency"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="support_tickets">
+            <column name="urgency" type="VARCHAR(20)" defaultValue="MEDIUM">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Opciona veza tiketa ka porudžbini. Nullable — tiket ne mora biti
+         vezan za porudžbinu; postojeći tiketi ostaju bez veze. -->
+    <changeSet id="70" author="gentlemanstore">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="support_tickets" columnName="order_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="support_tickets">
+            <column name="order_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addForeignKeyConstraint
+                baseTableName="support_tickets"
+                baseColumnNames="order_id"
+                constraintName="fk_support_tickets_order"
+                referencedTableName="orders"
+                referencedColumnNames="id"/>
+        <createIndex tableName="support_tickets" indexName="idx_support_tickets_order_id">
+            <column name="order_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Tekst bot pitanja 2 i 3 prilagođen strukturisanom unosu (izbor
+         porudžbine iz liste / izbor hitnosti) umesto slobodnog teksta. -->
+    <changeSet id="71" author="gentlemanstore">
+        <update tableName="bot_questions">
+            <column name="question" value="Is the problem related to an order? Select an order from the list."/>
+            <where>order_index = 2 AND deleted = false</where>
+        </update>
+        <update tableName="bot_questions">
+            <column name="question" value="How would you rate the urgency of your problem?"/>
+            <where>order_index = 3 AND deleted = false</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

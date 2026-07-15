@@ -17,6 +17,10 @@ public interface SupportMapper {
     @Mapping(source = "status", target = "status")
     @Mapping(source = "chatSession.id", target = "sessionId")
     @Mapping(target = "unreadCount", constant = "0")
+    @Mapping(target = "customerName", expression = "java(ticket.getUser() == null ? null : (ticket.getUser().getFirstName() + \" \" + ticket.getUser().getLastName()).trim())")
+    @Mapping(source = "urgency", target = "urgency")
+    @Mapping(source = "order.id", target = "orderId")
+    @Mapping(source = "order.status", target = "orderStatus")
     SupportTicketDTO toDTO(SupportTicket ticket);
 
     @Mapping(source = "sender", target = "sender")

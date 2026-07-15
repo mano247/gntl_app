@@ -9,6 +9,9 @@ interface ManagerApiService {
     @GET("analytics/dashboard")
     suspend fun getDashboard(): ApiResponse<AnalyticsResponse>
 
+    @GET("analytics/reports")
+    suspend fun getMonthlyReports(): ApiResponse<List<MonthlyReportResponse>>
+
     @GET("discounts")
     suspend fun getAllDiscounts(): ApiResponse<List<DiscountResponse>>
 

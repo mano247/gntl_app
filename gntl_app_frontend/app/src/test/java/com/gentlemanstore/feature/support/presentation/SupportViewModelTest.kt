@@ -37,6 +37,7 @@ class SupportViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var supportRepository: SupportRepository
+    private lateinit var orderRepository: com.gentlemanstore.feature.order.domain.OrderRepository
     private lateinit var tokenDataStore: TokenDataStore
     private lateinit var chatWebSocketManager: ChatWebSocketManager
     private lateinit var badgeWebSocketManager: BadgeWebSocketManager
@@ -45,6 +46,7 @@ class SupportViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         supportRepository = mockk()
+        orderRepository = mockk()
         tokenDataStore = mockk()
         chatWebSocketManager = mockk(relaxed = true)
         badgeWebSocketManager = mockk(relaxed = true)
@@ -91,6 +93,7 @@ class SupportViewModelTest {
 
     private fun createViewModel() = SupportViewModel(
         supportRepository = supportRepository,
+        orderRepository = orderRepository,
         tokenDataStore = tokenDataStore,
         chatWebSocketManager = chatWebSocketManager,
         badgeWebSocketManager = badgeWebSocketManager
@@ -175,6 +178,108 @@ class SupportViewModelTest {
         assertTrue(state.tickets.none { it.id == 1L })
         assertEquals("Ticket deleted successfully!", state.successMessage)
         assertEquals(0, state.unreadByStatus["OPEN"])
+    }
+
+    // ---------- bot flow: izbor porudžbine + strukturisana hitnost ----------
+
+    private fun botQuestions() = listOf(
+        com.gentlemanstore.feature.support.data.dto.BotQuestionResponse(1, "Opišite problem", 1),
+        com.gentlemanstore.feature.support.data.dto.BotQuestionResponse(2, "Da li se odnosi na porudžbinu?", 2),
+        com.gentlemanstore.feature.support.data.dto.BotQuestionResponse(3, "Kolika je hitnost?", 3)
+    )
+
+    private fun myOrder(id: Long) = com.gentlemanstore.feature.order.data.dto.OrderResponse(
+        id = id,
+        totalPrice = java.math.BigDecimal.TEN,
+        status = "DELIVERED",
+        createdAt = "2026-07-01T00:00:00",
+        items = emptyList(),
+        loyaltyDiscount = null,
+        finalPrice = null,
+        promoDiscount = null
+    )
+
+    private fun setUpBotFlowMocks() {
+        coEvery { supportRepository.getBotQuestions() } returns Resource.Success(botQuestions())
+        coEvery { orderRepository.getMyOrders(page = 0, status = null) } returns Resource.Success(
+            com.gentlemanstore.feature.order.data.dto.PagedOrderResponse(
+                content = listOf(myOrder(38)),
+                totalPages = 1, totalElements = 1, last = true, first = true,
+                number = 0, size = 20, numberOfElements = 1
+            )
+        )
+        coEvery { supportRepository.saveBotResponse(any(), any(), any()) } returns Resource.Success(
+            com.gentlemanstore.feature.support.data.dto.BotResponseResponse(1, "odgovor", "pitanje")
+        )
+    }
+
+    @Test
+    fun `bot flow salje izabrani order i urgency pri kreiranju tiketa`() = runTest(testDispatcher) {
+        setUpBotFlowMocks()
+        coEvery {
+            supportRepository.createTicket(subject = "Opis problema", orderId = 38L, urgency = "HIGH")
+        } returns Resource.Success(ticket(9, "OPEN"))
+
+        val viewModel = createViewModel()
+        viewModel.startBotFlow()
+        advanceUntilIdle()
+
+        assertEquals("porudžbine za korak 2 su učitane",
+            1, viewModel.botFlowUiState.value.myOrders.size)
+
+        viewModel.onBotAnswerChange("Opis problema")
+        viewModel.submitBotAnswer()
+        viewModel.onOrderChoice(38L)
+        viewModel.submitBotAnswer()
+        viewModel.onUrgencySelected("HIGH")
+        viewModel.submitBotAnswer()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            supportRepository.createTicket(subject = "Opis problema", orderId = 38L, urgency = "HIGH")
+        }
+        assertTrue(viewModel.botFlowUiState.value.flowComplete)
+    }
+
+    @Test
+    fun `Not related to an order salje tiket bez porudzbine`() = runTest(testDispatcher) {
+        setUpBotFlowMocks()
+        coEvery {
+            supportRepository.createTicket(subject = "Opis problema", orderId = null, urgency = "LOW")
+        } returns Resource.Success(ticket(9, "OPEN"))
+
+        val viewModel = createViewModel()
+        viewModel.startBotFlow()
+        advanceUntilIdle()
+
+        viewModel.onBotAnswerChange("Opis problema")
+        viewModel.submitBotAnswer()
+        viewModel.onOrderChoice(null)
+        assertEquals("Not related to an order", viewModel.botFlowUiState.value.currentAnswer)
+        viewModel.submitBotAnswer()
+        viewModel.onUrgencySelected("LOW")
+        viewModel.submitBotAnswer()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            supportRepository.createTicket(subject = "Opis problema", orderId = null, urgency = "LOW")
+        }
+    }
+
+    @Test
+    fun `proizvoljna urgency vrednost se ignorise`() = runTest(testDispatcher) {
+        setUpBotFlowMocks()
+
+        val viewModel = createViewModel()
+        viewModel.startBotFlow()
+        advanceUntilIdle()
+
+        viewModel.onUrgencySelected("SUPER_URGENT")
+        assertEquals("nevalidna vrednost ne postavlja urgency",
+            null, viewModel.botFlowUiState.value.selectedUrgency)
+
+        viewModel.onUrgencySelected("MEDIUM")
+        assertEquals("MEDIUM", viewModel.botFlowUiState.value.selectedUrgency)
     }
 
     @Test

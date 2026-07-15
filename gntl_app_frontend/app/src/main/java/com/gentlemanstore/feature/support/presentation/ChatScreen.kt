@@ -34,6 +34,7 @@ fun ChatScreen(
 
     LaunchedEffect(sessionId) {
         viewModel.loadMessages(sessionId)
+        viewModel.loadTicketInfo(ticketId)
         viewModel.connectWebSocket(sessionId)
         delay(1500)
         viewModel.markMessagesAsRead(sessionId)
@@ -64,6 +65,15 @@ fun ChatScreen(
                 Text(text = "CHAT #$ticketId", style = MaterialTheme.typography.titleLarge, color = Gold500)
                 Spacer(modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(48.dp))
+            }
+
+            // Info header za staff: subject, customer, urgency i povezana
+            // porudžbina. Customer vidi svoj postojeći minimalni prikaz.
+            val isStaff = !(currentRole ?: "CUSTOMER").contains("CUSTOMER")
+            if (isStaff) {
+                uiState.ticketInfo?.let { info ->
+                    TicketInfoHeader(info = info)
+                }
             }
 
             when {
@@ -112,6 +122,78 @@ fun ChatScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+// Info kartica na vrhu staff chata — bez uticaja na poruke/WebSocket logiku.
+@Composable
+private fun TicketInfoHeader(info: com.gentlemanstore.feature.support.data.dto.SupportTicketResponse) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = info.subject,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            val customerLine = listOfNotNull(info.customerName, info.userEmail).joinToString(" · ")
+            if (customerLine.isNotBlank()) {
+                Text(
+                    text = customerLine,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                info.urgency?.let { urgency ->
+                    val urgencyColor = getUrgencyColor(urgency)
+                    Box(
+                        modifier = Modifier
+                            .background(urgencyColor.copy(alpha = 0.2f), RoundedCornerShape(50))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = urgency,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = urgencyColor,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                    }
+                }
+                if (info.orderId != null) {
+                    Box(
+                        modifier = Modifier
+                            .background(Gold500.copy(alpha = 0.15f), RoundedCornerShape(50))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "Order #${info.orderId}" +
+                                    (info.orderStatus?.let { " · $it" } ?: ""),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Gold500
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "No linked order",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

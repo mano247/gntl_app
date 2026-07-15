@@ -15,12 +15,28 @@ data class TopProductResponse(
 )
 
 data class AnalyticsResponse(
+    // Period na koji se metrike odnose (tekući kalendarski mesec)
+    val year: Int = 0,
+    val month: Int = 0,
     val totalRevenue: BigDecimal,
     val totalOrders: Int,
     val newUsers: Int,
     val averageOrderValue: BigDecimal,
     val monthlyRevenue: List<MonthlyRevenueResponse>,
     val topProducts: List<TopProductResponse>
+)
+
+// Trajni snapshot završenog meseca (backend monthly_reports)
+data class MonthlyReportResponse(
+    val id: Long,
+    val year: Int,
+    val month: Int,
+    val totalRevenue: BigDecimal,
+    val totalOrders: Int,
+    val newUsers: Int,
+    val averageOrderValue: BigDecimal,
+    val topProducts: List<TopProductResponse>,
+    val createdAt: String?
 )
 
 // Discounts — automatski popusti (GLOBAL ili CATEGORY), bez promo koda

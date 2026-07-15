@@ -1,7 +1,11 @@
 package com.gentlemanstore.support.service;
 
+import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.order.model.Order;
+import com.gentlemanstore.order.repository.OrderRepository;
 import com.gentlemanstore.support.dto.ChatMessageDTO;
+import com.gentlemanstore.support.dto.CreateTicketRequest;
 import com.gentlemanstore.support.dto.SupportTicketDTO;
 import com.gentlemanstore.support.mapper.SupportMapper;
 import com.gentlemanstore.support.model.*;
@@ -45,6 +49,9 @@ public class SupportServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private OrderRepository orderRepository;
 
     @Mock
     private SupportMapper mapper;
@@ -159,6 +166,136 @@ public class SupportServiceTest {
 
         assertFalse(ticket.isArchivedByStaff(), "customer poruka vraca tiket u staff listu");
         verify(messagingTemplate).convertAndSend(eq("/topic/employee/new-ticket"), any(SupportTicketDTO.class));
+    }
+
+    // ---------- kreiranje tiketa: povezani order + strukturisana hitnost ----------
+
+    private User customer(long id) {
+        User user = new User();
+        user.setId(id);
+        user.setFirstName("Petar");
+        user.setLastName("Petrović");
+        user.setEmail("petar@example.com");
+        return user;
+    }
+
+    private Order order(long id, User owner, boolean deleted) {
+        Order order = new Order();
+        order.setId(id);
+        order.setUser(owner);
+        order.setDeleted(deleted);
+        return order;
+    }
+
+    @Test
+    void createTicketStoresLinkedOrderAndUrgency() {
+        User owner = customer(10L);
+        Order order = order(38L, owner, false);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+        when(orderRepository.findByIdAndDeletedFalse(38L)).thenReturn(Optional.of(order));
+        when(mapper.toDTO(any(SupportTicket.class))).thenReturn(new SupportTicketDTO());
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Problem sa porudžbinom")
+                .orderId(38L)
+                .urgency("HIGH")
+                .build();
+
+        supportService.createTicket(10L, request);
+
+        org.mockito.ArgumentCaptor<SupportTicket> captor =
+                org.mockito.ArgumentCaptor.forClass(SupportTicket.class);
+        verify(supportTicketRepository).save(captor.capture());
+        assertEquals(TicketUrgency.HIGH, captor.getValue().getUrgency());
+        assertEquals(38L, captor.getValue().getOrder().getId());
+    }
+
+    @Test
+    void createTicketWithoutOrderIsAllowed() {
+        User owner = customer(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+        when(mapper.toDTO(any(SupportTicket.class))).thenReturn(new SupportTicketDTO());
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Opšte pitanje")
+                .urgency("LOW")
+                .build();
+
+        supportService.createTicket(10L, request);
+
+        org.mockito.ArgumentCaptor<SupportTicket> captor =
+                org.mockito.ArgumentCaptor.forClass(SupportTicket.class);
+        verify(supportTicketRepository).save(captor.capture());
+        assertNull(captor.getValue().getOrder(), "tiket bez porudžbine je validan");
+        assertEquals(TicketUrgency.LOW, captor.getValue().getUrgency());
+        verify(orderRepository, never()).findByIdAndDeletedFalse(any());
+    }
+
+    @Test
+    void createTicketDefaultsUrgencyToMediumWhenMissing() {
+        User owner = customer(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+        when(mapper.toDTO(any(SupportTicket.class))).thenReturn(new SupportTicketDTO());
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Bez hitnosti")
+                .build();
+
+        supportService.createTicket(10L, request);
+
+        org.mockito.ArgumentCaptor<SupportTicket> captor =
+                org.mockito.ArgumentCaptor.forClass(SupportTicket.class);
+        verify(supportTicketRepository).save(captor.capture());
+        assertEquals(TicketUrgency.MEDIUM, captor.getValue().getUrgency());
+    }
+
+    @Test
+    void createTicketRejectsInvalidUrgency() {
+        User owner = customer(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Nevalidna hitnost")
+                .urgency("SUPER_URGENT")
+                .build();
+
+        assertThrows(BadRequestException.class, () -> supportService.createTicket(10L, request));
+        verify(supportTicketRepository, never()).save(any());
+    }
+
+    @Test
+    void createTicketRejectsForeignOrder() {
+        User owner = customer(10L);
+        User otherUser = customer(99L);
+        Order foreignOrder = order(38L, otherUser, false);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+        when(orderRepository.findByIdAndDeletedFalse(38L)).thenReturn(Optional.of(foreignOrder));
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Tuđa porudžbina")
+                .orderId(38L)
+                .urgency("MEDIUM")
+                .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> supportService.createTicket(10L, request),
+                "tuđa porudžbina se ne sme povezati (404, ne 403)");
+        verify(supportTicketRepository, never()).save(any());
+    }
+
+    @Test
+    void createTicketRejectsDeletedOrMissingOrder() {
+        User owner = customer(10L);
+        when(userRepository.findById(10L)).thenReturn(Optional.of(owner));
+        when(orderRepository.findByIdAndDeletedFalse(404L)).thenReturn(Optional.empty());
+
+        CreateTicketRequest request = CreateTicketRequest.builder()
+                .subject("Nepostojeća porudžbina")
+                .orderId(404L)
+                .urgency("MEDIUM")
+                .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> supportService.createTicket(10L, request));
+        verify(supportTicketRepository, never()).save(any());
     }
 
     @Test

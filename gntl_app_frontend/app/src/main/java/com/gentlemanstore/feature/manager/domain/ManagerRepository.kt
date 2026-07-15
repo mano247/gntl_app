@@ -23,6 +23,15 @@ class ManagerRepository @Inject constructor(
         }
     }
 
+    suspend fun getMonthlyReports(): Resource<List<MonthlyReportResponse>> {
+        return try {
+            val response = managerApiService.getMonthlyReports()
+            response.toResource()
+        } catch (e: Exception) {
+            ErrorMapper.map(e)
+        }
+    }
+
     suspend fun getAllDiscounts(): Resource<List<DiscountResponse>> {
         return try {
             val response = managerApiService.getAllDiscounts()

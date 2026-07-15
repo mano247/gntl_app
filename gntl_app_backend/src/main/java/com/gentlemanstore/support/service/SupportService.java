@@ -2,6 +2,8 @@ package com.gentlemanstore.support.service;
 
 import com.gentlemanstore.common.exception.BadRequestException;
 import com.gentlemanstore.common.exception.ResourceNotFoundException;
+import com.gentlemanstore.order.model.Order;
+import com.gentlemanstore.order.repository.OrderRepository;
 import com.gentlemanstore.support.dto.*;
 import com.gentlemanstore.support.mapper.SupportMapper;
 import com.gentlemanstore.support.model.*;
@@ -30,6 +32,7 @@ public class SupportService {
     private final ChatSessionRepository chatSessionRepository;
     private final SupportTicketRepository supportTicketRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
     private final SupportMapper mapper;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -37,6 +40,9 @@ public class SupportService {
     public SupportTicketDTO createTicket(Long userId, CreateTicketRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        TicketUrgency urgency = parseUrgency(request.getUrgency());
+        Order linkedOrder = resolveLinkedOrder(request.getOrderId(), userId);
 
         ChatSession chatSession = ChatSession.builder()
                 .deleted(false)
@@ -46,6 +52,8 @@ public class SupportService {
         SupportTicket ticket = SupportTicket.builder()
                 .subject(request.getSubject())
                 .status(TicketStatus.OPEN)
+                .urgency(urgency)
+                .order(linkedOrder)
                 .user(user)
                 .chatSession(chatSession)
                 .deleted(false)
@@ -87,6 +95,34 @@ public class SupportService {
                 authority.getAuthority().equals("ROLE_ADMIN")
                         || authority.getAuthority().equals("ROLE_MANAGER")
                         || authority.getAuthority().equals("ROLE_EMPLOYEE"));
+    }
+
+    // null = MEDIUM (default); nevalidna vrednost se odbija — klijent ne može
+    // poslati proizvoljan tekst kao hitnost.
+    private TicketUrgency parseUrgency(String urgency) {
+        if (urgency == null || urgency.isBlank()) {
+            return TicketUrgency.MEDIUM;
+        }
+        try {
+            return TicketUrgency.valueOf(urgency.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid ticket urgency: " + urgency);
+        }
+    }
+
+    // Porudžbina mora postojati, ne sme biti obrisana i mora pripadati
+    // pozivaocu — frontend ID se ne uzima na poverenje. 404 umesto 403 da se
+    // ne otkriva postojanje tuđih porudžbina.
+    private Order resolveLinkedOrder(Long orderId, Long userId) {
+        if (orderId == null) {
+            return null;
+        }
+        Order order = orderRepository.findByIdAndDeletedFalse(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        if (!order.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Order not found");
+        }
+        return order;
     }
 
     @Transactional(readOnly = true)

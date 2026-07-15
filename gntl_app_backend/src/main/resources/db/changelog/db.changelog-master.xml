@@ -28,4 +28,6 @@
     <include file="db/changelog/migrations/V21__fix_schema_gaps.xml"/>
     <include file="db/changelog/migrations/V22__separate_discounts_promotions.xml"/>
     <include file="db/changelog/migrations/V23__add_ticket_staff_archive.xml"/>
+    <include file="db/changelog/migrations/V24__add_ticket_order_and_urgency.xml"/>
+    <include file="db/changelog/migrations/V25__create_monthly_reports.xml"/>
 </databaseChangeLog>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- Trajni mesečni analytics izveštaji. Unique (report_year, report_month)
+         sprečava duple izveštaje za isti mesec i pri ponovnom pokretanju job-a. -->
+    <changeSet id="72" author="gentlemanstore">
+        <createTable tableName="monthly_reports">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="report_year" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="report_month" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_revenue" type="DECIMAL(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_orders" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="new_users" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="average_order_value" type="DECIMAL(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="monthly_reports"
+                columnNames="report_year, report_month"
+                constraintName="uq_monthly_reports_year_month"/>
+
+        <createTable tableName="monthly_report_top_products">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="monthly_report_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_sold" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="monthly_report_top_products"
+                baseColumnNames="monthly_report_id"
+                constraintName="fk_monthly_report_top_products_report"
+                referencedTableName="monthly_reports"
+                referencedColumnNames="id"/>
+
+        <createIndex tableName="monthly_report_top_products"
+                     indexName="idx_monthly_report_top_products_report_id">
+            <column name="monthly_report_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

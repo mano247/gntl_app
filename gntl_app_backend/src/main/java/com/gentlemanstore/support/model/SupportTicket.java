@@ -1,5 +1,6 @@
 package com.gentlemanstore.support.model;
 
+import com.gentlemanstore.order.model.Order;
 import com.gentlemanstore.user.model.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,9 +41,21 @@ public class SupportTicket {
     @Column(name = "archived_by_staff", nullable = false)
     private boolean archivedByStaff = false;
 
+    // Strukturisana hitnost iz bot upitnika; postojeći tiketi migrirani na MEDIUM.
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketUrgency urgency = TicketUrgency.MEDIUM;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    // Opciona veza ka porudžbini na koju se tiket odnosi. Backend pri
+    // kreiranju proverava da porudžbina pripada vlasniku tiketa.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private Order order;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_session_id")

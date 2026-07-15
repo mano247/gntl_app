@@ -85,10 +85,13 @@ class EmployeeTicketsViewModelTest {
         numberOfElements = tickets.size
     )
 
-    private fun createViewModel() = EmployeeViewModel(
+    private fun createViewModel(
+        savedStateHandle: androidx.lifecycle.SavedStateHandle = androidx.lifecycle.SavedStateHandle()
+    ) = EmployeeViewModel(
         employeeRepository = employeeRepository,
         supportRepository = supportRepository,
-        badgeWebSocketManager = badgeWebSocketManager
+        badgeWebSocketManager = badgeWebSocketManager,
+        savedStateHandle = savedStateHandle
     )
 
     // ---------- unread badge po kategorijama ----------

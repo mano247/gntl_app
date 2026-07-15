@@ -28,6 +28,8 @@ import com.gentlemanstore.core.util.CurrencyFormatter
 import com.gentlemanstore.core.util.rememberCurrentCurrency
 import com.gentlemanstore.feature.order.data.dto.OrderResponse
 import com.gentlemanstore.ui.theme.Gold500
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 fun getStatusColor(status: String): Color {
     return when (status.uppercase()) {
@@ -63,16 +65,27 @@ fun MyOrdersScreen(
         onRefresh = { viewModel.loadOrders() }
     )
 
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.layoutInfo.totalItemsCount) {
-        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-        val total = listState.layoutInfo.totalItemsCount
+    // Promena statusa vraća listu na vrh — LazyListState zadržava scroll
+    // poziciju prethodne kategorije, pa bi pozicija blizu dna odmah okinula
+    // lančane load-more zahteve za novu kategoriju.
+    LaunchedEffect(uiState.selectedStatus) {
+        listState.scrollToItem(0)
+    }
 
-        if (lastVisible >= total - 3
-            && !uiState.isLastPage
-            && !uiState.isLoadingMore
-            && uiState.orders.isNotEmpty()) {
-            viewModel.loadMoreOrders()
+    // Load-more kroz snapshotFlow umesto LaunchedEffect ključeva: ne
+    // rekomponuje ekran na svaki scroll frame i emituje samo kad se
+    // (blizuDna, brojStavki) stvarno promeni. ViewModel guardovi (isLoading,
+    // isLoadingMore, isLastPage, error) sprečavaju duple i retry petlje.
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val info = listState.layoutInfo
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val nearBottom = info.totalItemsCount > 0 && lastVisible >= info.totalItemsCount - 3
+            nearBottom to info.totalItemsCount
         }
+            .distinctUntilChanged()
+            .filter { (nearBottom, _) -> nearBottom }
+            .collect { viewModel.loadMoreOrders() }
     }
 
     Box(

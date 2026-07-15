@@ -135,4 +135,133 @@ class MyOrdersViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull(state.error)
     }
+
+    @Test
+    fun `klik na vec selektovan status ne salje novi request`() = runTest(testDispatcher) {
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Success(page(listOf(order(1, "PENDING"))))
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceUntilIdle()
+
+        viewModel.onStatusFilter("PENDING")
+        viewModel.onStatusFilter("PENDING")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { orderRepository.getMyOrders(any(), any(), any()) }
+    }
+
+    @Test
+    fun `brza promena statusa salje tacno jedan request po statusu bez duplikata`() = runTest(testDispatcher) {
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } coAnswers {
+            delay(1_000)
+            Resource.Success(page(listOf(order(1, "PENDING"))))
+        }
+        coEvery { orderRepository.getMyOrders(0, any(), "DELIVERED") } coAnswers {
+            delay(500)
+            Resource.Success(page(listOf(order(2, "DELIVERED"))))
+        }
+        coEvery { orderRepository.getMyOrders(0, any(), "SHIPPED") } coAnswers {
+            delay(10)
+            Resource.Success(page(listOf(order(3, "SHIPPED"))))
+        }
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceTimeBy(50) // PENDING request u toku
+        viewModel.onStatusFilter("DELIVERED")
+        advanceTimeBy(50) // DELIVERED request u toku
+        viewModel.onStatusFilter("SHIPPED")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { orderRepository.getMyOrders(0, any(), "PENDING") }
+        coVerify(exactly = 1) { orderRepository.getMyOrders(0, any(), "DELIVERED") }
+        coVerify(exactly = 1) { orderRepository.getMyOrders(0, any(), "SHIPPED") }
+
+        val state = viewModel.uiState.value
+        assertEquals("SHIPPED", state.selectedStatus)
+        assertEquals(listOf(3L), state.orders.map { it.id })
+        assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun `load-more salje tacno jedan request i ignorise duple pozive dok traje`() = runTest(testDispatcher) {
+        val firstPage = (1L..20L).map { order(it, "PENDING") }
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Success(page(firstPage, last = false))
+        coEvery { orderRepository.getMyOrders(1, any(), "PENDING") } coAnswers {
+            delay(100)
+            Resource.Success(page(listOf(order(21, "PENDING"))))
+        }
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceUntilIdle()
+
+        // Višestruki UI trigger (scroll jitter) — sme proći samo jedan zahtev
+        viewModel.loadMoreOrders()
+        viewModel.loadMoreOrders()
+        viewModel.loadMoreOrders()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { orderRepository.getMyOrders(1, any(), "PENDING") }
+        assertEquals(21, viewModel.uiState.value.orders.size)
+        assertEquals(1, viewModel.uiState.value.currentPage)
+    }
+
+    @Test
+    fun `load-more se ne pokrece na poslednjoj stranici`() = runTest(testDispatcher) {
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Success(page(listOf(order(1, "PENDING")), last = true))
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceUntilIdle()
+
+        viewModel.loadMoreOrders()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { orderRepository.getMyOrders(1, any(), any()) }
+    }
+
+    @Test
+    fun `neuspesan load-more ne ulazi u retry petlju`() = runTest(testDispatcher) {
+        val firstPage = (1L..20L).map { order(it, "PENDING") }
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Success(page(firstPage, last = false))
+        coEvery { orderRepository.getMyOrders(1, any(), "PENDING") } returns
+                Resource.Error("Network error")
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceUntilIdle()
+
+        viewModel.loadMoreOrders()
+        advanceUntilIdle()
+        // UI trigger (promena veličine liste zbog spinner-a) pokušava ponovo —
+        // error stanje mora da blokira automatski retry
+        viewModel.loadMoreOrders()
+        viewModel.loadMoreOrders()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { orderRepository.getMyOrders(1, any(), "PENDING") }
+        assertNotNull(viewModel.uiState.value.error)
+        assertFalse(viewModel.uiState.value.isLoadingMore)
+    }
+
+    @Test
+    fun `refresh salje jedan kontrolisan request i cisti error`() = runTest(testDispatcher) {
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Error("Network error")
+
+        val viewModel = MyOrdersViewModel(orderRepository)
+        advanceUntilIdle()
+        assertNotNull(viewModel.uiState.value.error)
+
+        coEvery { orderRepository.getMyOrders(0, any(), "PENDING") } returns
+                Resource.Success(page(listOf(order(1, "PENDING"))))
+
+        viewModel.loadOrders()
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { orderRepository.getMyOrders(0, any(), "PENDING") }
+        assertEquals(null, viewModel.uiState.value.error)
+        assertEquals(listOf(1L), viewModel.uiState.value.orders.map { it.id })
+    }
 }

@@ -14,6 +14,8 @@ public interface OrderMapper {
     @Mapping(source = "loyaltyDiscount", target = "loyaltyDiscount")
     @Mapping(source = "finalPrice", target = "finalPrice")
     @Mapping(source = "promoDiscount", target = "promoDiscount")
+    @Mapping(target = "customerName", expression = "java(order.getUser() == null ? null : (order.getUser().getFirstName() + \" \" + order.getUser().getLastName()).trim())")
+    @Mapping(source = "user.email", target = "customerEmail")
     OrderDTO toDTO(Order order);
 
     @Mapping(source = "product.name", target = "productName")

@@ -44,7 +44,15 @@ data class BotFlowUiState(
     val isCreatingTicket: Boolean = false,
     val isSavingAnswer: Boolean = false,
     val error: String? = null,
-    val flowComplete: Boolean = false
+    val flowComplete: Boolean = false,
+    // Korak 2: izbor porudžbine iz My Orders liste umesto ručnog unosa
+    val myOrders: List<com.gentlemanstore.feature.order.data.dto.OrderResponse> = emptyList(),
+    val isLoadingOrders: Boolean = false,
+    val selectedOrderId: Long? = null,
+    // true = korisnik je izabrao "Not related to an order"
+    val orderChoiceMade: Boolean = false,
+    // Korak 3: strukturisana hitnost (LOW / MEDIUM / HIGH)
+    val selectedUrgency: String? = null
 )
 
 data class ChatUiState(
@@ -52,12 +60,15 @@ data class ChatUiState(
     val messages: List<ChatMessageResponse> = emptyList(),
     val currentMessage: String = "",
     val isSending: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    // Info header za staff chat (subject, customer, urgency, linked order)
+    val ticketInfo: SupportTicketResponse? = null
 )
 
 @HiltViewModel
 class SupportViewModel @Inject constructor(
     private val supportRepository: SupportRepository,
+    private val orderRepository: com.gentlemanstore.feature.order.domain.OrderRepository,
     private val tokenDataStore: TokenDataStore,
     private val chatWebSocketManager: ChatWebSocketManager,
     private val badgeWebSocketManager: BadgeWebSocketManager
@@ -198,6 +209,7 @@ class SupportViewModel @Inject constructor(
                 is Resource.Success -> {
                     val sortedQuestions = result.data.sortedBy { it.orderIndex }
                     _botFlowUiState.value = BotFlowUiState(isLoading = false, questions = sortedQuestions)
+                    loadMyOrdersForBotFlow()
                 }
                 is Resource.Error -> {
                     _botFlowUiState.value = BotFlowUiState(isLoading = false, error = result.message)
@@ -207,8 +219,50 @@ class SupportViewModel @Inject constructor(
         }
     }
 
+    // Porudžbine za korak 2 (izbor umesto ručnog unosa order broja).
+    // Neuspeh nije blokirajući — korisnik i dalje može "Not related to an order".
+    private fun loadMyOrdersForBotFlow() {
+        viewModelScope.launch {
+            _botFlowUiState.update { it.copy(isLoadingOrders = true) }
+            when (val result = orderRepository.getMyOrders(page = 0, status = null)) {
+                is Resource.Success -> {
+                    _botFlowUiState.update {
+                        it.copy(isLoadingOrders = false, myOrders = result.data.content)
+                    }
+                }
+                else -> _botFlowUiState.update { it.copy(isLoadingOrders = false) }
+            }
+        }
+    }
+
     fun onBotAnswerChange(answer: String) {
         _botFlowUiState.value = _botFlowUiState.value.copy(currentAnswer = answer)
+    }
+
+    // Korak 2: izbor porudžbine (null = "Not related to an order").
+    // Odgovor za bot transkript se izvodi iz izbora — nema slobodnog unosa.
+    fun onOrderChoice(orderId: Long?) {
+        val answerText = if (orderId == null) {
+            "Not related to an order"
+        } else {
+            "Order #$orderId"
+        }
+        _botFlowUiState.update {
+            it.copy(selectedOrderId = orderId, orderChoiceMade = true, currentAnswer = answerText)
+        }
+    }
+
+    // Korak 3: strukturisana hitnost — samo LOW/MEDIUM/HIGH.
+    fun onUrgencySelected(urgency: String) {
+        if (urgency !in listOf("LOW", "MEDIUM", "HIGH")) return
+        val label = when (urgency) {
+            "LOW" -> "LOW - Not urgent"
+            "HIGH" -> "HIGH - Urgent"
+            else -> "MEDIUM - Moderately urgent"
+        }
+        _botFlowUiState.update {
+            it.copy(selectedUrgency = urgency, currentAnswer = label)
+        }
     }
 
     fun submitBotAnswer() {
@@ -235,7 +289,12 @@ class SupportViewModel @Inject constructor(
     private fun createTicketAndSaveAnswers(answers: Map<Long, String>, questions: List<BotQuestionResponse>) {
         viewModelScope.launch {
             val subject = answers[questions.firstOrNull()?.id] ?: "Support Request"
-            when (val ticketResult = supportRepository.createTicket(subject)) {
+            val state = _botFlowUiState.value
+            when (val ticketResult = supportRepository.createTicket(
+                subject = subject,
+                orderId = state.selectedOrderId,
+                urgency = state.selectedUrgency ?: "MEDIUM"
+            )) {
                 is Resource.Success -> {
                     val ticket = ticketResult.data
                     answers.forEach { (questionId, response) ->
@@ -278,6 +337,16 @@ class SupportViewModel @Inject constructor(
                     _chatUiState.value = _chatUiState.value.copy(isLoading = false, error = result.message)
                 }
                 is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    // Info header za staff chat — opcioni podatak, chat radi i ako ne stigne.
+    fun loadTicketInfo(ticketId: Long) {
+        viewModelScope.launch {
+            when (val result = supportRepository.getTicket(ticketId)) {
+                is Resource.Success -> _chatUiState.update { it.copy(ticketInfo = result.data) }
+                else -> Unit
             }
         }
     }

@@ -20,4 +20,8 @@ public class OrderDTO {
     private BigDecimal loyaltyDiscount;
     private BigDecimal finalPrice;
     private BigDecimal promoDiscount;
+    // Ime i email kupca za staff prikaz (Employee Orders) — namerno bez
+    // celog User entiteta, samo minimalna polja.
+    private String customerName;
+    private String customerEmail;
 }

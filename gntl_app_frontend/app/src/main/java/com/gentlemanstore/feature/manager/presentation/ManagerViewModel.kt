@@ -16,6 +16,10 @@ import javax.inject.Inject
 data class ManagerUiState(
     val isLoading: Boolean = false,
     val analytics: AnalyticsResponse? = null,
+    // Istorija mesečnih izveštaja (najnoviji prvi)
+    val monthlyReports: List<MonthlyReportResponse> = emptyList(),
+    val isLoadingReports: Boolean = false,
+    val reportsError: String? = null,
     val discounts: List<DiscountResponse> = emptyList(),
     val promotions: List<PromotionResponse> = emptyList(),
     val categories: List<Pair<Long, String>> = emptyList(),
@@ -44,9 +48,32 @@ class ManagerViewModel @Inject constructor(
 
     init {
         loadDashboard()
+        loadMonthlyReports()
         loadDiscounts()
         loadPromotions()
         loadCategories()
+    }
+
+    fun loadMonthlyReports() {
+        if (_uiState.value.isLoadingReports) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingReports = true, reportsError = null)
+            when (val result = managerRepository.getMonthlyReports()) {
+                is Resource.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingReports = false,
+                        monthlyReports = result.data
+                    )
+                }
+                is Resource.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingReports = false,
+                        reportsError = result.message
+                    )
+                }
+                is Resource.Loading -> Unit
+            }
+        }
     }
 
     fun loadCategories() {

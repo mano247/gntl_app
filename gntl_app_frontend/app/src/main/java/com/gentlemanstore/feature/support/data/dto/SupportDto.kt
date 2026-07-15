@@ -7,7 +7,14 @@ data class SupportTicketResponse(
     val createdAt: String,
     val userEmail: String,
     val sessionId: Long?,
-    val unreadCount: Int = 0
+    val unreadCount: Int = 0,
+    // Ime kupca za staff chat header
+    val customerName: String? = null,
+    // LOW / MEDIUM / HIGH
+    val urgency: String? = null,
+    // Povezana porudžbina (nullable)
+    val orderId: Long? = null,
+    val orderStatus: String? = null
 )
 
 data class PagedTicketResponse(
@@ -22,7 +29,11 @@ data class PagedTicketResponse(
 )
 
 data class CreateTicketRequest(
-    val subject: String
+    val subject: String,
+    // Izabrana porudžbina iz My Orders liste (null = "Not related to an order")
+    val orderId: Long? = null,
+    // LOW / MEDIUM / HIGH — backend odbija bilo šta drugo
+    val urgency: String? = null
 )
 
 data class ChatMessageResponse(

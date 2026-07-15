@@ -1,6 +1,8 @@
 package com.gentlemanstore.feature.support.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -158,17 +160,36 @@ fun BotFlowScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        // Input polje
-                        OutlinedTextField(
-                            value = uiState.currentAnswer,
-                            onValueChange = { viewModel.onBotAnswerChange(it) },
-                            placeholder = { Text("Type your answer...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            maxLines = 4
-                        )
+                        // Tip unosa zavisi od redosleda pitanja u bot upitniku:
+                        // 1 = slobodan opis, 2 = izbor porudžbine, 3 = hitnost.
+                        when (currentQuestion?.orderIndex) {
+                            2 -> OrderPickerStep(
+                                orders = uiState.myOrders,
+                                isLoading = uiState.isLoadingOrders,
+                                selectedOrderId = uiState.selectedOrderId,
+                                choiceMade = uiState.orderChoiceMade,
+                                onOrderChoice = { viewModel.onOrderChoice(it) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            3 -> UrgencyPickerStep(
+                                selectedUrgency = uiState.selectedUrgency,
+                                onUrgencySelected = { viewModel.onUrgencySelected(it) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            else -> {
+                                Spacer(modifier = Modifier.weight(1f))
+                                OutlinedTextField(
+                                    value = uiState.currentAnswer,
+                                    onValueChange = { viewModel.onBotAnswerChange(it) },
+                                    placeholder = { Text("Type your answer...") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    maxLines = 4
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -191,6 +212,154 @@ fun BotFlowScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+// Korak 2: izbor porudžbine iz sopstvene My Orders liste — bez ručnog unosa
+// proizvoljnog order ID-a. "Not related to an order" uvek dostupno.
+@Composable
+private fun OrderPickerStep(
+    orders: List<com.gentlemanstore.feature.order.data.dto.OrderResponse>,
+    isLoading: Boolean,
+    selectedOrderId: Long?,
+    choiceMade: Boolean,
+    onOrderChoice: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.lazy.LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            SelectableOptionCard(
+                selected = choiceMade && selectedOrderId == null,
+                onClick = { onOrderChoice(null) }
+            ) {
+                Text(
+                    text = "Not related to an order",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        if (isLoading) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Gold500, modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+
+        items(orders.size, key = { orders[it].id }) { index ->
+            val order = orders[index]
+            SelectableOptionCard(
+                selected = selectedOrderId == order.id,
+                onClick = { onOrderChoice(order.id) }
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Order #${order.id}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = order.status,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = com.gentlemanstore.feature.order.presentation.getStatusColor(order.status)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${order.createdAt.take(10)} · ${(order.finalPrice ?: order.totalPrice)} din",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Korak 3: strukturisana hitnost — samo tri dozvoljene vrednosti.
+@Composable
+private fun UrgencyPickerStep(
+    selectedUrgency: String?,
+    onUrgencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val options = listOf(
+        Triple("LOW", "Not urgent", "General question or minor issue"),
+        Triple("MEDIUM", "Moderately urgent", "Affects my order or account"),
+        Triple("HIGH", "Urgent", "Needs immediate attention")
+    )
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { (value, label, description) ->
+            SelectableOptionCard(
+                selected = selectedUrgency == value,
+                onClick = { onUrgencySelected(value) }
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedUrgency == value,
+                        onClick = { onUrgencySelected(value) },
+                        colors = RadioButtonDefaults.colors(selectedColor = Gold500)
+                    )
+                    Column {
+                        Text(
+                            text = "$value — $label",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectableOptionCard(
+    selected: Boolean,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (selected) Modifier.border(
+                    width = 1.5.dp,
+                    color = Gold500,
+                    shape = RoundedCornerShape(12.dp)
+                ) else Modifier
+            )
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Gold500.copy(alpha = 0.12f)
+            else MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Box(modifier = Modifier.padding(12.dp)) {
+            content()
         }
     }
 }

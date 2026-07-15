@@ -14,9 +14,13 @@ class SupportRepository @Inject constructor(
     private val supportApiService: SupportApiService
 ) {
 
-    suspend fun createTicket(subject: String): Resource<SupportTicketResponse> {
+    suspend fun createTicket(
+        subject: String,
+        orderId: Long? = null,
+        urgency: String? = null
+    ): Resource<SupportTicketResponse> {
         return try {
-            val response = supportApiService.createTicket(CreateTicketRequest(subject))
+            val response = supportApiService.createTicket(CreateTicketRequest(subject, orderId, urgency))
             response.toResource()
         } catch (e: Exception) {
             ErrorMapper.map(e)

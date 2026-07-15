@@ -20,7 +20,10 @@ data class OrderResponse(
     val items: List<OrderItemResponse>,
     val loyaltyDiscount: BigDecimal?,
     val finalPrice: BigDecimal?,
-    val promoDiscount: BigDecimal?
+    val promoDiscount: BigDecimal?,
+    // Popunjeno na backendu za staff prikaz (Employee Orders)
+    val customerName: String? = null,
+    val customerEmail: String? = null
 )
 
 data class CheckoutRequest(

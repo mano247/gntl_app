@@ -5,6 +5,7 @@ import com.gentlemanstore.support.model.SupportTicket;
 import com.gentlemanstore.support.model.TicketStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,13 @@ import java.util.Optional;
 @Repository
 public interface SupportTicketRepository extends JpaRepository<SupportTicket, Long> {
     Page<SupportTicket> findAllByDeletedFalse(Pageable pageable);
+
+    // EntityGraph: mapper mapira user (email/ime), chat sesiju i povezanu
+    // porudžbinu — bez join-a bi svaki red stranice okidao dodatne SELECT-e (N+1).
+    @EntityGraph(attributePaths = {"user", "chatSession", "order"})
     Page<SupportTicket> findAllByDeletedFalseAndArchivedByStaffFalse(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "chatSession", "order"})
     Page<SupportTicket> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
     List<SupportTicket> findAllByStatusAndDeletedFalse(TicketStatus status);
     Optional<SupportTicket> findByChatSessionId(Long sessionId);

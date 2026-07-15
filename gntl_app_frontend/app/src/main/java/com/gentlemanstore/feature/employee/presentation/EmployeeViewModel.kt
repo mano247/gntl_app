@@ -1,5 +1,6 @@
 package com.gentlemanstore.feature.employee.presentation
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gentlemanstore.core.network.BadgeWebSocketManager
@@ -52,8 +53,19 @@ data class EmployeeTicketsUiState(
 class EmployeeViewModel @Inject constructor(
     private val employeeRepository: EmployeeRepository,
     private val supportRepository: SupportRepository,
-    private val badgeWebSocketManager: BadgeWebSocketManager
+    private val badgeWebSocketManager: BadgeWebSocketManager,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    // Aktivni tab živi u ViewModelu (nav-entry scope) + SavedStateHandle:
+    // preživljava rekreaciju ekrana pri povratku iz Chat/Product detail
+    // navigacije i process death. Lokalni remember u ekranu se gubio i
+    // panel se vraćao na Orders tab.
+    val selectedTab: StateFlow<Int> = savedStateHandle.getStateFlow(KEY_SELECTED_TAB, 0)
+
+    fun onTabSelected(index: Int) {
+        savedStateHandle[KEY_SELECTED_TAB] = index
+    }
 
     private val _ordersUiState = MutableStateFlow(EmployeeOrdersUiState())
     val ordersUiState: StateFlow<EmployeeOrdersUiState> = _ordersUiState.asStateFlow()
@@ -168,8 +180,10 @@ class EmployeeViewModel @Inject constructor(
 
     fun loadOrders() {
         ordersLoadJob?.cancel()
+        // isLoading sinhrono (pre launch-a) da guard u loadMoreOrders važi
+        // i pre nego što korutina krene.
+        _ordersUiState.value = _ordersUiState.value.copy(isLoading = true)
         ordersLoadJob = viewModelScope.launch {
-            _ordersUiState.value = _ordersUiState.value.copy(isLoading = true)
             when (val result = employeeRepository.getAllOrders(0, _ordersUiState.value.selectedStatus)) {
                 is Resource.Success -> {
                     _ordersUiState.value = _ordersUiState.value.copy(
@@ -193,10 +207,12 @@ class EmployeeViewModel @Inject constructor(
 
     fun loadMoreOrders() {
         val state = _ordersUiState.value
-        if (state.isLastPage || state.isLoadingMore || state.isLoading) return
+        if (state.isLastPage || state.isLoadingMore || state.isLoading || state.error != null) return
 
+        // Sinhroni guard: sprečava dva paralelna zahteva za istu stranicu
+        // i kad se loadMoreOrders pozove više puta pre starta korutine.
+        _ordersUiState.value = state.copy(isLoadingMore = true)
         ordersLoadJob = viewModelScope.launch {
-            _ordersUiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
             when (val result = employeeRepository.getAllOrders(nextPage, state.selectedStatus)) {
@@ -339,7 +355,8 @@ class EmployeeViewModel @Inject constructor(
             orders = emptyList(),
             currentPage = 0,
             isLastPage = false,
-            isLoadingMore = false
+            isLoadingMore = false,
+            error = null
         )
         loadOrders()
     }
@@ -359,5 +376,6 @@ class EmployeeViewModel @Inject constructor(
     private companion object {
         const val EMPLOYEE_UNREAD_TOPIC = "/topic/employee/unread"
         const val EMPLOYEE_NEW_TICKET_TOPIC = "/topic/employee/new-ticket"
+        const val KEY_SELECTED_TAB = "employee_selected_tab"
     }
 }

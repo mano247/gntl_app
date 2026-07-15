@@ -40,6 +40,15 @@ fun getTicketStatusColor(status: String): Color {
     }
 }
 
+fun getUrgencyColor(urgency: String): Color {
+    return when (urgency.uppercase()) {
+        "LOW" -> Color(0xFF4CAF50)
+        "MEDIUM" -> Color(0xFFE5A03C)
+        "HIGH" -> Color(0xFFE05252)
+        else -> Color.Gray
+    }
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SupportScreen(

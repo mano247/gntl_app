@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -188,7 +189,7 @@ fun SwipeScreen(
                             }
                         }
 
-                        // Cart button only
+                        // Info + Cart akcije (odvojene klik zone)
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -196,6 +197,24 @@ fun SwipeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            // Vodi na postojeći Product Detail ekran (dodatne
+                            // slike, veličine, opis, SKU, dostupnost...)
+                            IconButton(
+                                onClick = { onNavigateToDetail(product.id) },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(
+                                        color = Color.Black.copy(alpha = 0.45f),
+                                        shape = RoundedCornerShape(50)
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Info,
+                                    contentDescription = "View details",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                             IconButton(
                                 onClick = {
                                     selectedProduct = product

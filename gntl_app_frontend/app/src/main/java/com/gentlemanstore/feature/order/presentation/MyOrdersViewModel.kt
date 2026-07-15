@@ -41,9 +41,10 @@ class MyOrdersViewModel @Inject constructor(
 
     fun loadOrders() {
         loadJob?.cancel()
+        // isLoading se postavlja sinhrono (pre launch-a) da bi guard u
+        // loadMoreOrders važio i kad dispatcher nije Main.immediate (testovi).
+        _uiState.value = _uiState.value.copy(isLoading = true)
         loadJob = viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
             when (val result = orderRepository.getMyOrders(page = 0, status = _uiState.value.selectedStatus)) {
                 is Resource.Success -> {
                     _uiState.value = _uiState.value.copy(
@@ -67,10 +68,18 @@ class MyOrdersViewModel @Inject constructor(
 
     fun loadMoreOrders() {
         val state = _uiState.value
-        if (state.isLastPage || state.isLoadingMore || state.isLoading || state.orders.isEmpty()) return
+        // error != null blokira automatski retry sa UI trigger-a — bez toga
+        // neuspešan load-more ulazi u beskonačnu request petlju (spinner item
+        // menja veličinu liste, što ponovo okida load-more). Error se čisti
+        // kroz refresh/promenu statusa.
+        if (state.isLastPage || state.isLoadingMore || state.isLoading ||
+            state.orders.isEmpty() || state.error != null
+        ) return
 
+        // Sinhroni guard: sprečava dva paralelna zahteva za istu stranicu
+        // i kad se loadMoreOrders pozove više puta pre starta korutine.
+        _uiState.value = state.copy(isLoadingMore = true)
         loadJob = viewModelScope.launch {
-            _uiState.value = state.copy(isLoadingMore = true)
             val nextPage = state.currentPage + 1
 
             when (val result = orderRepository.getMyOrders(page = nextPage, status = state.selectedStatus)) {
@@ -111,7 +120,8 @@ class MyOrdersViewModel @Inject constructor(
             orders = emptyList(),
             currentPage = 0,
             isLastPage = false,
-            isLoadingMore = false
+            isLoadingMore = false,
+            error = null
         )
         loadOrders()
     }
