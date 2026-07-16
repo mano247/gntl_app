@@ -220,7 +220,6 @@ Base path `/api/`. All responses use the `ApiResponse<T>` envelope. All endpoint
 | Support | `/api/support` | tickets, messages, bot flow, unread summaries, archive |
 | Analytics | `/api/analytics` | dashboard + monthly reports (MANAGER/ADMIN) |
 
-Full request/response contracts are documented in **`07_API_Documentation.md`**.
 
 ---
 
@@ -233,7 +232,6 @@ Full request/response contracts are documented in **`07_API_Documentation.md`**.
 - **On device:** access token, refresh token, role, and user id are encrypted with AES-256-GCM (key in the Android Keystore) before being written to DataStore; the DataStore file is excluded from Auto Backup and device transfer.
 - **IDOR protection:** user-scoped reads/writes verify ownership and return **404** (not 403) to avoid resource enumeration.
 
-Details in **`08_Security_Book.md`**.
 
 ---
 
@@ -249,7 +247,7 @@ Real-time messaging runs over **STOMP on Spring's WebSocket broker**, endpoint `
 | `/topic/employee/unread` | shared staff unread badge updates |
 | `/topic/employee/new-ticket` | new-ticket signal to all staff |
 
-Messages sent via REST are broadcast through the same topics, so REST and WebSocket clients stay consistent. Details in **`09_WebSocket_Book.md`**.
+Messages sent via REST are broadcast through the same topics, so REST and WebSocket clients stay consistent.
 
 ---
 
@@ -346,24 +344,12 @@ Liquibase migrations (V1–V25) run automatically on startup. The API is served 
   ./gradlew :app:testDebugUnitTest
   ```
 
-Coverage details in **`12_Testing_Book.md`**.
 
 ---
 
 ## 🔮 Future Improvements
 
-Redis (cache + distributed rate-limit/bucket store), Docker Compose / Kubernetes, RabbitMQ for the email + notification pipeline, CI/CD, Prometheus + Grafana monitoring, OAuth2 / social login, cloud object storage for product images, a real payment gateway (e.g. Stripe), and horizontal scaling of the WebSocket layer with an external STOMP broker. Expanded in **`14_Future_Improvements.md`**.
+Redis (cache + distributed rate-limit/bucket store), Docker Compose / Kubernetes, RabbitMQ for the email + notification pipeline, CI/CD, Prometheus + Grafana monitoring, OAuth2 / social login, cloud object storage for product images, a real payment gateway (e.g. Stripe), and horizontal scaling of the WebSocket layer with an external STOMP broker.
 
 ---
 
-## Companion Documentation
-
-Detailed documentation "books" (in Serbian) live in `D:\projekti\0_dokumentacije\gntl_app`:
-
-`01_Project_Overview` · `02_Business_Documentation` · `03_System_Architecture` · `04_Backend_Book` · `05_Android_Book` · `06_Database_Book` · `07_API_Documentation` · `08_Security_Book` · `09_WebSocket_Book` · `10_Design_Decisions` · `11_Code_Walkthrough` · `12_Testing_Book` · `13_Performance_Book` · `14_Future_Improvements` · `15_Interview_Preparation`
-
----
-
-## License
-
-MIT.
