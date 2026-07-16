@@ -1,6 +1,6 @@
 # Gentleman Store 🎩
 
-A full-stack e-commerce platform for premium menswear — suits, shirts, shoes, ties, and accessories. Built as a native Android application backed by a Spring Boot REST API and PostgreSQL, with role-based access for customers, employees, managers, and administrators.
+A full-stack e-commerce platform for premium menswear — suits, shirts, shoes, ties, and accessories. Built as a native Android application backed by a Spring Boot REST API and PostgreSQL, with role-based access for customers, employees, managers, and administrators, and real-time customer support over WebSocket.
 
 ---
 
@@ -14,80 +14,275 @@ A full-stack e-commerce platform for premium menswear — suits, shirts, shoes, 
 
 ---
 
-## ✨ Features
+## 📖 Table of Contents
 
-- 🛍️ **Product catalog** — paginated grid with search, category filters, sort, and an alternative vertical swipe/feed view
-- 🧺 **Shopping cart** — add/remove items, automatic discount application at the item level
-- 💳 **Checkout** — address management, payment method selection, promo code validation, loyalty tier discount
-- 📦 **Order tracking** — full order history with status filters, detail view, and cancellation
-- 👑 **Loyalty program** — four tiers (Gentleman / Distinguished / Elite / Black Label) with automatic point earning and tier promotion
-- 🏷️ **Discount & promotions** — percentage and fixed-amount codes, product or category-scoped, with broadcast notifications on creation
-- 🔔 **In-app notifications** — per-type filtering, unread badge, bulk mark-as-read
-- 🎧 **Support chat** — structured bot intake questionnaire, live chat with staff, per-ticket unread counts
-- 📊 **Analytics dashboard** — revenue, order counts, new users, monthly revenue chart, top products (MANAGER/ADMIN)
-- 🗂️ **Admin panel** — user management, role assignment, account deactivation/reactivation
-- 🛡️ **Security hardening** — JWT with rotating refresh tokens, BCrypt, rate limiting, IDOR protection, AES-256-GCM token storage on device
+- [Project Overview](#-project-overview)
+- [Features](#-features)
+- [Technologies](#-technologies)
+- [Architecture Overview](#-architecture-overview)
+- [User Roles](#-user-roles)
+- [Screenshots](#-screenshots)
+- [Backend](#-backend)
+- [Android](#-android)
+- [Database](#-database)
+- [API Overview](#-api-overview)
+- [Authentication](#-authentication)
+- [WebSocket](#-websocket)
+- [Project Structure](#-project-structure)
+- [Installation](#-installation)
+- [Running Locally](#-running-locally)
+- [Testing](#-testing)
+- [Future Improvements](#-future-improvements)
 
 ---
 
-## 🏗️ Architecture
+## 🎯 Project Overview
 
-```
-┌─────────────────────────────┐
-│  Android App (Kotlin)        │
-│  Jetpack Compose · MVVM      │
-│  Screens → ViewModels        │
-│    → Repositories            │
-│       → Retrofit ApiService  │
-└──────────────┬───────────────┘
-               │ HTTPS · JWT Bearer Token
-               ▼
-┌─────────────────────────────┐
-│  Spring Boot REST API        │
-│  Java 21 · Spring Boot 3.4   │
-│  Controller → Service        │
-│    → Repository (JPA)        │
-│  JwtAuthenticationFilter     │
-│  AuthRateLimitingFilter       │
-└──────────────┬───────────────┘
-               │ JDBC (Hibernate / JPA)
-               ▼
-┌─────────────────────────────┐
-│  PostgreSQL 16               │
-│  Schema managed by Liquibase │
-│  Migrations V1 – V20         │
-└─────────────────────────────┘
-```
+Gentleman Store is a portfolio / educational project that demonstrates production-grade patterns end to end: a layered Spring Boot backend, a native MVVM Android client, JWT security hardening with rotating refresh tokens, a layered discount/promotion/loyalty pricing engine, a real-time STOMP-over-WebSocket support chat, and a scheduled analytics reporting pipeline.
 
-### Tech Stack
+The domain models a men's fashion store. Customers browse a catalog, build a cart, check out with address and payment selection, earn loyalty points and tier discounts, redeem promo codes, track orders, and open support tickets that turn into live chat with staff. Employees manage orders, products, and support tickets. Managers own analytics, discounts, and promotions. Admins manage users and roles.
+
+The whole system is intentionally written to be explained: business rules live in the service layer, the schema is versioned with Liquibase, and the trickier decisions are documented inline in Serbian and, in depth, in the companion documentation books (see [Companion Documentation](#companion-documentation)).
+
+---
+
+## ✨ Features
+
+- 🛍️ **Product catalog** — server-side paginated grid with search, category filter, client-side sort, and an alternative vertical swipe/feed view. Staff can additionally filter `ACTIVE / DELETED / ALL`.
+- 🧺 **Shopping cart** — add/remove items; the automatic discount is snapshotted into the item price at add-time (`CartItem.unitPrice`).
+- 💳 **Checkout** — address selection, promo-code validation, layered discount stacking (auto discount → loyalty tier % → promo code), backend-authoritative final price, shipment + tracking number generation.
+- 📦 **Order management** — customer order history with status filters, detail view, cancellation; staff status transitions with customer notifications.
+- 👑 **Loyalty program** — tiers with automatic point earning (1 point per 100 RSD spent) and automatic tier promotion.
+- 🏷️ **Discounts & promotions** — two distinct concepts: automatic **discounts** (no code, GLOBAL or CATEGORY scope) and **promotions** (unique promo codes, single-use per customer). Both broadcast an in-app notification to every customer on creation.
+- 🔔 **In-app notifications** — per-type notifications, unread count badge, bulk mark-as-read / delete.
+- 🎧 **Support chat** — structured bot intake questionnaire (order link + urgency), then live chat with staff over WebSocket; per-ticket and per-status unread badges; staff archive that "un-archives" on a new customer message.
+- 📊 **Analytics** — current-month dashboard (revenue, orders, new users, average order value, monthly revenue chart, top products) plus persistent monthly report snapshots generated by a scheduled job (MANAGER/ADMIN).
+- 🗂️ **Admin panel** — user management, role assignment (forces re-login), account deactivation/reactivation.
+- 🛡️ **Security hardening** — JWT access tokens + rotating single-use refresh tokens (SHA-256 hashed at rest), BCrypt, Bucket4j rate limiting, IDOR/ownership checks, WebSocket handshake + subscription authorization, AES-256-GCM token storage on device.
+
+---
+
+## 🧰 Technologies
+
+### Backend
 
 | Technology | Version | Purpose |
 |---|---|---|
 | Java | 21 | Backend runtime |
-| Spring Boot | 3.4.3 | REST API framework |
+| Spring Boot | 3.4.3 | REST API framework (Web, Data JPA, Security, Validation, WebSocket, Mail) |
 | PostgreSQL | 16 | Primary database |
-| Liquibase | Spring Boot managed | Schema migrations |
+| Liquibase | Spring Boot managed | Versioned schema migrations (V1–V25) |
+| Hibernate / JPA | Spring Boot managed | ORM; `ddl-auto=validate` |
 | jjwt | 0.12.6 | JWT generation & validation |
-| Bucket4j | 8.19.0 | Auth rate limiting |
+| Bucket4j | 8.19.0 | Auth-endpoint rate limiting |
 | MapStruct | 1.5.5.Final | Entity ↔ DTO mapping |
 | Lombok | 1.18.30 | Boilerplate reduction |
-| Kotlin | 2.0.21 | Android development language |
-| Jetpack Compose | BOM 2024.09.00 | Declarative Android UI |
+| Spring WebSocket / STOMP | Spring Boot managed | Real-time chat & badges |
+
+### Android
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Kotlin | 2.0.21 | App language |
+| Jetpack Compose | BOM 2024.09.00 | Declarative UI |
 | Hilt | 2.56.1 | Dependency injection |
+| Navigation Compose | 2.9.0 | In-app navigation |
 | Retrofit | 2.11.0 | HTTP client |
-| OkHttp | 4.12.0 | HTTP engine + token refresh |
-| DataStore | 1.1.4 | Encrypted local token storage |
+| OkHttp | 4.12.0 | HTTP engine, token refresh, WebSocket transport |
+| DataStore (Preferences) | 1.1.4 | Encrypted local storage |
 | Coil | 2.7.0 | Image loading |
+| Coroutines | 1.10.2 | Async / StateFlow |
+| Min / Target / Compile SDK | 31 / 36 / 36 | — |
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+┌──────────────────────────────────────────────┐
+│  Android App (Kotlin, Jetpack Compose)         │
+│  Screen  →  ViewModel (StateFlow)              │
+│                 →  Repository                   │
+│                     →  Retrofit ApiService      │
+│  OkHttp: AuthInterceptor + TokenAuthenticator   │
+│  ChatWebSocketManager / BadgeWebSocketManager   │
+└───────────────┬──────────────────┬─────────────┘
+                │ HTTPS · JWT       │ STOMP/WS · JWT (query param)
+                ▼                   ▼
+┌──────────────────────────────────────────────┐
+│  Spring Boot REST API (Java 21)                │
+│  Controller → Service → Repository (JPA)        │
+│  Filters: AuthRateLimitingFilter →              │
+│           JwtAuthenticationFilter               │
+│  @PreAuthorize RBAC + ownership (IDOR) checks    │
+│  WebSocketConfig + WebSocketAuthInterceptor      │
+│  @Scheduled monthly report job                   │
+└───────────────┬──────────────────────────────┘
+                │ JDBC (Hibernate)
+                ▼
+┌──────────────────────────────────────────────┐
+│  PostgreSQL 16 — schema owned by Liquibase      │
+│  Migrations V1 – V25 · ddl-auto = validate      │
+└──────────────────────────────────────────────┘
+```
+
+The backend is **package-by-feature** (`com.gentlemanstore.<feature>`), each feature a vertical slice of `controller / service / repository / model / dto / mapper`. The Android app mirrors this with `feature/<name>/{data, domain, presentation}` and a shared `core` layer.
+
+---
+
+## 👥 User Roles
+
+| Role | Capabilities |
+|---|---|
+| `CUSTOMER` | Browse catalog, manage cart, checkout, track & cancel own orders, loyalty, support tickets & chat, notifications, profile & addresses |
+| `EMPLOYEE` | Customer API access + manage all orders (status), full product CRUD, inventory updates, staff support chat, grant loyalty points, create discounts/promotions |
+| `MANAGER` | Analytics dashboard & monthly reports, discount & promotion management, read access to all orders/payments/tickets/loyalty |
+| `ADMIN` | Superset of the above + user management (roles, deactivation, reactivation) and delete-access on resources |
+
+Roles are flat — each `@PreAuthorize` explicitly lists every permitted role. Changing a user's role revokes all their refresh tokens, forcing a re-login so the new authorities take effect.
 
 ---
 
 ## 📱 Screenshots
 
-> _Screenshots coming soon. To add them, place images in a `docs/screenshots/` folder and update this section._
+> _Screenshots coming soon. To add them, place images in a `docs/screenshots/` folder and reference them here._
+
+| Login | Catalog | Product detail | Cart / Checkout |
+|---|---|---|---|
+| _(placeholder)_ | _(placeholder)_ | _(placeholder)_ | _(placeholder)_ |
+
+| Loyalty | Support chat | Employee panel | Analytics |
+|---|---|---|---|
+| _(placeholder)_ | _(placeholder)_ | _(placeholder)_ | _(placeholder)_ |
 
 ---
 
-## 🚀 Getting Started
+## ⚙️ Backend
+
+- **Layering:** `Controller` (HTTP + `@PreAuthorize`) → `Service` (`@Transactional` business logic) → `Repository` (Spring Data JPA). DTOs cross the controller boundary; entities never leave the service layer.
+- **Uniform response envelope:** every endpoint returns `ApiResponse<T> { success, message, data }`.
+- **Central error handling:** `GlobalExceptionHandler` (`@RestControllerAdvice`) maps custom exceptions to HTTP status codes and the same envelope.
+- **Soft delete everywhere:** every table carries `deleted`; queries filter `...AndDeletedFalse`. No hard deletes.
+- **Mapping:** MapStruct interfaces (`@Mapper(componentModel = "spring")`).
+- **Mail:** `EmailService` sends welcome and order-confirmation emails best-effort (failures are logged, never fatal).
+- **Scheduling:** `@EnableScheduling`; `MonthlyReportService` closes each completed month into a persistent snapshot (cron + startup catch-up, idempotent via a unique constraint).
+
+---
+
+## 🤖 Android
+
+- **Pattern:** MVVM. Compose screens observe `StateFlow<UiState>` from Hilt-injected ViewModels; ViewModels call repositories; repositories call Retrofit services and translate results into a `Resource<T>` (`Success` / `Error` / `Loading`).
+- **Error mapping:** `ErrorMapper` converts Retrofit `HttpException`/IO errors into typed `Resource.Error` with per-field validation errors surfaced under form inputs.
+- **State survival:** `SavedStateHandle` persists UI state that must survive recreation/process death (e.g. the employee panel's active tab).
+- **Networking:** OkHttp `AuthInterceptor` attaches the bearer token; `TokenAuthenticator` performs single-flight refresh on 401 and clears tokens if the refresh token is definitively rejected.
+- **Real-time:** two singleton STOMP-over-OkHttp managers — `ChatWebSocketManager` (per open chat) and `BadgeWebSocketManager` (whole session, multiplexed subscriptions), both with exponential-backoff reconnect and REST resync.
+
+---
+
+## 🗄️ Database
+
+Schema is managed **exclusively** through Liquibase (`db.changelog-master.xml`, migrations **V1–V25**). Hibernate runs with `ddl-auto=validate` — it never modifies the schema, only verifies entities match it.
+
+| Table group | Key tables |
+|---|---|
+| Users & auth | `users`, `roles`, `user_roles`, `addresses`, `refresh_tokens` |
+| Products | `categories`, `products`, `sizes`, `images`, `tags`, `product_tags`, `outfits`, `outfit_items` |
+| Orders & payments | `orders`, `order_items`, `shipments`, `payments` |
+| Inventory | `inventory`, `stock_alerts` |
+| Loyalty | `loyalty_tiers`, `loyalty_accounts`, `loyalty_transactions`, `points_rules` |
+| Discounts | `discounts`, `promotions`, `user_promotions` (+ legacy `user_discounts`, kept for history) |
+| Support | `support_tickets`, `chat_sessions`, `chat_messages`, `bot_questions`, `bot_responses` |
+| Notifications | `notifications` |
+| Cart | `carts`, `cart_items` |
+| Analytics | `monthly_reports`, `monthly_report_top_products` |
+
+Notable integrity guarantees: a **partial unique index** on `user_promotions(user_id, promotion_id) WHERE deleted = false` prevents a customer from redeeming the same promo code twice (even under concurrent checkouts); a **unique constraint** on `monthly_reports(report_year, report_month)` prevents duplicate monthly snapshots; `promotions.code` is unique.
+
+---
+
+## 📡 API Overview
+
+Base path `/api/`. All responses use the `ApiResponse<T>` envelope. All endpoints require a JWT except `/api/auth/**`.
+
+| Module | Base Path | Notes |
+|---|---|---|
+| Auth | `/api/auth` | register / login / refresh / logout — public, rate-limited |
+| Users | `/api/users` | profile, role change (ADMIN), lifecycle |
+| Addresses | `/api/addresses` | customer delivery addresses (CRUD) |
+| Products | `/api/products` | paginated catalog, search, category filter, CRUD (staff), restore |
+| Cart | `/api/cart` | add/remove, checkout |
+| Orders | `/api/orders` | create, status transitions (staff), history, cancel |
+| Payments | `/api/payments` | payment records & status |
+| Inventory | `/api/inventory` | stock per size, low-stock alerts |
+| Loyalty | `/api/loyalty` | account, transactions, point grants |
+| Discounts | `/api/discounts` | discounts, promotions, promo validation |
+| Notifications | `/api/notifications` | list, unread count, mark/delete |
+| Support | `/api/support` | tickets, messages, bot flow, unread summaries, archive |
+| Analytics | `/api/analytics` | dashboard + monthly reports (MANAGER/ADMIN) |
+
+Full request/response contracts are documented in **`07_API_Documentation.md`**.
+
+---
+
+## 🔐 Authentication
+
+- **Access token:** stateless JWT (HMAC-SHA, `jjwt`), 15-minute lifetime, subject = user email.
+- **Refresh token:** opaque 64-byte random value, 30-day lifetime, **single-use rotation**. Only its SHA-256 hash is stored in `refresh_tokens`. Consuming a refresh token revokes it and issues a new pair.
+- **Password policy:** BCrypt hashing; registration requires min 8 chars with at least one digit, one uppercase letter, and one symbol.
+- **Rate limiting:** Bucket4j, 5 requests/minute per IP on `/api/auth/login` and `/api/auth/register`.
+- **On device:** access token, refresh token, role, and user id are encrypted with AES-256-GCM (key in the Android Keystore) before being written to DataStore; the DataStore file is excluded from Auto Backup and device transfer.
+- **IDOR protection:** user-scoped reads/writes verify ownership and return **404** (not 403) to avoid resource enumeration.
+
+Details in **`08_Security_Book.md`**.
+
+---
+
+## 🔌 WebSocket
+
+Real-time messaging runs over **STOMP on Spring's WebSocket broker**, endpoint `/ws` (raw transport `/ws/websocket`). Because the mobile OkHttp client cannot set an `Authorization` header on the handshake, the JWT is passed as a **query parameter** and validated in `WebSocketAuthInterceptor` before the connection is accepted; the same interceptor authorizes each STOMP `SUBSCRIBE` (only the ticket owner or staff may subscribe to `/topic/chat/{sessionId}`, etc.).
+
+| Destination | Purpose |
+|---|---|
+| `/app/chat/{sessionId}/send` | client → server: send a chat message |
+| `/topic/chat/{sessionId}` | server → clients: broadcast chat messages |
+| `/topic/user/{userId}/unread` | per-customer unread badge updates |
+| `/topic/employee/unread` | shared staff unread badge updates |
+| `/topic/employee/new-ticket` | new-ticket signal to all staff |
+
+Messages sent via REST are broadcast through the same topics, so REST and WebSocket clients stay consistent. Details in **`09_WebSocket_Book.md`**.
+
+---
+
+## 📂 Project Structure
+
+```
+gntl_app/
+├── README.md
+├── gntl_app_backend/                 # Spring Boot API
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/gentlemanstore/
+│       │   ├── GentlemanStoreApp.java
+│       │   ├── analytics/  cart/  common/  discount/  inventory/
+│       │   ├── loyalty/  notification/  order/  payment/  product/
+│       │   ├── security/  support/  user/
+│       │   └── <feature>/{controller, service, repository, model, dto, mapper}
+│       └── resources/
+│           ├── application.properties  application-prod.properties
+│           └── db/changelog/            # Liquibase master + V1–V25
+└── gntl_app_frontend/                # Android app
+    ├── app/build.gradle.kts
+    └── app/src/main/java/com/gentlemanstore/
+        ├── MainActivity.kt  GentlemanStoreApp.kt
+        ├── core/{di, network, ui, util}
+        ├── data/datastore/            # CryptoManager, TokenDataStore
+        ├── feature/<name>/{data, domain, presentation}
+        └── ui/theme/
+```
+
+---
+
+## 🚀 Installation
 
 ### Prerequisites
 
@@ -97,142 +292,78 @@ A full-stack e-commerce platform for premium menswear — suits, shirts, shoes, 
 | Maven | 3.9+ |
 | PostgreSQL | 16 |
 | Android Studio | Latest stable (AGP 8.11.2, SDK Platform 36) |
-| Docker + Compose | Optional (for containerized setup) |
 
----
+### Environment variables (backend)
 
-### Backend Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repo-url>
-   cd gntl_app/gntl_app_backend
-   ```
-
-2. **Create the database**
-   ```bash
-   # Option A — local PostgreSQL
-   createdb gentleman_store
-
-   # Option B — Docker (starts Postgres only)
-   docker-compose up postgres
-   ```
-
-3. **Set required environment variables** (see [Environment Variables](#-environment-variables) below)
-
-4. **Run the application**
-   ```bash
-   # Maven
-   mvn spring-boot:run
-
-   # Or build and run the JAR
-   mvn clean package
-   java -jar target/gentleman-store-0.0.1-SNAPSHOT.jar
-
-   # Docker Compose (starts Postgres + backend)
-   docker-compose up
-   ```
-
-   Liquibase migrations (V1–V20) run automatically on startup. The API is available at `http://localhost:8080/api/`.
-
----
-
-### Frontend Setup
-
-1. **Open the project** — open `gntl_app_frontend/` in Android Studio. Gradle sync downloads all dependencies automatically.
-
-2. **`local.properties`** — Android Studio generates this file on first open with your local SDK path:
-   ```properties
-   sdk.dir=C:\Users\<you>\AppData\Local\Android\Sdk
-   ```
-
-3. **Run on emulator** — create an AVD with API level 31+, ensure the backend is running locally on port 8080, and launch the `debug` build variant. The emulator reaches the host machine at `10.0.2.2:8080`.
-
-4. **Run on a physical device** — update the `debug` `BASE_URL` in `app/build.gradle.kts` from `10.0.2.2` to your machine's local IP, and allow that IP in `app/src/debug/res/xml/network_security_config.xml`.
-
----
-
-## 🔐 Environment Variables
-
-All secrets are loaded from environment variables at runtime. The application will not start without them.
+All secrets load from the environment; the app will not start without them.
 
 | Variable | Required | Description |
 |---|---|---|
 | `DB_USERNAME` | ✅ | PostgreSQL username |
 | `DB_PASSWORD` | ✅ | PostgreSQL password |
-| `JWT_SECRET` | ✅ | Base64-encoded HMAC signing key for JWTs (generate with `openssl rand -base64 64`) |
-| `MAIL_USERNAME` | ✅ | Gmail SMTP account address |
+| `JWT_SECRET` | ✅ | Base64-encoded HMAC key (`openssl rand -base64 64`) |
+| `MAIL_USERNAME` | ✅ | Gmail SMTP address |
 | `MAIL_PASSWORD` | ✅ | Gmail app password (not the account password) |
-| `CORS_ALLOWED_ORIGINS` | ➖ | Comma-separated list of allowed CORS origins (empty = no cross-origin access) |
-
-In IntelliJ IDEA, add these in the **Run Configuration → Environment variables** field. Never commit them to the repository.
+| `CORS_ALLOWED_ORIGINS` | ➖ | Comma-separated allowed origins (empty = none) |
 
 ---
 
-## 👥 User Roles
+## 🏃 Running Locally
 
-| Role | Capabilities |
-|---|---|
-| `CUSTOMER` | Browse catalog, manage cart, checkout, track orders, loyalty program, support tickets, notifications, profile & addresses |
-| `EMPLOYEE` | All customer API access + manage all orders (status updates), staff support chat, product CRUD, inventory updates |
-| `MANAGER` | Analytics dashboard, discount & promotion management, loyalty point grants, read access to all orders/payments/tickets |
-| `ADMIN` | All of the above + user management (roles, deactivation, reactivation), delete-access on all resources |
+### Backend
 
-Roles are flat — each `@PreAuthorize` annotation explicitly lists every permitted role. Assigning a new role forces a re-login by revoking all existing refresh tokens.
+```bash
+cd gntl_app_backend
+createdb gentleman_store               # or point application.properties at your DB
+# set the environment variables above, then:
+mvn spring-boot:run
+```
 
----
+Liquibase migrations (V1–V25) run automatically on startup. The API is served at `http://localhost:8080/api/`.
 
-## 🔒 Security
+### Frontend
 
-- **JWT authentication** — 15-minute access tokens, 30-day single-use rotating refresh tokens stored as SHA-256 hashes
-- **BCrypt password hashing** — strength 10; password policy enforces minimum 8 characters, at least one digit, uppercase letter, and symbol
-- **Rate limiting** — Bucket4j, 5 requests/minute per IP on `/api/auth/login` and `/api/auth/register`
-- **IDOR protection** — ownership checks on all user-scoped resources; returns 404 instead of 403 to avoid resource enumeration
-- **CORS** — explicit whitelist via environment variable, restricted headers and methods, no credentials
-- **Android Keystore encryption** — access and refresh tokens, user role, and user ID are encrypted with AES-256-GCM before writing to DataStore
-- **Backup exclusion** — DataStore file containing encrypted tokens is excluded from Android Auto Backup and device transfer
-- **Network security** — cleartext HTTP globally disabled in release builds; debug allows it only to `10.0.2.2`
-- **ProGuard/R8** — minification and obfuscation enabled for release builds
+1. Open `gntl_app_frontend/` in Android Studio; let Gradle sync.
+2. Android Studio generates `local.properties` with your SDK path.
+3. Create an AVD with **API 31+**, ensure the backend is running on port 8080, and run the `debug` variant. The emulator reaches the host at `10.0.2.2:8080` (already configured in the `debug` `BASE_URL`).
+4. For a physical device: change the `debug` `BASE_URL` in `app/build.gradle.kts` to your machine's LAN IP and allow that host in `app/src/debug/res/xml/network_security_config.xml`.
 
 ---
 
-## 📡 API Overview
+## 🧪 Testing
 
-All endpoints return `{ success, message, data }` (the `ApiResponse<T>` envelope). Base path: `/api/`.
+- **Backend:** JUnit 5 + Mockito unit tests over services (checkout pricing, discount/promo rules, order status filtering, support archive/urgency, analytics month boundaries), an `@WebMvcTest` security slice (`ProductControllerSecurityTest`) asserting role rules, an `OrderMapper` test, and a Liquibase changelog validation test.
 
-| Module | Base Path | Description |
-|---|---|---|
-| Auth | `/api/auth` | Register, login, token refresh, logout — all public |
-| Users | `/api/users` | Profile management, role changes, account lifecycle |
-| Addresses | `/api/addresses` | Customer delivery addresses (CRUD) |
-| Products | `/api/products` | Catalog with pagination, search, and category filter |
-| Cart | `/api/cart` | Add/remove items, checkout |
-| Orders | `/api/orders` | Order creation, status management, history |
-| Payments | `/api/payments` | Payment records and status updates |
-| Inventory | `/api/inventory` | Stock levels per product size, low-stock alerts |
-| Loyalty | `/api/loyalty` | Account, tiers, point transactions |
-| Discounts | `/api/discounts` | Promo codes, promotions, validation |
-| Notifications | `/api/notifications` | In-app notifications, unread count |
-| Support | `/api/support` | Tickets, chat messages, bot intake |
-| Analytics | `/api/analytics` | Sales dashboard (MANAGER/ADMIN) |
+  ```bash
+  cd gntl_app_backend
+  mvn test
+  ```
+
+- **Frontend:** JUnit 4 + MockK + `kotlinx-coroutines-test` unit tests over ViewModels (filter/pagination race conditions, WebSocket badge updates, optimistic delete rollback, bot flow) and `ErrorMapper`.
+
+  ```bash
+  cd gntl_app_frontend
+  ./gradlew :app:testDebugUnitTest
+  ```
+
+Coverage details in **`12_Testing_Book.md`**.
 
 ---
 
-## 🗄️ Database
+## 🔮 Future Improvements
 
-Schema is managed exclusively through Liquibase migrations (V1–V20). Hibernate is set to `validate` — it never modifies the schema.
+Redis (cache + distributed rate-limit/bucket store), Docker Compose / Kubernetes, RabbitMQ for the email + notification pipeline, CI/CD, Prometheus + Grafana monitoring, OAuth2 / social login, cloud object storage for product images, a real payment gateway (e.g. Stripe), and horizontal scaling of the WebSocket layer with an external STOMP broker. Expanded in **`14_Future_Improvements.md`**.
 
-| Table group | Key tables |
-|---|---|
-| Users & auth | `users`, `roles`, `user_roles`, `addresses`, `refresh_tokens` |
-| Products | `categories`, `products`, `sizes`, `images`, `tags`, `product_tags`, `outfits`, `outfit_items` |
-| Orders & payments | `orders`, `order_items`, `shipments`, `payments` |
-| Inventory | `inventory`, `stock_alerts` |
-| Loyalty | `loyalty_tiers`, `loyalty_accounts`, `loyalty_transactions`, `points_rules` |
-| Discounts | `discounts`, `promotions`, `user_promotions` |
-| Support | `support_tickets`, `chat_sessions`, `chat_messages`, `bot_questions`, `bot_responses` |
-| Notifications | `notifications` |
-| Cart | `carts`, `cart_items` |
+---
 
-All 32 entities use soft-delete (`deleted = true`) — no hard deletes anywhere in the application.
+## Companion Documentation
 
+Detailed documentation "books" (in Serbian) live in `D:\projekti\0_dokumentacije\gntl_app`:
+
+`01_Project_Overview` · `02_Business_Documentation` · `03_System_Architecture` · `04_Backend_Book` · `05_Android_Book` · `06_Database_Book` · `07_API_Documentation` · `08_Security_Book` · `09_WebSocket_Book` · `10_Design_Decisions` · `11_Code_Walkthrough` · `12_Testing_Book` · `13_Performance_Book` · `14_Future_Improvements` · `15_Interview_Preparation`
+
+---
+
+## License
+
+MIT.
